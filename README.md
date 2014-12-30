@@ -14,6 +14,11 @@ Broadway is being designed for a very specific processing use case... High speed
 tools like <a href="http://storm.apache.org/" target="storm">Apache Storm</a>, which excels at processing streams of data
 but is not specifically geared toward processing one-off files.
 
+## Getting the Code
+
+Broadway is currently pre-alpha quality software, and although it will currently run simple topologies, there's still
+some work to do before it can be made available to the general public. The current ETA is to have the code ready for
+action by the end of January 2015.
 
 ## Creating a Topology
 
