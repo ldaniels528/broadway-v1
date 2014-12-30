@@ -1,0 +1,24 @@
+<?xml version="1.0" ?>
+<flow name="NASDAQ File Import">
+
+    <resource id="nasdaqFile" type="classpath" path="/data/NASDAQ.txt" />
+
+    <producer id="nasdaqProducer" class="com.ldaniels528.broadway.server.etl.actors.TextFileReader" target="symbolLookup">
+        <property key="delimiter" value="\t" />
+    </producer>
+
+    <consumer id="symbolLookup" class="com.ldaniels528.broadway.test.nasdaq.StockQuoteLookupActor">
+        <onSuccess refid="shocktrade.quotes.yahoo.avro" />
+        <onSFailure refid="errors" />
+    </consumer>
+
+    <consumer id="shocktrade.quotes.yahoo.avro" class="com.ldaniels528.broadway.server.etl.actors.KafkaAvroPublisher">
+        <property key="topic" value="shocktrade.quotes.yahoo.avro" />
+        <property key="brokers" value="dev501:9091,dev501:9092,dev501:9093,dev501:9094,dev501:9095,dev501:9096" />
+    </consumer>
+
+    <consumer id="errors" class="com.ldaniels528.broadway.core.actors.ErrorLogger" />
+
+    <emit resource="nasdaqFile" producer="nasdaqProducer" />
+
+</flow>
