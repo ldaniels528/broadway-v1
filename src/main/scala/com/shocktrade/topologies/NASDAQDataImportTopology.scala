@@ -1,6 +1,6 @@
 package com.shocktrade.topologies
 
-import akka.actor.{Actor, ActorRef, Props}
+import akka.actor.{Actor, ActorRef}
 import com.ldaniels528.broadway.server.etl.BroadwayTopology
 import com.ldaniels528.broadway.server.etl.actors.TextFileReader.DelimitedFile
 import com.ldaniels528.broadway.server.etl.actors.{KafkaAvroPublisher, TextFileReader}
@@ -25,13 +25,13 @@ object NASDAQDataImportTopology {
       import topology.executionContext
 
       // create a Kafka publisher actor
-      val kafkaPublisher = topology.system.actorOf(Props(new KafkaAvroPublisher(topic, brokers)))
+      val kafkaPublisher = topology.addActor(new KafkaAvroPublisher(topic, brokers))
 
       // create a stock quote lookup actor
-      val quoteLookup = topology.system.actorOf(Props(new StockQuoteLookupActor(kafkaPublisher)))
+      val quoteLookup = topology.addActor(new StockQuoteLookupActor(kafkaPublisher))
 
       // create a file reader actor to read lines from the incoming resource
-      val fileReader = topology.system.actorOf(Props(new TextFileReader()))
+      val fileReader = topology.addActor(new TextFileReader())
 
       // start the processing by submitting a request to the file reader actor
       fileReader ! DelimitedFile(resource, "\t", quoteLookup)

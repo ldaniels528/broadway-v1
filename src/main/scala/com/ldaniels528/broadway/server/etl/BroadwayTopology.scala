@@ -1,8 +1,10 @@
 package com.ldaniels528.broadway.server.etl
 
-import akka.actor.ActorSystem
+import akka.actor.{Actor, ActorSystem, Props}
 import com.ldaniels528.broadway.core.Resources.ReadableResource
 import org.slf4j.LoggerFactory
+
+import scala.reflect.ClassTag
 
 /**
  * Broadway Topology
@@ -14,6 +16,13 @@ case class BroadwayTopology(name: String) {
   lazy val system = ActorSystem("BroadwaySystem_2")
 
   implicit val executionContext = system.dispatcher
+
+  /**
+   * Adds a new actor to the topology
+   * @param actor the given [[Actor]]
+   * @return an [[akka.actor.ActorRef]]
+   */
+  def addActor[T <: Actor: ClassTag](actor: => T) = system.actorOf(Props(actor))
 
   /**
    * Setups the actions that will occur upon start of the topology
