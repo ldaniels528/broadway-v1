@@ -29,10 +29,10 @@ The following code demonstrates how to create a Broadway topology:
       // create a stock quote lookup actor
       val quoteLookup = topology.system.actorOf(Props(new StockQuoteLookupActor(kafkaPublisher)))
 
-      // create an actor to read lines from the incoming resource
+      // create a ile reader actor to read lines from the incoming resource
       val fileReader = topology.system.actorOf(Props(new TextFileReader()))
 
-      // start the processing by submitted a request to the file reader actor
+      // start the processing by submitting a request to the file reader actor
       fileReader ! DelimitedFile(resource, "\t", quoteLookup)
     }
 
