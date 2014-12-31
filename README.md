@@ -29,23 +29,70 @@ action by the end of January 2015.
 
 ## Creating a Broadway Topology
 
-The following code demonstrates how to create a Broadway topology:
+The proceeding example is a Broadway topology performs the following flow:
+
+* Extracts stock symbols from a tabbed-delimited file.
+* Retrieves stock quotes for each symbol.
+* Converts the stock quotes to <a href="http://avro.apache.org/" target="avro">Avro</a> records.
+* Publishes each Avro record to a Kafka topic (shocktrade.quotes.yahoo.avro)
+
+Below is the Broadway topology that implements the flow described above:
 
 ```scala
-val topology = new BroadwayTopology("NASDAQ Data Topology")
-topology.onStart { resource =>
-  import topology.executionContext
+class NASDAQSymbolImportTopology() extends BroadwayTopology("NASDAQ Symbol Import Topology") {
+  private val topic = "shocktrade.quotes.yahoo.avro"
+  private val brokers = "dev501:9091,dev501:9092,dev501:9093,dev501:9094,dev501:9095,dev501:9096"
 
-  // create a Kafka publisher actor
-  val kafkaPublisher = topology.addActor(new KafkaAvroPublisher(topic, brokers))
+  onStart { resource =>
+    // create a file reader actor to read lines from the incoming resource
+    val fileReader = addActor(new TextFileReader())
 
-  // create a stock quote lookup actor
-  val quoteLookup = topology.addActor(new StockQuoteLookupActor(kafkaPublisher))
+    // create a Kafka publisher actor
+    val kafkaPublisher = addActor(new KafkaAvroPublisher(topic, brokers))
 
-  // create a file reader actor to read lines from the incoming resource
-  val fileReader = topology.addActor(new TextFileReader())
+    // create a stock quote lookup actor
+    val quoteLookup = addActor(new StockQuoteLookupActor(kafkaPublisher))
 
-  // start the processing by submitting a request to the file reader actor
-  fileReader ! DelimitedFile(resource, "\t", quoteLookup)
+    // start the processing by submitting a request to the file reader actor
+    fileReader ! DelimitedFile(resource, "\t", quoteLookup)
+  }
 }
+```
+
+**NOTE:** The `KafkaAvroPublisher` and `TextFileReader` actors are builtin components of Broadway.
+
+The class below is an optional custom actor that will perform the stock symbol look-ups and then pass an Avro-encoded
+record to the Kafka publishing actor (a built-in component).
+
+```scala
+class StockQuoteLookupActor(target: ActorRef)(implicit ec: ExecutionContext) extends Actor {
+  private val parameters = YFStockQuoteService.getParams(
+    "symbol", "exchange", "lastTrade", "tradeDate", "tradeTime", "ask", "bid",
+    "change", "changePct", "prevClose", "open", "close", "high", "low", "volume", "marketCap", "errorMessage")
+
+  override def receive = {
+    case symbolData: Array[String] =>
+      symbolData.headOption foreach { symbol =>
+        YahooFinanceServices.getStockQuote(symbol, parameters) foreach { quote =>
+          val builder = com.shocktrade.avro.CSVQuoteRecord.newBuilder()
+          AvroConversion.copy(quote, builder)
+          target ! builder.build()
+        }
+      }
+    case message =>
+      unhandled(message)
+  }
+}
+```
+
+And an XML file to describe how files will be mapped to the topology:
+
+```xml
+<?xml version="1.0" ?>
+<topology class="com.shocktrade.topologies.NASDAQSymbolImportTopology">
+    <feed match="exact">AMEX.txt</feed>
+    <feed match="exact">NASDAQ.txt</feed>
+    <feed match="exact">NYSE.txt</feed>
+    <feed match="regex">OTCBB.*[.]txt</feed>
+</topology>
 ```
