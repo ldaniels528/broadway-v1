@@ -39,14 +39,14 @@ class NASDAQSymbolImportTopology() extends BroadwayTopology("NASDAQ Symbol Impor
   private val brokers = "dev501:9091,dev501:9092,dev501:9093,dev501:9094,dev501:9095,dev501:9096"
 
   onStart { resource =>
+    // create a file reader actor to read lines from the incoming resource
+    val fileReader = addActor(new TextFileReader())
+
     // create a Kafka publisher actor
     val kafkaPublisher = addActor(new KafkaAvroPublisher(topic, brokers))
 
     // create a stock quote lookup actor
     val quoteLookup = addActor(new StockQuoteLookupActor(kafkaPublisher))
-
-    // create a file reader actor to read lines from the incoming resource
-    val fileReader = addActor(new TextFileReader())
 
     // start the processing by submitting a request to the file reader actor
     fileReader ! DelimitedFile(resource, "\t", quoteLookup)
