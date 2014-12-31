@@ -27,21 +27,23 @@ action by the end of January 2015.
 The following code demonstrates how to create a Broadway topology:
 
 ```scala
-val topology = new BroadwayTopology("NASDAQ Data Topology")
-topology.onStart { resource =>
-  import topology.executionContext
+class NASDAQSymbolImportTopology() extends BroadwayTopology("NASDAQ Symbol Import Topology") {
+  private val topic = "shocktrade.quotes.yahoo.avro"
+  private val brokers = "dev501:9091,dev501:9092,dev501:9093,dev501:9094,dev501:9095,dev501:9096"
 
-  // create a Kafka publisher actor
-  val kafkaPublisher = topology.addActor(new KafkaAvroPublisher(topic, brokers))
+  onStart { resource =>
+    // create a Kafka publisher actor
+    val kafkaPublisher = addActor(new KafkaAvroPublisher(topic, brokers))
 
-  // create a stock quote lookup actor
-  val quoteLookup = topology.addActor(new StockQuoteLookupActor(kafkaPublisher))
+    // create a stock quote lookup actor
+    val quoteLookup = addActor(new StockQuoteLookupActor(kafkaPublisher))
 
-  // create a file reader actor to read lines from the incoming resource
-  val fileReader = topology.addActor(new TextFileReader())
+    // create a file reader actor to read lines from the incoming resource
+    val fileReader = addActor(new TextFileReader())
 
-  // start the processing by submitting a request to the file reader actor
-  fileReader ! DelimitedFile(resource, "\t", quoteLookup)
+    // start the processing by submitting a request to the file reader actor
+    fileReader ! DelimitedFile(resource, "\t", quoteLookup)
+  }
 }
 ```
 
