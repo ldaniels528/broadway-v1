@@ -80,7 +80,7 @@ class StockQuoteLookupActor(target: ActorRef)(implicit ec: ExecutionContext) ext
 }
 ```
 
-And an XML file to describe the topology:
+And an XML file to describe how files will be mapped to the topology:
 
 ```xml
 <?xml version="1.0" ?>
