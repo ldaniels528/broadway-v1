@@ -3,21 +3,18 @@ package com.ldaniels528.broadway.server
 import java.io.File
 
 import com.ldaniels528.broadway.core.FileHelper._
-import com.ldaniels528.broadway.core.FileHelper.logger
-import com.ldaniels528.broadway.core.Resources.{ReadableResource, ClasspathResource}
+import com.ldaniels528.broadway.core.Resources.{ClasspathResource, ReadableResource}
 import com.ldaniels528.broadway.server.ServerConfig._
-import com.ldaniels528.broadway.server.ServerConfig.logger
 import com.ldaniels528.trifecta.util.PropertiesHelper._
-import com.shocktrade.topologies.NASDAQDataImportTopology._
 import org.slf4j.LoggerFactory
-
-import scala.util.{Failure, Success, Try}
 
 /**
  * Server Config
  * @author Lawrence Daniels <lawrence.daniels@gmail.com>
  */
-class ServerConfig(props: java.util.Properties) {
+case class ServerConfig(props: java.util.Properties,
+                        httpInfo: Option[HttpInfo],
+                        topologies: Seq[Topology]) {
 
   def getRootDirectory = new File(new File(props.getOrElse(BaseDir, scala.util.Properties.userHome)), "broadway")
 
@@ -29,17 +26,16 @@ class ServerConfig(props: java.util.Properties) {
 
   def getIncomingDirectory = new File(getRootDirectory, "incoming")
 
+  def getTopologiesDirectory = new File(getRootDirectory, "topologies")
+
   def getWorkDirectory = new File(getRootDirectory, "work")
 
   /**
    * Initializes the environment based on this configuration
    */
-  def init(): Unit = {
-    // ensure that all processing directories exist
-    Seq(
-      getArchiveDirectory, getCompletedDirectory,
-      getFailedDirectory, getIncomingDirectory, getWorkDirectory) foreach ensureExistence
-  }
+  def init() = Seq(
+    getArchiveDirectory, getCompletedDirectory, getFailedDirectory,
+    getIncomingDirectory, getTopologiesDirectory, getWorkDirectory) foreach ensureExistence
 
 }
 
@@ -55,20 +51,23 @@ object ServerConfig {
    * Loads the default server configuration
    * @return the default server configuration
    */
-  def apply() = loadConfig(ClasspathResource("/server-config.properties"))
+  def apply(): Option[ServerConfig] = apply(ClasspathResource("/broadway-config.xml"))
 
   /**
    * Loads the server configuration from the given resource
    * @return the server configuration
    */
-  def loadConfig(resource: ReadableResource) = {
-    val props = new java.util.Properties()
-    Try(resource.getInputStream foreach props.load) match {
-      case Success(_) =>
-      case Failure(e) =>
-        logger.error(s"Error loading configuration from '$resource'", e)
-    }
-    new ServerConfig(props)
+  def apply(resource: ReadableResource): Option[ServerConfig] = ServerConfigParser.parse(resource)
+
+  case class Feed(name: String, matching: String) {
+
+    def matches(text: String) = name == text
+
   }
+
+  case class HttpInfo(host: String, port: Int)
+
+  case class Topology(className: String, feeds: Seq[Feed])
+
 
 }

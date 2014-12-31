@@ -10,7 +10,7 @@ import scala.reflect.ClassTag
  * Broadway Topology
  * @author Lawrence Daniels <lawrence.daniels@gmail.com>
  */
-case class BroadwayTopology(name: String) {
+class BroadwayTopology(val name: String) {
   private lazy val logger = LoggerFactory.getLogger(getClass)
   private var executable: Option[ReadableResource => Unit] = None
   lazy val system = ActorSystem("BroadwaySystem_2")

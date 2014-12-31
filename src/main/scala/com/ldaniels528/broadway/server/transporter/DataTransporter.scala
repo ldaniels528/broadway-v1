@@ -25,8 +25,8 @@ class DataTransporter(config: ServerConfig)(implicit ec: ExecutionContext) {
    */
   def process(file: File) {
     val fileName = file.getName
-    etl.getMapping(fileName) match {
-      case Some(process) => processETL(process, file)
+    etl.getProcessor(fileName) match {
+      case Some((feed, process)) => processETL(process, file)
       case None => noMappedProcess(file)
     }
     ()

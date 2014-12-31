@@ -6,6 +6,7 @@ import com.ldaniels528.broadway.core.Resources.FileResource
 import com.ldaniels528.broadway.server.BroadwayServer._
 import com.ldaniels528.broadway.server.datastore.DataStore
 import com.ldaniels528.broadway.server.transporter.DataTransporter
+import com.ldaniels528.trifecta.util.OptionHelper._
 
 /**
  * Broadway Server
@@ -59,11 +60,11 @@ object BroadwayServer {
     // load the configuration
     val config = args.toList match {
       case Nil => ServerConfig()
-      case configPath :: Nil => ServerConfig.loadConfig(FileResource(configPath))
+      case configPath :: Nil => ServerConfig(FileResource(configPath))
       case _ =>
         throw new IllegalArgumentException(s"${getClass.getName} [<config-file>]")
     }
-    new BroadwayServer(config).start()
+    new BroadwayServer(config.orDie("No configuration file (broadway-config.xml) found")).start()
   }
 
 }
