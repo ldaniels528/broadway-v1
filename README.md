@@ -24,7 +24,14 @@ action by the end of January 2015.
 
 ## Creating a Broadway Topology
 
-The following code demonstrates how to create a Broadway topology:
+The proceeding example is a Broadway topology performs the following flow:
+
+* Extracts stock symbols from a tabbed-delimited file.
+* Retrieves stock quotes for each symbol.
+* Converts the stock quotes to <a href="http://avro.apache.org/" target="avro">Avro</a> records.
+* Publishes each Avro record to a Kafka topic (shocktrade.quotes.yahoo.avro)
+
+Below is the Broadway topology that implements the flow described above:
 
 ```scala
 class NASDAQSymbolImportTopology() extends BroadwayTopology("NASDAQ Symbol Import Topology") {
@@ -47,8 +54,10 @@ class NASDAQSymbolImportTopology() extends BroadwayTopology("NASDAQ Symbol Impor
 }
 ```
 
-The class below is a custom actor that will perform the stock symbol look-ups and then pass an Avro encoded object
-to the Kafka publishing actor (a built-in component).
+**NOTE:** The `KafkaAvroPublisher` and `TextFileReader` actors are builtin components of Broadway.
+
+The class below is an optional custom actor that will perform the stock symbol look-ups and then pass an Avro-encoded
+record to the Kafka publishing actor (a built-in component).
 
 ```scala
 class StockQuoteLookupActor(target: ActorRef)(implicit ec: ExecutionContext) extends Actor {
