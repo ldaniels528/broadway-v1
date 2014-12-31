@@ -16,6 +16,11 @@ it is not intended as a replacement for Storm or other stream-oriented processin
 environments where many different individual files require processing, while Storm excels at processing streams of data
 but is not specifically geared toward the processing one-off files.
 
+### How is Broadway different from Storm
+
+Storm and Broadway have different design goals. Broadway is file-centric, whereas Storm processes streams of data.
+For example, Storm doesn't allow you to say I want to process files B, C and D, but only after I've processed A.
+
 ## Getting the Code
 
 Broadway is currently pre-alpha quality software, and although it will currently run simple topologies, there's still
