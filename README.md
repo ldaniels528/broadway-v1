@@ -11,7 +11,7 @@ of 3 main modules:
 ## About Broadway
 
 Broadway is being designed for a very specific processing use case... High speed file ingestion. And while Broadway will
-share many some similarities with existing processing engines, like <a href="http://storm.apache.org/" target="storm">Apache Storm</a>,
+share many similarities with existing processing engines, like <a href="http://storm.apache.org/" target="storm">Apache Storm</a>,
 it is not intended as a replacement for Storm or other stream-oriented processing systems. Broadway is targeting
 environments where many different individual files require processing, while Storm excels at processing streams of data
 but is not specifically geared toward the processing one-off files.
