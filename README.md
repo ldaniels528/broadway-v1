@@ -88,6 +88,6 @@ And an XML file to describe how files will be mapped to the topology:
     <feed match="exact">AMEX.txt</feed>
     <feed match="exact">NASDAQ.txt</feed>
     <feed match="exact">NYSE.txt</feed>
-    <feed match="exact">OTCBB.txt</feed>
+    <feed match="regex">OTCBB.*[.]txt</feed>
 </topology>
 ```
