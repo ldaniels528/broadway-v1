@@ -28,13 +28,7 @@ class ServerConfigParserSpec() extends FeatureSpec with GivenWhenThen with Mocki
       info(s"config = $config")
       config shouldBe Some(ServerConfig(
         props = Map("base" -> "/Users/ldaniels/broadway").toProps,
-        httpInfo = Some(HttpInfo(host = "0.0.0.0", port = 9999)),
-        topologies = List(
-          Topology("com.shocktrade.topologies.NASDAQSymbolImportTopology",
-            List(
-              Feed("AMEX.txt", "exact"), Feed("NASDAQ.txt", "exact"),
-              Feed("NYSE.txt", "exact"), Feed("OTCBB.txt", "exact"))
-          ))
+        httpInfo = Some(HttpInfo(host = "0.0.0.0", port = 9999))
       ))
 
     }

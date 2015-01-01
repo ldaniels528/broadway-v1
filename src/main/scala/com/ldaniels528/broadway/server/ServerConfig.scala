@@ -2,6 +2,7 @@ package com.ldaniels528.broadway.server
 
 import java.io.File
 
+import com.ldaniels528.trifecta.util.OptionHelper._
 import com.ldaniels528.broadway.core.FileHelper._
 import com.ldaniels528.broadway.core.Resources.{ClasspathResource, ReadableResource}
 import com.ldaniels528.broadway.server.ServerConfig._
@@ -12,10 +13,9 @@ import com.ldaniels528.trifecta.util.PropertiesHelper._
  * @author Lawrence Daniels <lawrence.daniels@gmail.com>
  */
 case class ServerConfig(props: java.util.Properties,
-                        httpInfo: Option[HttpInfo],
-                        topologies: Seq[Topology]) {
+                        httpInfo: Option[HttpInfo]) {
 
-  def getRootDirectory = new File(new File(props.getOrElse(BaseDir, scala.util.Properties.userHome)), "broadway")
+  def getRootDirectory = new File(props.asOpt[String](BaseDir).orDie(s"Required property '$BaseDir' is missing"))
 
   def getArchiveDirectory = new File(getRootDirectory, "archive")
 
@@ -57,30 +57,6 @@ object ServerConfig {
    */
   def apply(resource: ReadableResource): Option[ServerConfig] = ServerConfigParser.parse(resource)
 
-  case class FeedSet() {
-
-  }
-
-  case class Feed(name: String, matching: String) {
-    def matches(text: String): Boolean = {
-      matching match {
-        case "exact" => name == text
-        case "regex" => name.matches(text)
-        case "start" => name.startsWith(text)
-        case "ends" => name.endsWith(text)
-        case _ => name == text
-      }
-    }
-  }
-
-  case class Location(feeds: Seq[Feed]) {
-
-    def findFeed(name: String): Option[Feed] = feeds.find(_.matches(name))
-
-  }
-
   case class HttpInfo(host: String, port: Int)
-
-  case class Topology(className: String, feeds: Seq[Feed])
 
 }

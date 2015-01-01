@@ -6,4 +6,4 @@ package com.ldaniels528.broadway.core.topology
  */
 case class TopologyConfig(locations: Seq[Location],
                           propertySets: Seq[PropertySet],
-                          topologies: Seq[Topology])
+                          topologies: Seq[TopologyDescriptor])

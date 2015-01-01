@@ -9,7 +9,10 @@ import java.util.UUID
  * @param dependencies the given feed dependencies
  * @param topology the topology to execute
  */
-case class FeedDescriptor(name: String, matching: String, dependencies: Seq[FeedDescriptor] = Nil, topology: Option[Topology] = None) {
+case class FeedDescriptor(name: String,
+                          matching: String,
+                          dependencies: Seq[FeedDescriptor] = Nil,
+                          topology: Option[TopologyDescriptor] = None) {
   val uuid = UUID.randomUUID().toString
 
   /**
@@ -19,17 +22,15 @@ case class FeedDescriptor(name: String, matching: String, dependencies: Seq[Feed
    */
   def matches(feedName: String): Boolean = {
     matching match {
-      case "exact" => name == feedName
-      case "regex" => name.matches(feedName)
-      case "start" => name.startsWith(feedName)
-      case "ends" => name.endsWith(feedName)
-      case _ => name == feedName
+      case "exact" => name.toLowerCase == feedName.toLowerCase
+      case "regex" => name.toLowerCase.matches(feedName.toLowerCase)
+      case "start" => name.toLowerCase.startsWith(feedName.toLowerCase)
+      case "ends" => name.toLowerCase.endsWith(feedName.toLowerCase)
+      case unhanded =>
+        throw new IllegalArgumentException(s"Feed match type '$unhanded' was not recognized")
     }
   }
 
-  def toFeed(implicit rt: TopologyRuntime): Feed = {
-    val feed = Feed(uuid, name, dependencies map (_.toFeed), topology)
-    rt.feeds.getOrElseUpdate(feed.uuid, feed)
-  }
+  def toFeed(implicit rt: TopologyRuntime): Feed = rt.getFeed(this)
 
 }

@@ -63,7 +63,7 @@ class FileMonitor(system: ActorSystem) {
               if (event.kind() == StandardWatchEventKinds.ENTRY_CREATE) {
                 // get a reference to the new file
                 val file = new File(directory, event.context().toString)
-                logger.info(s"Preparing to consume '${file.getName}'...")
+                logger.info(s"Waiting to consume '${file.getName}' (${directory.getAbsolutePath})...")
 
                 // register to be notified when the file is ready for consumption
                 notifyWhenReady(file)(file => Future { callback(file); () } )

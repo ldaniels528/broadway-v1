@@ -15,7 +15,7 @@ class TopologyConfigSpec() extends FeatureSpec with GivenWhenThen with MockitoSu
 
   feature("Feeds can have dependencies") {
     scenario("Feeds should only be processed when all dependencies are satisfied") {
-      Given("a runtime instance")
+      Given("a topology runtime")
       implicit val rt = new TopologyRuntime()
 
       And("a collection of feeds with inter-dependencies")

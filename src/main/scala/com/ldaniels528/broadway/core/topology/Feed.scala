@@ -6,7 +6,7 @@ package com.ldaniels528.broadway.core.topology
  * @param dependencies the given feed dependencies
  * @param topology the topology to execute
  */
-case class Feed(uuid: String, name: String, dependencies: Seq[Feed], topology: Option[Topology]) {
+case class Feed(uuid: String, name: String, dependencies: Seq[Feed], topology: Option[TopologyDescriptor]) {
   var processed: Boolean = false
 
   /**
