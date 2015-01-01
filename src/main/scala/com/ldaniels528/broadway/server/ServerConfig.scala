@@ -6,7 +6,6 @@ import com.ldaniels528.broadway.core.FileHelper._
 import com.ldaniels528.broadway.core.Resources.{ClasspathResource, ReadableResource}
 import com.ldaniels528.broadway.server.ServerConfig._
 import com.ldaniels528.trifecta.util.PropertiesHelper._
-import org.slf4j.LoggerFactory
 
 /**
  * Server Config
@@ -44,7 +43,6 @@ case class ServerConfig(props: java.util.Properties,
  * @author Lawrence Daniels <lawrence.daniels@gmail.com>
  */
 object ServerConfig {
-  private lazy val logger = LoggerFactory.getLogger(getClass)
   private val BaseDir = "broadway.directories.base"
 
   /**
@@ -59,15 +57,30 @@ object ServerConfig {
    */
   def apply(resource: ReadableResource): Option[ServerConfig] = ServerConfigParser.parse(resource)
 
-  case class Feed(name: String, matching: String) {
+  case class FeedSet() {
 
-    def matches(text: String) = name == text
+  }
+
+  case class Feed(name: String, matching: String) {
+    def matches(text: String): Boolean = {
+      matching match {
+        case "exact" => name == text
+        case "regex" => name.matches(text)
+        case "start" => name.startsWith(text)
+        case "ends" => name.endsWith(text)
+        case _ => name == text
+      }
+    }
+  }
+
+  case class Location(feeds: Seq[Feed]) {
+
+    def findFeed(name: String): Option[Feed] = feeds.find(_.matches(name))
 
   }
 
   case class HttpInfo(host: String, port: Int)
 
   case class Topology(className: String, feeds: Seq[Feed])
-
 
 }

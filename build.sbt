@@ -55,10 +55,13 @@ libraryDependencies ++= Seq(
   "net.liftweb" %% "lift-json" % "3.0-M1",
   "org.apache.avro" % "avro" % "1.7.7",
   "org.apache.curator" % "curator-framework" % "2.7.0",
+  "org.apache.httpcomponents" % "httpcore" % "4.3.2",
+  "org.apache.httpcomponents" % "httpmime" % "4.3.2",
   "org.apache.kafka" %% "kafka" % "0.8.1.1"
     exclude("org.apache.zookeeper", "zookeeper")
     exclude("org.slf4j", "log4j-over-slf4j"),
   "org.apache.zookeeper" % "zookeeper" % "3.4.6",
+  "org.jboss" % "jboss-vfs" % "3.2.8.Final",
   "org.slf4j" % "slf4j-api" % "1.7.9",
   "org.slf4j" % "log4j-over-slf4j" % "1.7.9",
   "net.databinder.dispatch" %% "dispatch-core" % "0.11.2"

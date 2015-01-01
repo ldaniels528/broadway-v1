@@ -66,7 +66,7 @@ class FileMonitor(system: ActorSystem) {
                 logger.info(s"Preparing to consume '${file.getName}'...")
 
                 // register to be notified when the file is ready for consumption
-                notifyWhenReady(file)(file => Future(callback(file)))
+                notifyWhenReady(file)(file => Future { callback(file); () } )
               }
             }
           }

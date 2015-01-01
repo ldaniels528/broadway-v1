@@ -1,0 +1,44 @@
+<?xml version="1.0" ?>
+<topology-config>
+
+    <properties id="KafkaProps">
+        <property key="topic" value="shocktrade.quotes.yahoo.avro" />
+        <property key="brokers" value="dev501:9091,dev501:9092,dev501:9093,dev501:9094,dev501:9095,dev501:9096" />
+    </properties>
+
+    <topology id="QuoteImportTopology" class="com.shocktrade.topologies.NASDAQSymbolImportTopology">
+        <properties ref-id="KafkaProps" />
+    </topology>
+
+    <topology id="EodDataImportTopology" class="com.shocktrade.topologies.EODDATAImportTopology">
+        <properties ref-id="KafkaProps" />
+    </topology>
+
+    <location id="NASDAQ" path="/usr/local/java/shocktrade-server/incoming/nasdaq">
+        <feed match="exact" name="AMEX.txt" topology-ref="QuoteImportTopology" />
+        <feed match="exact" name="NASDAQ.txt" topology-ref="QuoteImportTopology" />
+        <feed match="exact" name="NYSE.txt" topology-ref="QuoteImportTopology" />
+        <feed match="exact" name="OTCBB.txt" topology-ref="QuoteImportTopology" />
+    </location>
+
+    <location id="NASDAQ" path="/usr/local/java/shocktrade-server/incoming/dependencies">
+        <feed match="exact" name="AMEX.txt" topology-ref="QuoteImportTopology">
+            <depends on="NYSE.txt" />
+        </feed>
+        <feed match="exact" name="NASDAQ.txt" topology-ref="QuoteImportTopology" />
+        <feed match="exact" name="NYSE.txt" topology-ref="QuoteImportTopology">
+            <depends on="NASDAQ.txt" />
+        </feed>
+        <feed match="exact" name="OTCBB.txt" topology-ref="QuoteImportTopology">
+            <depends on="AMEX.txt" />
+        </feed>
+    </location>
+
+    <location id="EODDATA" path="/usr/local/java/shocktrade-server/incoming/tradingHistory">
+        <feed match="regex" topology-ref="EodDataImportTopology">AMEX.*[.]txt</feed>
+        <feed match="regex" topology-ref="EodDataImportTopology">NASDAQ.*[.]txt</feed>
+        <feed match="regex" topology-ref="EodDataImportTopology">NYSE.*[.]txt</feed>
+        <feed match="regex" topology-ref="EodDataImportTopology">OTCBB.*[.]txt</feed>
+    </location>
+
+</topology-config>
