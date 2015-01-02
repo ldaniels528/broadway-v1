@@ -39,22 +39,20 @@ The proceeding example is a Broadway topology performs the following flow:
 Below is the Broadway topology that implements the flow described above:
 
 ```scala
-class NASDAQSymbolImportTopology() extends BroadwayTopology("NASDAQ Symbol Import Topology") {
-  private val topic = "shocktrade.quotes.yahoo.avro"
-  private val brokers = "dev501:9091,dev501:9092,dev501:9093,dev501:9094,dev501:9095,dev501:9096"
+class StockQuoteImportTopology() extends BroadwayTopology("Stock Quote Import Topology") with KafkaConstants {
 
   onStart { resource =>
     // create a file reader actor to read lines from the incoming resource
-    val fileReader = addActor(new TextFileReader())
+    val fileReader = addActor(new FileReadingActor())
 
-    // create a Kafka publisher actor
-    val kafkaPublisher = addActor(new KafkaAvroPublisher(topic, brokers))
+    // create a Kafka publishing actor for stock quotes
+    val quotePublisher = addActor(new KafkaAvroPublishingActor(quotesTopic, brokers))
 
     // create a stock quote lookup actor
-    val quoteLookup = addActor(new StockQuoteLookupActor(kafkaPublisher))
+    val quoteLookup = addActor(new StockQuoteLookupActor(quotePublisher))
 
     // start the processing by submitting a request to the file reader actor
-    fileReader ! DelimitedFile(resource, "\t", quoteLookup)
+    fileReader ! TextParse(resource, Delimited("\t"), quoteLookup)
   }
 }
 ```
@@ -88,11 +86,14 @@ class StockQuoteLookupActor(target: ActorRef)(implicit ec: ExecutionContext) ext
 And an XML file to describe how files will be mapped to the topology:
 
 ```xml
-<?xml version="1.0" ?>
-<topology class="com.shocktrade.topologies.NASDAQSymbolImportTopology">
-    <feed match="exact">AMEX.txt</feed>
-    <feed match="exact">NASDAQ.txt</feed>
-    <feed match="exact">NYSE.txt</feed>
-    <feed match="regex">OTCBB.*[.]txt</feed>
-</topology>
+<topology-config>
+    <topology id="QuoteImportTopology" class="com.shocktrade.topologies.StockQuoteImportTopology" />
+
+    <location id="CSVQuotes" path="/Users/ldaniels/broadway/incoming/csvQuotes">
+        <feed match="exact" name="AMEX.txt" topology-ref="QuoteImportTopology" />
+        <feed match="exact" name="NASDAQ.txt" topology-ref="QuoteImportTopology" />
+        <feed match="exact" name="NYSE.txt" topology-ref="QuoteImportTopology" />
+        <feed match="exact" name="OTCBB.txt" topology-ref="QuoteImportTopology" />
+    </location>
+</topology-config>
 ```
