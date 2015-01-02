@@ -35,7 +35,7 @@ class FileReader() extends Actor {
         target ! bytes
       }
       else if (count == -1) {
-        target ! EOF
+        target ! EOF(resource)
       }
     }
   }
@@ -46,7 +46,7 @@ class FileReader() extends Actor {
    * @param resource the resource to read from
    * @param handler the optional text handler
    */
-  private def textCopy(target: ActorRef, resource: ReadableResource, handler: Option[TextHandler]) {
+  private def textCopy(target: ActorRef, resource: ReadableResource, handler: Option[TextFormatHandler]) {
     resource.getInputStream foreach { in =>
       Source.fromInputStream(in).getLines() foreach { line =>
         handler.map { handler =>
@@ -55,7 +55,7 @@ class FileReader() extends Actor {
           target ! line
         }
       }
-      target ! EOF
+      target ! EOF(resource)
     }
   }
 
@@ -71,13 +71,22 @@ object FileReader {
 
   case class TextCopy(resource: ReadableResource, target: ActorRef)
 
-  case class TextParse(resource: ReadableResource, handler: TextHandler, target: ActorRef)
+  case class TextParse(resource: ReadableResource, handler: TextFormatHandler, target: ActorRef)
 
-  trait TextHandler {
+  /**
+   * Base class for all text format handlers
+   */
+  trait TextFormatHandler {
+
     def parse(line: String): Array[String]
+
   }
 
-  case object CSV extends TextHandler {
+  /**
+   * Comma Separated Values (CSV) format handler
+   */
+  case object CSV extends TextFormatHandler {
+
     override def parse(line: String): Array[String] = {
       val sb = new StringBuilder()
       var inQuotes = false
@@ -110,14 +119,23 @@ object FileReader {
       // add the last token
       (if (sb.nonEmpty) sb.toString :: list else list).reverse.toArray
     }
+
   }
 
-  case class Delimited(delimiter: String) extends TextHandler {
+  /**
+   * Delimited text format handler
+   * @param delimiter the given delimiter character or sequence
+   */
+  case class Delimited(delimiter: String) extends TextFormatHandler {
     private val splitter = s"[$delimiter]"
 
     override def parse(line: String): Array[String] = line.split(splitter)
   }
 
-  case object EOF
+  /**
+   * This message is sent once the actor has reach the end-of-file for the given resource
+   * @param readableResource the given [[ReadableResource]]
+   */
+  case class EOF(readableResource: ReadableResource)
 
 }
