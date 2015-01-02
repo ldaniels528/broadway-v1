@@ -14,8 +14,7 @@ class FileReadingActor() extends Actor {
 
   override def receive = {
     case BinaryCopy(resource, target) => binaryCopy(target, resource)
-    case TextCopy(resource, target) => textCopy(target, resource, None)
-    case TextParse(resource, handler, target) => textCopy(target, resource, Option(handler))
+    case TextCopy(resource, target, handler) => textCopy(target, resource, handler)
     case message => unhandled(message)
   }
 
@@ -25,18 +24,35 @@ class FileReadingActor() extends Actor {
    * @param resource the resource to read from
    */
   private def binaryCopy(target: ActorRef, resource: ReadableResource) {
-    val buf = new Array[Byte](1024)
+    // use 64K blocks
+    val buf = new Array[Byte](65536)
     resource.getInputStream foreach { in =>
+      // notify the target actor that the resource has been opened
+      target ! OpeningFile(resource)
+
+      // transmit the blocks
+      var offset = 0L
       val count = in.read(buf)
-      if (count == buf.length) target ! buf
-      else if (count > 0) {
-        val bytes = new Array[Byte](count)
-        System.arraycopy(buf, 0, bytes, 0, count)
-        target ! bytes
+      if (count == -1) target ! ClosingFile(resource)
+      else {
+        target ! BinaryBlock(offset, copyBlock(buf, count))
       }
-      else if (count == -1) {
-        target ! ClosingFile(resource)
-      }
+      offset += count
+    }
+  }
+
+  /**
+   * Copies the data from the given buffer and returns a new buffer containing the data
+   * @param buf the given buffer
+   * @param count the given number of bytes
+   * @return the new byte array containing a copy of the data
+   */
+  private def copyBlock(buf: Array[Byte], count: Int) = {
+    if (count == buf.length) buf
+    else {
+      val bytes = new Array[Byte](count)
+      System.arraycopy(buf, 0, bytes, 0, count)
+      bytes
     }
   }
 
@@ -47,18 +63,15 @@ class FileReadingActor() extends Actor {
    * @param formatHandler the optional text handler
    */
   private def textCopy(target: ActorRef, resource: ReadableResource, formatHandler: Option[TextFormatHandler]) {
-    // notify the target actor that the resource has been opened
-    target ! OpeningFile(resource)
-
-    // transmit all the lines of the file
-    var lineNo = 0
+    var lineNo = 1
     resource.getInputStream foreach { in =>
+      // notify the target actor that the resource has been opened
+      target ! OpeningFile(resource)
+
+      // transmit all the lines of the file
       Source.fromInputStream(in).getLines() foreach { line =>
+        target ! TextLine(lineNo, line, formatHandler.map(_.parse(line)) getOrElse Nil)
         lineNo += 1
-        formatHandler match {
-          case Some(handler) => target ! TextLine(lineNo, line, handler.parse(line))
-          case None => target ! TextLine(lineNo, line)
-        }
       }
 
       // notify the target actor that the resource has been closed
@@ -76,18 +89,30 @@ object FileReadingActor {
 
   case class BinaryCopy(resource: ReadableResource, target: ActorRef)
 
-  case class TextCopy(resource: ReadableResource, target: ActorRef)
+  case class BinaryBlock(offset: Long, data: Array[Byte])
 
-  case class TextParse(resource: ReadableResource, handler: TextFormatHandler, target: ActorRef)
+  /**
+   * This message is sent once the actor has reach the end-of-file for the given resource
+   * @param readableResource the given [[ReadableResource]]
+   */
+  case class ClosingFile(readableResource: ReadableResource)
 
-  case class TextLine(lineNo: Long, line: String, tokens: Seq[String] = Nil)
+  /**
+   * This message is sent when the given resource is opened for reading
+   * @param readableResource the given [[ReadableResource]]
+   */
+  case class OpeningFile(readableResource: ReadableResource)
+
+  case class TextCopy(resource: ReadableResource, target: ActorRef, handler: Option[TextFormatHandler] = None)
+
+  case class TextLine(lineNo: Long, line: String, tokens: List[String] = Nil)
 
   /**
    * Base class for all text format handlers
    */
   trait TextFormatHandler {
 
-    def parse(line: String): Array[String]
+    def parse(line: String): List[String]
 
   }
 
@@ -96,7 +121,7 @@ object FileReadingActor {
    */
   case object CSV extends TextFormatHandler {
 
-    override def parse(line: String): Array[String] = {
+    override def parse(line: String) = {
       val sb = new StringBuilder()
       var inQuotes = false
 
@@ -126,27 +151,17 @@ object FileReadingActor {
       }
 
       // add the last token
-      (if (sb.nonEmpty) sb.toString :: list else list).reverse.toArray
+      (if (sb.nonEmpty) sb.toString :: list else list).reverse
     }
 
   }
 
   /**
    * Delimited text format handler
-   * @param delimiter the given delimiter character or sequence
+   * @param splitter the given delimiter regular expression (e.g. "[,]")
    */
-  case class Delimited(delimiter: String) extends TextFormatHandler {
-    private val splitter = s"[$delimiter]"
-
-    override def parse(line: String): Array[String] = line.split(splitter)
+  case class Delimited(splitter: String) extends TextFormatHandler {
+    override def parse(line: String) = line.split(splitter).toList
   }
-
-  case class OpeningFile(readableResource: ReadableResource)
-
-  /**
-   * This message is sent once the actor has reach the end-of-file for the given resource
-   * @param readableResource the given [[ReadableResource]]
-   */
-  case class ClosingFile(readableResource: ReadableResource)
 
 }
