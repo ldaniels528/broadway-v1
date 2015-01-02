@@ -16,6 +16,11 @@ it is not intended as a replacement for Storm or other stream-oriented processin
 environments where many different individual files require processing, while Storm excels at processing streams of data
 but is not specifically geared toward the processing one-off files.
 
+### How is Broadway different from Storm
+
+Storm and Broadway have different design goals. Broadway is file-centric, whereas Storm processes streams of data.
+For example, Storm doesn't allow you to say I want to process files B, C and D, but only after I've processed A.
+
 ## Getting the Code
 
 Broadway is currently pre-alpha quality software, and although it will currently run simple topologies, there's still
@@ -34,27 +39,25 @@ The proceeding example is a Broadway topology performs the following flow:
 Below is the Broadway topology that implements the flow described above:
 
 ```scala
-class NASDAQSymbolImportTopology() extends BroadwayTopology("NASDAQ Symbol Import Topology") {
-  private val topic = "shocktrade.quotes.yahoo.avro"
-  private val brokers = "dev501:9091,dev501:9092,dev501:9093,dev501:9094,dev501:9095,dev501:9096"
+class StockQuoteImportTopology() extends BroadwayTopology("Stock Quote Import Topology") with KafkaConstants {
 
   onStart { resource =>
     // create a file reader actor to read lines from the incoming resource
-    val fileReader = addActor(new TextFileReader())
+    val fileReader = addActor(new FileReadingActor())
 
-    // create a Kafka publisher actor
-    val kafkaPublisher = addActor(new KafkaAvroPublisher(topic, brokers))
+    // create a Kafka publishing actor for stock quotes
+    val quotePublisher = addActor(new KafkaAvroPublishingActor(quotesTopic, brokers))
 
     // create a stock quote lookup actor
-    val quoteLookup = addActor(new StockQuoteLookupActor(kafkaPublisher))
+    val quoteLookup = addActor(new StockQuoteLookupActor(quotePublisher))
 
     // start the processing by submitting a request to the file reader actor
-    fileReader ! DelimitedFile(resource, "\t", quoteLookup)
+    fileReader ! TextParse(resource, Delimited("\t"), quoteLookup)
   }
 }
 ```
 
-**NOTE:** The `KafkaAvroPublisher` and `TextFileReader` actors are builtin components of Broadway.
+**NOTE:** The `KafkaAvroPublishingActor` and `FileReadingActor` actors are builtin components of Broadway.
 
 The class below is an optional custom actor that will perform the stock symbol look-ups and then pass an Avro-encoded
 record to the Kafka publishing actor (a built-in component).
@@ -62,10 +65,11 @@ record to the Kafka publishing actor (a built-in component).
 ```scala
 class StockQuoteLookupActor(target: ActorRef)(implicit ec: ExecutionContext) extends Actor {
   private val parameters = YFStockQuoteService.getParams(
-    "symbol", "exchange", "lastTrade", "tradeDate", "tradeTime", "ask", "bid",
-    "change", "changePct", "prevClose", "open", "close", "high", "low", "volume", "marketCap", "errorMessage")
+    "symbol", "exchange", "lastTrade", "tradeDate", "tradeTime", "ask", "bid", "change", "changePct",
+    "prevClose", "open", "close", "high", "low", "volume", "marketCap", "errorMessage")
 
   override def receive = {
+    case EOF(resource) =>
     case symbolData: Array[String] =>
       symbolData.headOption foreach { symbol =>
         YahooFinanceServices.getStockQuote(symbol, parameters) foreach { quote =>
@@ -80,14 +84,28 @@ class StockQuoteLookupActor(target: ActorRef)(implicit ec: ExecutionContext) ext
 }
 ```
 
+```scala
+trait KafkaConstants {
+  val eodDataTopic = "shocktrade.quotes.yahoo.avro"
+  val keyStatsTopic = "shocktrade.keystats.yahoo.avro"
+  val quotesTopic = "shocktrade.quotes.yahoo.avro"
+
+  val brokers = "dev501:9091,dev501:9092,dev501:9093,dev501:9094,dev501:9095,dev501:9096"
+
+}
+```
+
 And an XML file to describe how files will be mapped to the topology:
 
 ```xml
-<?xml version="1.0" ?>
-<topology class="com.shocktrade.topologies.NASDAQSymbolImportTopology">
-    <feed match="exact">AMEX.txt</feed>
-    <feed match="exact">NASDAQ.txt</feed>
-    <feed match="exact">NYSE.txt</feed>
-    <feed match="regex">OTCBB.*[.]txt</feed>
-</topology>
+<topology-config>
+    <topology id="QuoteImportTopology" class="com.shocktrade.topologies.StockQuoteImportTopology" />
+
+    <location id="CSVQuotes" path="/Users/ldaniels/broadway/incoming/csvQuotes">
+        <feed match="exact" name="AMEX.txt" topology-ref="QuoteImportTopology" />
+        <feed match="exact" name="NASDAQ.txt" topology-ref="QuoteImportTopology" />
+        <feed match="exact" name="NYSE.txt" topology-ref="QuoteImportTopology" />
+        <feed match="exact" name="OTCBB.txt" topology-ref="QuoteImportTopology" />
+    </location>
+</topology-config>
 ```
