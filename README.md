@@ -65,10 +65,11 @@ record to the Kafka publishing actor (a built-in component).
 ```scala
 class StockQuoteLookupActor(target: ActorRef)(implicit ec: ExecutionContext) extends Actor {
   private val parameters = YFStockQuoteService.getParams(
-    "symbol", "exchange", "lastTrade", "tradeDate", "tradeTime", "ask", "bid",
-    "change", "changePct", "prevClose", "open", "close", "high", "low", "volume", "marketCap", "errorMessage")
+    "symbol", "exchange", "lastTrade", "tradeDate", "tradeTime", "ask", "bid", "change", "changePct",
+    "prevClose", "open", "close", "high", "low", "volume", "marketCap", "errorMessage")
 
   override def receive = {
+    case EOF(resource) =>
     case symbolData: Array[String] =>
       symbolData.headOption foreach { symbol =>
         YahooFinanceServices.getStockQuote(symbol, parameters) foreach { quote =>
