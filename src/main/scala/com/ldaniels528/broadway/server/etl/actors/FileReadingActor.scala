@@ -2,7 +2,7 @@ package com.ldaniels528.broadway.server.etl.actors
 
 import akka.actor.{Actor, ActorRef}
 import com.ldaniels528.broadway.core.Resources.ReadableResource
-import com.ldaniels528.broadway.server.etl.actors.FileReader._
+import com.ldaniels528.broadway.server.etl.actors.FileReadingActor._
 
 import scala.io.Source
 
@@ -10,7 +10,7 @@ import scala.io.Source
  * This actor is capable of reading/parsing binary/text files
  * @author Lawrence Daniels <lawrence.daniels@gmail.com>
  */
-class FileReader() extends Actor {
+class FileReadingActor() extends Actor {
 
   override def receive = {
     case BinaryCopy(resource, target) => binaryCopy(target, resource)
@@ -65,7 +65,7 @@ class FileReader() extends Actor {
  * File Reader Singleton
  * @author Lawrence Daniels <lawrence.daniels@gmail.com>
  */
-object FileReader {
+object FileReadingActor {
 
   case class BinaryCopy(resource: ReadableResource, target: ActorRef)
 

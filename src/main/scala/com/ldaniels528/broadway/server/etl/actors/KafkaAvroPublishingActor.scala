@@ -15,7 +15,7 @@ import scala.util.{Failure, Success, Try}
  * Kafka-Avro Publishing Actor
  * @author Lawrence Daniels <lawrence.daniels@gmail.com>
  */
-class KafkaAvroPublisher(topic: String, brokers: String) extends Actor {
+class KafkaAvroPublishingActor(topic: String, brokers: String) extends Actor {
   private lazy val logger = LoggerFactory.getLogger(getClass)
   private val publisher = KafkaPublisher(Broker.parseBrokerList(brokers))
 
