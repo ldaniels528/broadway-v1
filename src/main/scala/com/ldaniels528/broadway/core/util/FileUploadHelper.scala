@@ -1,4 +1,4 @@
-package com.ldaniels528.broadway.core
+package com.ldaniels528.broadway.core.util
 
 import java.io.{File, FileInputStream, IOException}
 

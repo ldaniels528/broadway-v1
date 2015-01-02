@@ -2,8 +2,9 @@ package com.ldaniels528.broadway.server
 
 import java.io.File
 
+import com.ldaniels528.broadway.core.util.FileHelper
 import com.ldaniels528.trifecta.util.OptionHelper._
-import com.ldaniels528.broadway.core.FileHelper._
+import FileHelper._
 import com.ldaniels528.broadway.core.Resources.{ClasspathResource, ReadableResource}
 import com.ldaniels528.broadway.server.ServerConfig._
 import com.ldaniels528.trifecta.util.PropertiesHelper._

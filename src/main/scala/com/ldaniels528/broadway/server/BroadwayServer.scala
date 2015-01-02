@@ -1,16 +1,12 @@
 package com.ldaniels528.broadway.server
 
-import java.io.{FilenameFilter, File}
-
 import akka.actor.ActorSystem
-import com.ldaniels528.broadway.core.FileMonitor
 import com.ldaniels528.broadway.core.Resources.FileResource
-import com.ldaniels528.broadway.core.topology.{TopologyConfig, TopologyConfigParser}
+import com.ldaniels528.broadway.core.topology.TopologyConfig
 import com.ldaniels528.broadway.server.BroadwayServer._
 import com.ldaniels528.broadway.server.datastore.DataStore
-import com.ldaniels528.broadway.server.transporter.DataTransporter
+import com.ldaniels528.broadway.server.transporter.{DataTransporter, FileMonitor}
 import com.ldaniels528.trifecta.util.OptionHelper._
-import org.slf4j.LoggerFactory
 
 /**
  * Broadway Server
@@ -34,7 +30,7 @@ class BroadwayServer(config: ServerConfig) {
     config.init()
 
     // load the topology configurations
-    val topologyConfigs = loadTopologyConfigs(config.getTopologiesDirectory)
+    val topologyConfigs = TopologyConfig.loadTopologyConfigs(config.getTopologiesDirectory)
 
     // setup listeners for all configured locations
     topologyConfigs foreach { tc =>
@@ -63,21 +59,7 @@ class BroadwayServer(config: ServerConfig) {
  * @author Lawrence Daniels <lawrence.daniels@gmail.com>
  */
 object BroadwayServer {
-  private lazy val logger = LoggerFactory.getLogger(getClass)
   private val Version = "0.1"
-
-  /**
-   * Loads all topology configurations from the given directory
-   * @param directory the given directory
-   * @return the collection of successfully parsed [[TopologyConfig]] objects
-   */
-  def loadTopologyConfigs(directory: File): Seq[TopologyConfig] = {
-    logger.info(s"Searching for topology configuration files in '${directory.getAbsolutePath}'...")
-    val xmlFile = directory.listFiles(new FilenameFilter {
-      override def accept(dir: File, name: String): Boolean = name.toLowerCase.endsWith(".xml")
-    })
-    xmlFile.toSeq flatMap (f => TopologyConfigParser.parse(FileResource(f.getAbsolutePath)))
-  }
 
   /**
    * Enables command line execution

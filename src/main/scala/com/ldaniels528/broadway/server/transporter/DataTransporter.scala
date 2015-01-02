@@ -2,7 +2,8 @@ package com.ldaniels528.broadway.server.transporter
 
 import java.io.File
 
-import com.ldaniels528.broadway.core.FileHelper._
+import com.ldaniels528.broadway.core.util.FileHelper
+import FileHelper._
 import com.ldaniels528.broadway.core.topology.{Feed, Location, TopologyRuntime}
 import com.ldaniels528.broadway.server.ServerConfig
 import com.ldaniels528.broadway.server.etl.ETLProcessor

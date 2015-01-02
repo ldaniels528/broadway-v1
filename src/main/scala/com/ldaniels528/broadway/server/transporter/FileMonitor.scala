@@ -1,10 +1,10 @@
-package com.ldaniels528.broadway.core
+package com.ldaniels528.broadway.server.transporter
 
 import java.io._
 import java.nio.file.{Paths, StandardWatchEventKinds}
 
 import akka.actor.ActorSystem
-import com.ldaniels528.broadway.core.FileMonitor._
+import com.ldaniels528.broadway.server.transporter.FileMonitor._
 import org.slf4j.LoggerFactory
 
 import scala.collection.JavaConversions._
@@ -66,7 +66,9 @@ class FileMonitor(system: ActorSystem) {
                 logger.info(s"Waiting to consume '${file.getName}' (${directory.getAbsolutePath})...")
 
                 // register to be notified when the file is ready for consumption
-                notifyWhenReady(file)(file => Future { callback(file); () } )
+                notifyWhenReady(file)(file => Future {
+                  callback(file); ()
+                })
               }
             }
           }

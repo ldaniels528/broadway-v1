@@ -35,7 +35,7 @@ class FileReadingActor() extends Actor {
         target ! bytes
       }
       else if (count == -1) {
-        target ! EOF(resource)
+        target ! ClosingFile(resource)
       }
     }
   }
@@ -44,18 +44,25 @@ class FileReadingActor() extends Actor {
    * Copies the contents of an ASCII file
    * @param target the given target actor
    * @param resource the resource to read from
-   * @param handler the optional text handler
+   * @param formatHandler the optional text handler
    */
-  private def textCopy(target: ActorRef, resource: ReadableResource, handler: Option[TextFormatHandler]) {
+  private def textCopy(target: ActorRef, resource: ReadableResource, formatHandler: Option[TextFormatHandler]) {
+    // notify the target actor that the resource has been opened
+    target ! OpeningFile(resource)
+
+    // transmit all the lines of the file
+    var lineNo = 0
     resource.getInputStream foreach { in =>
       Source.fromInputStream(in).getLines() foreach { line =>
-        handler.map { handler =>
-          target ! handler.parse(line)
-        } getOrElse {
-          target ! line
+        lineNo += 1
+        formatHandler match {
+          case Some(handler) => target ! TextLine(lineNo, line, handler.parse(line))
+          case None => target ! TextLine(lineNo, line)
         }
       }
-      target ! EOF(resource)
+
+      // notify the target actor that the resource has been closed
+      target ! ClosingFile(resource)
     }
   }
 
@@ -72,6 +79,8 @@ object FileReadingActor {
   case class TextCopy(resource: ReadableResource, target: ActorRef)
 
   case class TextParse(resource: ReadableResource, handler: TextFormatHandler, target: ActorRef)
+
+  case class TextLine(lineNo: Long, line: String, tokens: Seq[String] = Nil)
 
   /**
    * Base class for all text format handlers
@@ -132,10 +141,12 @@ object FileReadingActor {
     override def parse(line: String): Array[String] = line.split(splitter)
   }
 
+  case class OpeningFile(readableResource: ReadableResource)
+
   /**
    * This message is sent once the actor has reach the end-of-file for the given resource
    * @param readableResource the given [[ReadableResource]]
    */
-  case class EOF(readableResource: ReadableResource)
+  case class ClosingFile(readableResource: ReadableResource)
 
 }

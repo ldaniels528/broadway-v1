@@ -4,7 +4,8 @@ import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 
-import com.ldaniels528.broadway.core.FileHelper._
+import com.ldaniels528.broadway.core.util.FileHelper
+import FileHelper._
 import com.ldaniels528.broadway.server.ServerConfig
 import org.slf4j.LoggerFactory
 
