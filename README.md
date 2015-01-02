@@ -57,7 +57,7 @@ class StockQuoteImportTopology() extends BroadwayTopology("Stock Quote Import To
 }
 ```
 
-**NOTE:** The `KafkaAvroPublisher` and `TextFileReader` actors are builtin components of Broadway.
+**NOTE:** The `KafkaAvroPublishingActor` and `FileReadingActor` actors are builtin components of Broadway.
 
 The class below is an optional custom actor that will perform the stock symbol look-ups and then pass an Avro-encoded
 record to the Kafka publishing actor (a built-in component).
@@ -80,6 +80,17 @@ class StockQuoteLookupActor(target: ActorRef)(implicit ec: ExecutionContext) ext
     case message =>
       unhandled(message)
   }
+}
+```
+
+```scala
+trait KafkaConstants {
+  val eodDataTopic = "shocktrade.quotes.yahoo.avro"
+  val keyStatsTopic = "shocktrade.keystats.yahoo.avro"
+  val quotesTopic = "shocktrade.quotes.yahoo.avro"
+
+  val brokers = "dev501:9091,dev501:9092,dev501:9093,dev501:9094,dev501:9095,dev501:9096"
+
 }
 ```
 
