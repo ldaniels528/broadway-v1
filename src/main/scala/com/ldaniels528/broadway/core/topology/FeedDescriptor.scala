@@ -22,10 +22,10 @@ case class FeedDescriptor(name: String,
    */
   def matches(feedName: String): Boolean = {
     matching match {
-      case "exact" => name.toLowerCase == feedName.toLowerCase
-      case "regex" => name.toLowerCase.matches(feedName.toLowerCase)
-      case "start" => name.toLowerCase.startsWith(feedName.toLowerCase)
-      case "ends" => name.toLowerCase.endsWith(feedName.toLowerCase)
+      case "exact" => feedName.toLowerCase == name.toLowerCase
+      case "regex" => feedName.toLowerCase.matches(name.toLowerCase)
+      case "start" => feedName.toLowerCase.startsWith(name.toLowerCase)
+      case "ends" => feedName.toLowerCase.endsWith(name.toLowerCase)
       case unhanded =>
         throw new IllegalArgumentException(s"Feed match type '$unhanded' was not recognized")
     }
