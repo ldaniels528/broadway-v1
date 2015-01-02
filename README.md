@@ -86,7 +86,7 @@ class StockQuoteLookupActor(target: ActorRef)(implicit ec: ExecutionContext) ext
 
 ```scala
 trait KafkaConstants {
-  val eodDataTopic = "shocktrade.quotes.yahoo.avro"
+  val eodDataTopic = "shocktrade.eoddata.yahoo.avro"
   val keyStatsTopic = "shocktrade.keystats.yahoo.avro"
   val quotesTopic = "shocktrade.quotes.yahoo.avro"
 
