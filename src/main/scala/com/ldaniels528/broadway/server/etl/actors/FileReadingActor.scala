@@ -1,6 +1,6 @@
 package com.ldaniels528.broadway.server.etl.actors
 
-import akka.actor.{Actor, ActorRef}
+import akka.actor.{ActorRef, Actor}
 import com.ldaniels528.broadway.core.Resources.ReadableResource
 import com.ldaniels528.broadway.server.etl.actors.FileReadingActor._
 
@@ -13,8 +13,8 @@ import scala.io.Source
 class FileReadingActor() extends Actor {
 
   override def receive = {
-    case BinaryCopy(resource, target) => binaryCopy(target, resource)
-    case TextCopy(resource, target, handler) => textCopy(target, resource, handler)
+    case CopyBinary(resource, target) => copyBinary(target, resource)
+    case CopyText(resource, target, handler) => copyText(target, resource, handler)
     case message => unhandled(message)
   }
 
@@ -23,7 +23,7 @@ class FileReadingActor() extends Actor {
    * @param target the given target actor
    * @param resource the resource to read from
    */
-  private def binaryCopy(target: ActorRef, resource: ReadableResource) {
+  private def copyBinary(target: ActorRef, resource: ReadableResource) {
     // use 64K blocks
     val buf = new Array[Byte](65536)
     resource.getInputStream foreach { in =>
@@ -62,7 +62,7 @@ class FileReadingActor() extends Actor {
    * @param resource the resource to read from
    * @param formatHandler the optional text handler
    */
-  private def textCopy(target: ActorRef, resource: ReadableResource, formatHandler: Option[TextFormatHandler]) {
+  private def copyText(target: ActorRef, resource: ReadableResource, formatHandler: Option[TextFormatHandler]) {
     var lineNo = 1
     resource.getInputStream foreach { in =>
       // notify the target actor that the resource has been opened
@@ -87,8 +87,11 @@ class FileReadingActor() extends Actor {
  */
 object FileReadingActor {
 
-  case class BinaryCopy(resource: ReadableResource, target: ActorRef)
-
+  /**
+   * Represents a block of binary data
+   * @param offset the given offset within the file
+   * @param data the given block of binary data
+   */
   case class BinaryBlock(offset: Long, data: Array[Byte])
 
   /**
@@ -98,12 +101,27 @@ object FileReadingActor {
   case class ClosingFile(readableResource: ReadableResource)
 
   /**
+   * This message initiates a process to copy the contents of a file (as binary) to the given target actor
+   * @param resource the resource representing the content
+   * @param target the given target [[ActorRef]]
+   */
+  case class CopyBinary(resource: ReadableResource, target: ActorRef)
+
+  /**
+   * This message initiates a process to copy the contents of a file (as ASCII) to the given target actor
+   * @param resource the resource representing the content
+   * @param target the given target [[ActorRef]]
+   * @param handler the optional text format handler
+   * @see CSV
+   * @see Delimited
+   */
+  case class CopyText(resource: ReadableResource, target: ActorRef, handler: Option[TextFormatHandler] = None)
+
+  /**
    * This message is sent when the given resource is opened for reading
    * @param readableResource the given [[ReadableResource]]
    */
   case class OpeningFile(readableResource: ReadableResource)
-
-  case class TextCopy(resource: ReadableResource, target: ActorRef, handler: Option[TextFormatHandler] = None)
 
   case class TextLine(lineNo: Long, line: String, tokens: List[String] = Nil)
 
