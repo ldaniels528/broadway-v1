@@ -3,8 +3,10 @@ package com.ldaniels528.broadway.server.etl
 import akka.actor.{Actor, ActorRef, ActorSystem, Props}
 import com.ldaniels528.broadway.core.resources._
 import com.ldaniels528.broadway.server.etl.BroadwayTopology.BWxActorRef
+import com.ldaniels528.broadway.server.etl.actors.FileReadingActor.TextFormatHandler
 import org.slf4j.LoggerFactory
 
+import scala.language.implicitConversions
 import scala.reflect.ClassTag
 
 /**
@@ -72,6 +74,8 @@ object BroadwayTopology {
   type BWxActorRef = () => ActorRef
 
   object Implicits {
+
+    implicit def formatHandler2Option(handler: TextFormatHandler): Option[TextFormatHandler] = Option(handler)
 
     implicit class ActorExtensions[T <: BWxActorRef](val actor: T) extends AnyVal {
 
