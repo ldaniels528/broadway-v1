@@ -2,7 +2,7 @@ package com.ldaniels528.broadway.core.topology
 
 import java.io.{File, FilenameFilter}
 
-import com.ldaniels528.broadway.core.Resources.FileResource
+import com.ldaniels528.broadway.core.resources._
 import org.slf4j.LoggerFactory
 
 /**

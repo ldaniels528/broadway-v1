@@ -1,7 +1,7 @@
 package com.ldaniels528.broadway.server.etl.actors
 
-import akka.actor.{ActorRef, Actor}
-import com.ldaniels528.broadway.core.Resources.ReadableResource
+import akka.actor.{Actor, ActorRef}
+import com.ldaniels528.broadway.core.resources._
 import com.ldaniels528.broadway.core.util.TextFileHelper
 import com.ldaniels528.broadway.server.etl.actors.FileReadingActor._
 

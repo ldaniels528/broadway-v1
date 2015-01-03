@@ -2,7 +2,7 @@ package com.ldaniels528.broadway.server.etl
 
 import java.io.File
 
-import com.ldaniels528.broadway.core.Resources.FileResource
+import com.ldaniels528.broadway.core.resources._
 import com.ldaniels528.broadway.server.ServerConfig
 import org.slf4j.LoggerFactory
 

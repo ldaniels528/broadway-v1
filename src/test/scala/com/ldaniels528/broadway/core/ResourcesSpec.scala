@@ -1,9 +1,9 @@
 package com.ldaniels528.broadway.core
 
-import com.ldaniels528.broadway.core.Resources.ClasspathResource
+import com.ldaniels528.broadway.core.resources._
+import org.scalatest.Matchers._
 import org.scalatest.mock.MockitoSugar
 import org.scalatest.{FeatureSpec, GivenWhenThen}
-import org.scalatest.Matchers._
 
 import scala.io.Source
 
@@ -22,7 +22,7 @@ class ResourcesSpec() extends FeatureSpec with GivenWhenThen with MockitoSugar {
       val resource = ClasspathResource("/server-config.properties")
 
       When("the content is retrieved")
-      val contents = resource.getInputStream map(in => Source.fromInputStream(in)) map(_.getLines().mkString)
+      val contents = resource.getInputStream map (in => Source.fromInputStream(in)) map (_.getLines().mkString)
 
       Then("the content should match the exact result")
       contents shouldBe Some("broadway.directories.base=/Users/ldaniels/broadway")

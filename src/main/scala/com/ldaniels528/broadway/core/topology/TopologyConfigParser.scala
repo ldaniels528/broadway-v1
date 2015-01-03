@@ -2,7 +2,7 @@ package com.ldaniels528.broadway.core.topology
 
 import java.util.Properties
 
-import com.ldaniels528.broadway.core.Resources.ReadableResource
+import com.ldaniels528.broadway.core.resources._
 import com.ldaniels528.broadway.core.util.XMLHelper._
 import com.ldaniels528.trifecta.util.OptionHelper._
 import com.ldaniels528.trifecta.util.PropertiesHelper._

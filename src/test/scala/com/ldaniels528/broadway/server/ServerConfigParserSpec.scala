@@ -1,6 +1,6 @@
 package com.ldaniels528.broadway.server
 
-import com.ldaniels528.broadway.core.Resources.ClasspathResource
+import com.ldaniels528.broadway.core.resources._
 import com.ldaniels528.broadway.server.ServerConfig._
 import com.ldaniels528.trifecta.util.PropertiesHelper._
 import org.scalatest.Matchers._

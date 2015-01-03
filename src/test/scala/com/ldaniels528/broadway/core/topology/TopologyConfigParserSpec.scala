@@ -1,8 +1,6 @@
 package com.ldaniels528.broadway.core.topology
 
-import com.ldaniels528.broadway.core.Resources.ClasspathResource
-import com.ldaniels528.trifecta.util.PropertiesHelper._
-import org.scalatest.Matchers._
+import com.ldaniels528.broadway.core.resources._
 import org.scalatest.mock.MockitoSugar
 import org.scalatest.{FeatureSpec, GivenWhenThen}
 

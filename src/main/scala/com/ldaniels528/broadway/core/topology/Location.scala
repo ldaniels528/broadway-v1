@@ -2,7 +2,7 @@ package com.ldaniels528.broadway.core.topology
 
 import java.io.File
 
-import com.ldaniels528.broadway.core.Resources.{FileResource, ReadableResource}
+import com.ldaniels528.broadway.core.resources._
 
 /**
  * Represents a location; a container for incoming feeds

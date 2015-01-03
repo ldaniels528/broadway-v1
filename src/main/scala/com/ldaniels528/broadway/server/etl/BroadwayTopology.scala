@@ -1,7 +1,7 @@
 package com.ldaniels528.broadway.server.etl
 
 import akka.actor.{Actor, ActorSystem, Props}
-import com.ldaniels528.broadway.core.Resources.ReadableResource
+import com.ldaniels528.broadway.core.resources._
 import org.slf4j.LoggerFactory
 
 import scala.reflect.ClassTag
@@ -22,7 +22,7 @@ class BroadwayTopology(val name: String) {
    * @param actor the given [[Actor]]
    * @return an [[akka.actor.ActorRef]]
    */
-  def addActor[T <: Actor: ClassTag](actor: => T) = system.actorOf(Props(actor))
+  def addActor[T <: Actor : ClassTag](actor: => T) = system.actorOf(Props(actor))
 
   /**
    * Setups the actions that will occur upon start of the topology

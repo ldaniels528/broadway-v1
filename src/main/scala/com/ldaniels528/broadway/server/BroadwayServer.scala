@@ -1,7 +1,7 @@
 package com.ldaniels528.broadway.server
 
 import akka.actor.ActorSystem
-import com.ldaniels528.broadway.core.Resources.FileResource
+import com.ldaniels528.broadway.core.resources._
 import com.ldaniels528.broadway.core.topology.TopologyConfig
 import com.ldaniels528.broadway.server.BroadwayServer._
 import com.ldaniels528.broadway.server.datastore.DataStore
