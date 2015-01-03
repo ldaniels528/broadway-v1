@@ -26,7 +26,7 @@ class BroadwayTopology(val name: String) {
    * @return an [[akka.actor.ActorRef]]
    */
   def addActor[T <: Actor : ClassTag](actor: => T, parallelism: Int = 1): BWxActorRef = {
-    val actors = (1 to 10) map (_ => system.actorOf(Props(actor)))
+    val actors = (1 to parallelism) map (_ => system.actorOf(Props(actor)))
 
     // return a function to an actor
     val randomActor = {
