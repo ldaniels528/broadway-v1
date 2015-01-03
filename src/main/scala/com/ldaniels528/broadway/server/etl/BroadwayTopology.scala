@@ -1,7 +1,8 @@
 package com.ldaniels528.broadway.server.etl
 
-import akka.actor.{Actor, ActorSystem, Props}
+import akka.actor.{Actor, ActorRef, ActorSystem, Props}
 import com.ldaniels528.broadway.core.resources._
+import com.ldaniels528.broadway.server.etl.BroadwayTopology.BWxActorRef
 import org.slf4j.LoggerFactory
 
 import scala.reflect.ClassTag
@@ -22,7 +23,19 @@ class BroadwayTopology(val name: String) {
    * @param actor the given [[Actor]]
    * @return an [[akka.actor.ActorRef]]
    */
-  def addActor[T <: Actor : ClassTag](actor: => T) = system.actorOf(Props(actor))
+  def addActor[T <: Actor : ClassTag](actor: => T, parallelism: Int = 1): BWxActorRef = {
+    val actors = (1 to 10) map (_ => system.actorOf(Props(actor)))
+
+    // return a function to an actor
+    val randomActor = {
+      var index = 0
+      () => {
+        index += 1
+        actors(index % actors.length)
+      }
+    }
+    randomActor
+  }
 
   /**
    * Setups the actions that will occur upon start of the topology
@@ -46,6 +59,25 @@ class BroadwayTopology(val name: String) {
     val elapsedTime = System.currentTimeMillis() - startTime
     system.awaitTermination()
     logger.info(s"Processed '$name' in $elapsedTime msec")
+  }
+
+}
+
+/**
+ * Broadway Topology Singleton
+ * @author Lawrence Daniels <lawrence.daniels@gmail.com>
+ */
+object BroadwayTopology {
+
+  type BWxActorRef = () => ActorRef
+
+  object Implicits {
+
+    implicit class ActorExtensions[T <: BWxActorRef](val actor: T) extends AnyVal {
+
+      def !(message: Any): Unit = actor() ! message
+    }
+
   }
 
 }
