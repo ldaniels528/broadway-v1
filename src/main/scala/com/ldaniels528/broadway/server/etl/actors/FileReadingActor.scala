@@ -2,6 +2,7 @@ package com.ldaniels528.broadway.server.etl.actors
 
 import akka.actor.{ActorRef, Actor}
 import com.ldaniels528.broadway.core.Resources.ReadableResource
+import com.ldaniels528.broadway.core.util.TextFileHelper
 import com.ldaniels528.broadway.server.etl.actors.FileReadingActor._
 
 import scala.io.Source
@@ -139,38 +140,7 @@ object FileReadingActor {
    */
   case object CSV extends TextFormatHandler {
 
-    override def parse(line: String) = {
-      val sb = new StringBuilder()
-      var inQuotes = false
-
-      // extract the tokens
-      val list = line.foldLeft[List[String]](Nil) { (list, ch) =>
-        val result: Option[String] = ch match {
-          // quoted text
-          case '"' =>
-            inQuotes = !inQuotes
-            None
-
-          // comma (unquoted)?
-          case c if c == ',' && !inQuotes =>
-            if (sb.nonEmpty) {
-              val s = sb.toString()
-              sb.clear()
-              Option(s)
-            } else None
-
-          // any other character
-          case c =>
-            sb += c
-            None
-        }
-
-        result map (_ :: list) getOrElse list
-      }
-
-      // add the last token
-      (if (sb.nonEmpty) sb.toString :: list else list).reverse
-    }
+    override def parse(line: String) = TextFileHelper.parseCSV(line)
 
   }
 
@@ -179,7 +149,9 @@ object FileReadingActor {
    * @param splitter the given delimiter regular expression (e.g. "[,]")
    */
   case class Delimited(splitter: String) extends TextFormatHandler {
-    override def parse(line: String) = line.split(splitter).toList
+
+    override def parse(line: String) = TextFileHelper.parseTokens(line, splitter)
+
   }
 
 }
