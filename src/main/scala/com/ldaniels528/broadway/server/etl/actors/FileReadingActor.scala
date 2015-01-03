@@ -36,7 +36,7 @@ class FileReadingActor() extends Actor {
       val count = in.read(buf)
       if (count == -1) target ! ClosingFile(resource)
       else {
-        target ! BinaryBlock(offset, copyBlock(buf, count))
+        target ! BinaryBlock(resource, offset, copyBlock(buf, count))
       }
       offset += count
     }
@@ -71,7 +71,7 @@ class FileReadingActor() extends Actor {
 
       // transmit all the lines of the file
       Source.fromInputStream(in).getLines() foreach { line =>
-        target ! TextLine(lineNo, line, formatHandler.map(_.parse(line)) getOrElse Nil)
+        target ! TextLine(resource, lineNo, line, formatHandler.map(_.parse(line)) getOrElse Nil)
         lineNo += 1
       }
 
@@ -90,16 +90,17 @@ object FileReadingActor {
 
   /**
    * Represents a block of binary data
+   * @param resource the given [[ReadableResource]]
    * @param offset the given offset within the file
    * @param data the given block of binary data
    */
-  case class BinaryBlock(offset: Long, data: Array[Byte])
+  case class BinaryBlock(resource: ReadableResource, offset: Long, data: Array[Byte])
 
   /**
    * This message is sent once the actor has reach the end-of-file for the given resource
-   * @param readableResource the given [[ReadableResource]]
+   * @param resource the given [[ReadableResource]]
    */
-  case class ClosingFile(readableResource: ReadableResource)
+  case class ClosingFile(resource: ReadableResource)
 
   /**
    * This message initiates a process to copy the contents of a file (as binary) to the given target actor
@@ -120,11 +121,18 @@ object FileReadingActor {
 
   /**
    * This message is sent when the given resource is opened for reading
-   * @param readableResource the given [[ReadableResource]]
+   * @param resource the given [[ReadableResource]]
    */
-  case class OpeningFile(readableResource: ReadableResource)
+  case class OpeningFile(resource: ReadableResource)
 
-  case class TextLine(lineNo: Long, line: String, tokens: List[String] = Nil)
+  /**
+   * Represents a line of text read from the given resource (and optionally parsed into tokens)
+   * @param resource the given [[ReadableResource]]
+   * @param lineNo the given line number
+   * @param line the given line of text
+   * @param tokens the optional tokens
+   */
+  case class TextLine(resource: ReadableResource, lineNo: Long, line: String, tokens: List[String] = Nil)
 
   /**
    * Base class for all text format handlers
