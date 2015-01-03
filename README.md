@@ -24,8 +24,8 @@ For example, Storm doesn't allow you to say I want to process files B, C and D, 
 ## Getting the Code
 
 Broadway is currently pre-alpha quality software, and although it will currently run simple topologies, there's still
-some work to do before it can be made available to the general public. The current ETA is to have the code ready for
-action by the end of January 2015.
+some work to do before it's ready for use by the general public. The current ETA is to have the code ready for action by
+the end of January 2015.
 
 ## Creating a Broadway Topology
 
@@ -86,10 +86,11 @@ class StockQuoteLookupActor(target: ActorRef)(implicit ec: ExecutionContext) ext
 
 ```scala
 trait KafkaConstants {
-  val eodDataTopic = "shocktrade.quotes.yahoo.avro"
+  val eodDataTopic = "shocktrade.eoddata.yahoo.avro"
   val keyStatsTopic = "shocktrade.keystats.yahoo.avro"
   val quotesTopic = "shocktrade.quotes.yahoo.avro"
 
+  val zkHost = "dev501:2181"
   val brokers = "dev501:9091,dev501:9092,dev501:9093,dev501:9094,dev501:9095,dev501:9096"
 
 }
