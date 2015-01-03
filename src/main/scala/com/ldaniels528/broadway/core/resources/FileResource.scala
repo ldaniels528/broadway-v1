@@ -1,6 +1,6 @@
 package com.ldaniels528.broadway.core.resources
 
-import java.io.{FileInputStream, InputStream}
+import java.io.{File, FileInputStream, InputStream}
 
 /**
  * Represents a local file system resource
@@ -8,6 +8,8 @@ import java.io.{FileInputStream, InputStream}
  */
 case class FileResource(path: String) extends ReadableResource {
 
+  override def getResourceName = Option(new File(path)) map(_.getName)
+  
   override def getInputStream: Option[InputStream] = Option(new FileInputStream(path))
 
   override def toString = s"file:$path"

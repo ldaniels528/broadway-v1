@@ -8,6 +8,8 @@ import java.io.InputStream
  */
 trait ReadableResource extends Serializable {
 
+  def getResourceName: Option[String]
+
   def getInputStream: Option[InputStream]
 
 }

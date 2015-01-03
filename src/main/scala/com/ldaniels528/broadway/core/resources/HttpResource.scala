@@ -9,6 +9,8 @@ import java.net.URL
  */
 case class HttpResource(url: String) extends ReadableResource {
 
+  override def getResourceName = None
+
   override def getInputStream: Option[InputStream] = Option(new URL(url).openConnection().getInputStream)
 
   override def toString = s"http:url"
