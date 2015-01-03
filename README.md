@@ -39,7 +39,7 @@ The proceeding example is a Broadway topology performs the following flow:
 Below is the Broadway topology that implements the flow described above:
 
 ```scala
-class StockQuoteImportTopology() extends BroadwayTopology("Stock Quote Import Topology") with KafkaConstants {
+class StockQuoteImportTopology() extends BroadwayTopology("Stock Quote Import") with KafkaConstants {
 
   onStart { resource =>
     // create a file reader actor to read lines from the incoming resource
@@ -52,7 +52,7 @@ class StockQuoteImportTopology() extends BroadwayTopology("Stock Quote Import To
     val quoteLookup = addActor(new StockQuoteLookupActor(quotePublisher))
 
     // start the processing by submitting a request to the file reader actor
-    fileReader ! TextParse(resource, Delimited("\t"), quoteLookup)
+    fileReader ! CopyText(resource, quoteLookup, handler = Delimited("[\t]"))
   }
 }
 ```
@@ -63,21 +63,27 @@ The class below is an optional custom actor that will perform the stock symbol l
 record to the Kafka publishing actor (a built-in component).
 
 ```scala
-class StockQuoteLookupActor(target: ActorRef)(implicit ec: ExecutionContext) extends Actor {
+class StockQuoteLookupActor(target: BWxActorRef)(implicit ec: ExecutionContext) extends Actor {
   private val parameters = YFStockQuoteService.getParams(
     "symbol", "exchange", "lastTrade", "tradeDate", "tradeTime", "ask", "bid", "change", "changePct",
     "prevClose", "open", "close", "high", "low", "volume", "marketCap", "errorMessage")
 
   override def receive = {
-    case EOF(resource) =>
-    case symbolData: Array[String] =>
-      symbolData.headOption foreach { symbol =>
+    case OpeningFile(resource) =>
+      ResourceTracker.start(resource)
+
+    case ClosingFile(resource) =>
+      ResourceTracker.stop(resource)
+
+    case TextLine(resource, lineNo, line, tokens) =>
+      tokens.headOption foreach { symbol =>
         YahooFinanceServices.getStockQuote(symbol, parameters) foreach { quote =>
           val builder = com.shocktrade.avro.CSVQuoteRecord.newBuilder()
           AvroConversion.copy(quote, builder)
           target ! builder.build()
         }
       }
+
     case message =>
       unhandled(message)
   }
@@ -92,7 +98,6 @@ trait KafkaConstants {
 
   val zkHost = "dev501:2181"
   val brokers = "dev501:9091,dev501:9092,dev501:9093,dev501:9094,dev501:9095,dev501:9096"
-
 }
 ```
 
@@ -100,6 +105,7 @@ And an XML file to describe how files will be mapped to the topology:
 
 ```xml
 <topology-config>
+
     <topology id="QuoteImportTopology" class="com.shocktrade.topologies.StockQuoteImportTopology" />
 
     <location id="CSVQuotes" path="/Users/ldaniels/broadway/incoming/csvQuotes">
@@ -108,5 +114,7 @@ And an XML file to describe how files will be mapped to the topology:
         <feed match="exact" name="NYSE.txt" topology-ref="QuoteImportTopology" />
         <feed match="exact" name="OTCBB.txt" topology-ref="QuoteImportTopology" />
     </location>
+
 </topology-config>
 ```
+
