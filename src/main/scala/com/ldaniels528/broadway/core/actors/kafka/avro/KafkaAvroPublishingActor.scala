@@ -1,4 +1,4 @@
-package com.ldaniels528.broadway.server.etl.actors.kafka.avro
+package com.ldaniels528.broadway.core.actors.kafka.avro
 
 import java.util.UUID
 
