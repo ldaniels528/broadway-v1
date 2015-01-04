@@ -13,7 +13,7 @@ Kafka or Kestrel. I've built Broadway to help provide a solution to that challen
 ## About Broadway
 
 As mentioned above, Broadway is a distributed actor-based processing server, and is optimized for high-speed data/file
-ingestion. Broadway is meant to be a complement to systems like Storm, not necessarily an alternative.
+ingestion. As such, Broadway is meant to be a complement to systems like Storm, and not necessarily an alternative.
 
 Why the name Broadway? I chose the name Broadway (e.g. Broadway plays or musicals) because it's an actor-based system.
 As such you'll encounter terms such as director, narrative and producer once Broadway's documentation is complete.
@@ -21,7 +21,7 @@ As such you'll encounter terms such as director, narrative and producer once Bro
 Broadway provides three main functions:
 
 * *Transporting of Files* via a built-in orchestration server, which also has the capability to download files and/or moving files from one location (site) to another.
-* *Extract Transform and Loading* and is tailored toward processing flat files (XML, JSON, CSV, delimited, fixed field-length, and hierarchical)
+* *Extract, Transform and Loading* and is tailored toward processing flat files (XML, JSON, CSV, delimited, fixed field-length, and hierarchical)
 * *File archival system*, which provides the capability for warehousing processed files.
 
 Additionally, since Broadway is a file-centric processing system, it supports features like:
@@ -33,6 +33,7 @@ Additionally, since Broadway is a file-centric processing system, it supports fe
   * Binary files
   * Text files (XML, JSON, CSV, delimited, fixed field-length, and hierarchical)
   * Kafka
+* File archival and retention strategies
 
 Broadway is currently pre-alpha quality software, and although it will currently run simple topologies, there's still
 some work to do before it's ready for use by the general public. The current ETA is to have the system ready for action by
