@@ -15,14 +15,14 @@ Kafka or Kestrel. I've built Broadway to help provide a solution to that challen
 As mentioned above, Broadway is a distributed actor-based processing server, and is optimized for high-speed data/file
 ingestion. Broadway is meant to be a complement to systems like Storm, not necessarily an alternative.
 
-Why the name Broadway? I chose the name Broadway (as it Broadway plays or musicals) because it's an actor-based system.
+Why the name Broadway? I chose the name Broadway (e.g. Broadway plays or musicals) because it's an actor-based system.
 As such you'll encounter terms such as director, narrative and producer once Broadway's documentation is complete.
 
 Broadway provides three main functions:
 
-* *Transporting of Files* via a builtin an orchestration server, which also has the capability to download files and/or moving files from one location (site) to another.
+* *Transporting of Files* via a built-in orchestration server, which also has the capability to download files and/or moving files from one location (site) to another.
 * *Extract Transform and Loading* and is tailored toward processing flat files (XML, JSON, CSV, delimited, fixed field-length, and hierarchical)
-* *File archival system*, which provides the capability for warehousing files supplied by either the Data Transport or ETL modules.
+* *File archival system*, which provides the capability for warehousing processed files.
 
 Additionally, since Broadway is a file-centric processing system, it supports features like:
 * File-processing dependencies (e.g. File "A" must be processed before Files "B" and "C" can be processed)
@@ -41,7 +41,7 @@ the end of March 2015.
 ## How it works
 
 Broadway provides a construct called a narrative (e.g. story), which describes the flow for a single processing event.
-The proceeding example is a Broadway narrative performs the following flow:
+The proceeding example is a Broadway narrative that performs the following flow:
 
 * Extracts stock symbols from a tabbed-delimited file.
 * Retrieves stock quotes (via a custom service) for each symbol.
