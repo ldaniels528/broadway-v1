@@ -1,6 +1,5 @@
-package com.ldaniels528.broadway.core
+package com.ldaniels528.broadway.core.resources
 
-import com.ldaniels528.broadway.core.resources._
 import org.scalatest.Matchers._
 import org.scalatest.mock.MockitoSugar
 import org.scalatest.{FeatureSpec, GivenWhenThen}

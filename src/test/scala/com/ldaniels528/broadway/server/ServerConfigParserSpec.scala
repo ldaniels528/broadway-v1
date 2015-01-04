@@ -25,9 +25,8 @@ class ServerConfigParserSpec() extends FeatureSpec with GivenWhenThen with Mocki
       val config = ServerConfigParser.parse(resource)
 
       Then("the server configuration should match the exact result")
-      info(s"config = $config")
       config shouldBe Some(ServerConfig(
-        props = Map("base" -> "/Users/ldaniels/broadway").toProps,
+        props = Map("broadway.directories.base" -> "/Users/ldaniels/broadway").toProps,
         httpInfo = Some(HttpInfo(host = "0.0.0.0", port = 9999))
       ))
 
