@@ -1,9 +1,9 @@
-package com.ldaniels528.broadway.server.etl.actors.kafka.avro
+package com.ldaniels528.broadway.core.actors.kafka.avro
 
 import akka.actor.Actor
+import com.ldaniels528.broadway.core.actors.kafka.avro.KafkaAvroConsumingActor._
 import com.ldaniels528.broadway.server.etl.BroadwayTopology.BWxActorRef
 import com.ldaniels528.broadway.server.etl.BroadwayTopology.Implicits._
-import com.ldaniels528.broadway.server.etl.actors.kafka.avro.KafkaAvroConsumingActor._
 import com.ldaniels528.trifecta.io.kafka.KafkaMicroConsumer
 import org.apache.avro.Schema
 import org.slf4j.LoggerFactory
