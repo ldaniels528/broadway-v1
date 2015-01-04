@@ -139,13 +139,13 @@ And an XML file to describe how files will be mapped to the narrative:
 ```xml
 <narrative-config>
 
-    <narrative id="QuoteImportTopology" class="com.shocktrade.narratives.StockQuoteImportNarrative" />
+    <narrative id="QuoteImportNarrative" class="com.shocktrade.topologies.StockQuoteImportNarrative" />
 
     <location id="CSVQuotes" path="/Users/ldaniels/broadway/incoming/csvQuotes">
-        <feed match="exact" name="AMEX.txt" narrative-ref="QuoteImportTopology" />
-        <feed match="exact" name="NASDAQ.txt" narrative-ref="QuoteImportTopology" />
-        <feed match="exact" name="NYSE.txt" narrative-ref="QuoteImportTopology" />
-        <feed match="exact" name="OTCBB.txt" narrative-ref="QuoteImportTopology" />
+        <feed match="exact" name="AMEX.txt" narrative-ref="QuoteImportNarrative" />
+        <feed match="exact" name="NASDAQ.txt" narrative-ref="QuoteImportNarrative" />
+        <feed match="exact" name="NYSE.txt" narrative-ref="QuoteImportNarrative" />
+        <feed match="exact" name="OTCBB.txt" narrative-ref="QuoteImportNarrative" />
     </location>
 
 </narrative-config>
