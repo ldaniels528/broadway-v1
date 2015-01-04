@@ -34,6 +34,7 @@ Additionally, since Broadway is a file-centric processing system, it supports fe
   * Text files (XML, JSON, CSV, delimited, fixed field-length, and hierarchical)
   * Kafka
 * File archival and retention strategies
+* Resource limits (e.g. limit the number of Kafka connections)
 
 Broadway is currently pre-alpha quality software, and although it will currently run simple topologies, there's still
 some work to do before it's ready for use by the general public. The current ETA is to have the system ready for action by
@@ -49,7 +50,7 @@ The proceeding example is a Broadway narrative that performs the following flow:
 * Converts the stock quotes to <a href="http://avro.apache.org/" target="avro">Avro</a> records.
 * Publishes each Avro record to a Kafka topic (shocktrade.quotes.yahoo.avro)
 
-Below is the Broadway topology that implements the flow described above:
+Below is the Broadway narrative that implements the flow described above:
 
 ```scala
 class StockQuoteImportNarrative(config: ServerConfig) extends BroadwayNarrative(config, "Stock Quote Import")
@@ -130,13 +131,13 @@ And an XML file to describe how files will be mapped to the narrative:
 ```xml
 <narrative-config>
 
-    <topology id="QuoteImportTopology" class="com.shocktrade.topologies.StockQuoteImportNarrative" />
+    <narrative id="QuoteImportTopology" class="com.shocktrade.narratives.StockQuoteImportNarrative" />
 
     <location id="CSVQuotes" path="/Users/ldaniels/broadway/incoming/csvQuotes">
-        <feed match="exact" name="AMEX.txt" topology-ref="QuoteImportTopology" />
-        <feed match="exact" name="NASDAQ.txt" topology-ref="QuoteImportTopology" />
-        <feed match="exact" name="NYSE.txt" topology-ref="QuoteImportTopology" />
-        <feed match="exact" name="OTCBB.txt" topology-ref="QuoteImportTopology" />
+        <feed match="exact" name="AMEX.txt" narrative-ref="QuoteImportTopology" />
+        <feed match="exact" name="NASDAQ.txt" narrative-ref="QuoteImportTopology" />
+        <feed match="exact" name="NYSE.txt" narrative-ref="QuoteImportTopology" />
+        <feed match="exact" name="OTCBB.txt" narrative-ref="QuoteImportTopology" />
     </location>
 
 </narrative-config>
