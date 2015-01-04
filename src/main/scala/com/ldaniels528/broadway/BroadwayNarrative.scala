@@ -7,10 +7,10 @@ import org.slf4j.LoggerFactory
 import scala.language.implicitConversions
 
 /**
- * Broadway Topology
+ * This class describes a narrative; or flow for a given data process
  * @author Lawrence Daniels <lawrence.daniels@gmail.com>
  */
-class BroadwayTopology(val config: ServerConfig, val name: String) {
+class BroadwayNarrative(val config: ServerConfig, val name: String) {
   private lazy val logger = LoggerFactory.getLogger(getClass)
   private implicit val executionContext = config.system.dispatcher
   private var executable: Option[ReadableResource => Unit] = None

@@ -2,6 +2,8 @@ package com.ldaniels528.broadway.server
 
 import java.io.File
 
+import akka.actor.Actor
+import com.ldaniels528.broadway.BroadwayNarrative
 import com.ldaniels528.broadway.core.actors.Actors.Implicits._
 import com.ldaniels528.broadway.core.resources._
 import com.ldaniels528.broadway.core.topology.{Feed, Location, TopologyConfig, TopologyRuntime}
@@ -29,6 +31,7 @@ class BroadwayServer(config: ServerConfig) {
 
   // create the system actors
   private val archivingActor = config.archivingActor
+  private val processingActor = config.addActor(new TopologyProcessingActor(config))
 
   /**
    * Start the server
@@ -47,18 +50,13 @@ class BroadwayServer(config: ServerConfig) {
       tc.locations foreach { location =>
         location.toFile foreach { directory =>
           // watch the "incoming" directory for processing files
-          fileWatcher.listenForFiles(directory) { file =>
-            handleIncomingFile(location, file)
-          }
+          fileWatcher.listenForFiles(directory)(handleIncomingFile(location, _))
         }
       }
     }
 
     // watch the "completed" directory for archiving files
-    fileWatcher.listenForFiles(config.getCompletedDirectory) { file =>
-      archivingActor ! file
-      ()
-    }
+    fileWatcher.listenForFiles(config.getCompletedDirectory)(archivingActor ! _)
     ()
   }
 
@@ -90,7 +88,7 @@ class BroadwayServer(config: ServerConfig) {
           move(file, wipFile)
 
           // start the topology using the file as its input source
-          topology.start(FileResource(wipFile.getAbsolutePath))
+          processingActor ! RunTopology(topology, FileResource(wipFile.getAbsolutePath))
 
         /*
         executeTopology(topology, wipFile) onComplete {
@@ -144,5 +142,25 @@ object BroadwayServer {
     }
     new BroadwayServer(config.orDie("No configuration file (broadway-config.xml) found")).start()
   }
+
+  /**
+   * This is an internal use actor that is responsible for processing topologies
+   * @author Lawrence Daniels <lawrence.daniels@gmail.com>
+   */
+  class TopologyProcessingActor(config: ServerConfig) extends Actor {
+    override def receive = {
+      case RunTopology(topology, resource) =>
+        topology.start(resource)
+      case message =>
+        unhandled(message)
+    }
+  }
+
+  /**
+   * This message causes the the given topology to be invoked; consuming the given resource
+   * @param topology the given [[BroadwayNarrative]]
+   * @param resource the given [[ReadableResource]]
+   */
+  case class RunTopology(topology: BroadwayNarrative, resource: ReadableResource)
 
 }

@@ -1,55 +1,71 @@
 Broadway
 ====
+Broadway is a distributed actor-based processing server, and is optimized for high-speed data/file ingestion.
 
-Broadway is a distributed actor-based processing server, and is optimized for high-speed data/file ingestion. Broadway is composed
-of 3 main modules:
+## Motivation
 
-* Data Transporter - an orchestration server, which is responsible for download files and/or moving files from one location (site) to another.
-* ETL - an Extract Transform and Loading system
-* DataStore - a file archival system, which is responsible for warehousing files supplied by either the Data Transport or ETL modules.
+<a href="http://storm.apache.org/" target="new_window">Apache Storm</a> is a powerful distribute processing engine,
+which is usually feed by either <a href="http://kafka.apache.org/" target="new_window">Apache Kafka</a> or
+<a href="https://github.com/twitter/kestrel" target="new_window">Twitter Kestrel</a>. The challenge that I've identified,
+is that organizations usually have to build a robust homegrown solution for the high-speed data/file ingestion into
+Kafka or Kestrel. I've built Broadway to help provide a solution to that challenge.
 
 ## About Broadway
 
-Broadway is being designed for a very specific processing use case... High speed file ingestion. And while Broadway will
-share many similarities with existing processing engines, like <a href="http://storm.apache.org/" target="storm">Apache Storm</a>,
-it is not intended as a replacement for Storm or other stream-oriented processing systems. Broadway is targeting
-environments where many different individual files require processing, while Storm excels at processing streams of data
-but is not specifically geared toward the processing one-off files.
+As mentioned above, Broadway is a distributed actor-based processing server, and is optimized for high-speed data/file
+ingestion. Broadway is meant to be a complement to systems like Storm, not necessarily an alternative.
 
-### How is Broadway different from Storm
+Why the name Broadway? I chose the name Broadway (as it Broadway plays or musicals) because it's an actor-based system.
+As such you'll encounter terms such as director, narrative and producer once Broadway's documentation is complete.
 
-Storm and Broadway have different design goals. Broadway is file-centric, whereas Storm processes streams of data.
-For example, Storm doesn't allow you to say I want to process files B, C and D, but only after I've processed A.
+Broadway provides three main functions:
 
-## Getting the Code
+* *Transporting of Files* via a builtin an orchestration server, which also has the capability to download files and/or moving files from one location (site) to another.
+* *Extract Transform and Loading* and is tailored toward processing flat files (XML, JSON, CSV, delimited, fixed field-length, and hierarchical)
+* *File archival system*, which provides the capability for warehousing files supplied by either the Data Transport or ETL modules.
+
+Additionally, since Broadway is a file-centric processing system, it supports features like:
+* File-processing dependencies (e.g. File "A" must be processed before Files "B" and "C" can be processed)
+* File-processing schedulers and triggers
+  * Directories can be watched for specific files (or using pattern matching) and then processed and archived.
+  * Files can be limited to being processed at certain times or days of the week.
+* An Actor-based I/O system with builtin support for:
+  * Binary files
+  * Text files (XML, JSON, CSV, delimited, fixed field-length, and hierarchical)
+  * Kafka
 
 Broadway is currently pre-alpha quality software, and although it will currently run simple topologies, there's still
-some work to do before it's ready for use by the general public. The current ETA is to have the code ready for action by
-the end of January 2015.
+some work to do before it's ready for use by the general public. The current ETA is to have the system ready for action by
+the end of March 2015.
 
-## Creating a Broadway Topology
+## How it works
 
-The proceeding example is a Broadway topology performs the following flow:
+Broadway provides a construct called a narrative (e.g. story), which describes the flow for a single processing event.
+The proceeding example is a Broadway narrative performs the following flow:
 
 * Extracts stock symbols from a tabbed-delimited file.
-* Retrieves stock quotes for each symbol.
+* Retrieves stock quotes (via a custom service) for each symbol.
 * Converts the stock quotes to <a href="http://avro.apache.org/" target="avro">Avro</a> records.
 * Publishes each Avro record to a Kafka topic (shocktrade.quotes.yahoo.avro)
 
 Below is the Broadway topology that implements the flow described above:
 
 ```scala
-class StockQuoteImportTopology() extends BroadwayTopology("Stock Quote Import") with KafkaConstants {
+class StockQuoteImportNarrative(config: ServerConfig) extends BroadwayNarrative(config, "Stock Quote Import")
+  with KafkaConstants {
 
   onStart { resource =>
+
+    implicit val ec = config.system.dispatcher
+
     // create a file reader actor to read lines from the incoming resource
-    val fileReader = addActor(new FileReadingActor())
+    val fileReader = config.addActor(new FileReadingActor(config))
 
     // create a Kafka publishing actor for stock quotes
-    val quotePublisher = addActor(new KafkaAvroPublishingActor(quotesTopic, brokers))
+    val quotePublisher = config.addActor(new KafkaAvroPublishingActor(quotesTopic, brokers))
 
     // create a stock quote lookup actor
-    val quoteLookup = addActor(new StockQuoteLookupActor(quotePublisher))
+    val quoteLookup = config.addActor(new StockQuoteLookupActor(quotePublisher))
 
     // start the processing by submitting a request to the file reader actor
     fileReader ! CopyText(resource, quoteLookup, handler = Delimited("[\t]"))
@@ -90,6 +106,9 @@ class StockQuoteLookupActor(target: BWxActorRef)(implicit ec: ExecutionContext) 
 }
 ```
 
+The following code needs no explanation, it's simply a collection of Kafka constants that could have just as easily
+been placed in a properties file.
+
 ```scala
 trait KafkaConstants {
   val eodDataTopic = "shocktrade.eoddata.yahoo.avro"
@@ -101,12 +120,12 @@ trait KafkaConstants {
 }
 ```
 
-And an XML file to describe how files will be mapped to the topology:
+And an XML file to describe how files will be mapped to the narrative:
 
 ```xml
-<topology-config>
+<narrative-config>
 
-    <topology id="QuoteImportTopology" class="com.shocktrade.topologies.StockQuoteImportTopology" />
+    <topology id="QuoteImportTopology" class="com.shocktrade.topologies.StockQuoteImportNarrative" />
 
     <location id="CSVQuotes" path="/Users/ldaniels/broadway/incoming/csvQuotes">
         <feed match="exact" name="AMEX.txt" topology-ref="QuoteImportTopology" />
@@ -115,6 +134,6 @@ And an XML file to describe how files will be mapped to the topology:
         <feed match="exact" name="OTCBB.txt" topology-ref="QuoteImportTopology" />
     </location>
 
-</topology-config>
+</narrative-config>
 ```
 
