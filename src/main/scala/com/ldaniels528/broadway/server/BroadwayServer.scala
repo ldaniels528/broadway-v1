@@ -2,9 +2,7 @@ package com.ldaniels528.broadway.server
 
 import java.io.File
 
-import com.ldaniels528.broadway.BroadwayTopology
 import com.ldaniels528.broadway.core.actors.Actors.Implicits._
-import com.ldaniels528.broadway.core.actors.ArchivingActor
 import com.ldaniels528.broadway.core.resources._
 import com.ldaniels528.broadway.core.topology.{Feed, Location, TopologyConfig, TopologyRuntime}
 import com.ldaniels528.broadway.core.util.FileHelper._
@@ -14,7 +12,6 @@ import com.ldaniels528.trifecta.util.OptionHelper._
 import org.slf4j.LoggerFactory
 
 import scala.collection.concurrent.TrieMap
-import scala.concurrent.Future
 import scala.util.{Failure, Success}
 
 /**
@@ -31,7 +28,7 @@ class BroadwayServer(config: ServerConfig) {
   private val reported = TrieMap[String, Throwable]()
 
   // create the system actors
-  private val archivingActor = config.addActor(new ArchivingActor(config))
+  private val archivingActor = config.archivingActor
 
   /**
    * Start the server
@@ -92,14 +89,17 @@ class BroadwayServer(config: ServerConfig) {
           val wipFile = new File(config.getWorkDirectory, fileName)
           move(file, wipFile)
 
-          // start processing
-          executeTopology(topology, wipFile) onComplete {
-            case Success(result) =>
-              move(wipFile, new File(config.getCompletedDirectory, fileName))
-            case Failure(e) =>
-              logger.error(s"${topology.name}: File '$fileName' failed during processing", e)
-              move(wipFile, new File(config.getFailedDirectory, fileName))
-          }
+          // start the topology using the file as its input source
+          topology.start(FileResource(wipFile.getAbsolutePath))
+
+        /*
+        executeTopology(topology, wipFile) onComplete {
+          case Success(result) =>
+            move(wipFile, new File(config.getCompletedDirectory, fileName))
+          case Failure(e) =>
+            logger.error(s"${topology.name}: File '$fileName' failed during processing", e)
+            move(wipFile, new File(config.getFailedDirectory, fileName))
+        }*/
         case Failure(e) =>
           if (!reported.contains(td.id)) {
             logger.error(s"${td.id}: Topology could not be instantiated", e)
@@ -108,20 +108,6 @@ class BroadwayServer(config: ServerConfig) {
       }
 
     }
-  }
-
-  /**
-   * Processes the given file with the given topology
-   * @param topology the given [[BroadwayTopology]]
-   * @param file the given [[File]]
-   * @return a promise of resulting the termination of the process
-   */
-  private def executeTopology(topology: BroadwayTopology, file: File) = Future {
-    val name = topology.name
-    logger.info(s"$name: Processing '${file.getAbsolutePath}'....")
-    val start = System.currentTimeMillis()
-    topology.start(FileResource(file.getAbsolutePath))
-    logger.info(s"$name: Completed in ${System.currentTimeMillis() - start} msec")
   }
 
   /**

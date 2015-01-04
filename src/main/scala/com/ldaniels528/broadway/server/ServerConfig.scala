@@ -4,6 +4,7 @@ import java.io.File
 
 import akka.actor.{Actor, ActorRef, ActorSystem, Props}
 import com.ldaniels528.broadway.core.actors.Actors._
+import com.ldaniels528.broadway.core.actors.ArchivingActor
 import com.ldaniels528.broadway.core.resources._
 import com.ldaniels528.broadway.core.util.FileHelper._
 import com.ldaniels528.broadway.server.ServerConfig._
@@ -18,6 +19,9 @@ import scala.reflect.ClassTag
  */
 case class ServerConfig(props: java.util.Properties, httpInfo: Option[HttpInfo]) {
   implicit val system = ActorSystem("BroadwaySystem")
+
+  // create the system actors
+  val archivingActor = addActor(new ArchivingActor(this))
 
   /**
    * Adds a new actor to the topology

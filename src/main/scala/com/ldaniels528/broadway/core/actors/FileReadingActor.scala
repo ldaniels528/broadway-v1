@@ -6,6 +6,7 @@ import com.ldaniels528.broadway.core.actors.Actors.Implicits._
 import com.ldaniels528.broadway.core.actors.FileReadingActor._
 import com.ldaniels528.broadway.core.resources._
 import com.ldaniels528.broadway.core.util.TextFileHelper
+import com.ldaniels528.broadway.server.ServerConfig
 
 import scala.io.Source
 import scala.language.implicitConversions
@@ -14,7 +15,7 @@ import scala.language.implicitConversions
  * This actor is capable of reading/parsing binary/text files
  * @author Lawrence Daniels <lawrence.daniels@gmail.com>
  */
-class FileReadingActor() extends Actor {
+class FileReadingActor(config: ServerConfig) extends Actor {
 
   override def receive = {
     case CopyBinary(resource, target) => copyBinary(target, resource)
@@ -43,6 +44,9 @@ class FileReadingActor() extends Actor {
       }
       offset += count
     }
+
+    // archive the resource
+    config.archivingActor ! resource
   }
 
   /**
@@ -80,6 +84,9 @@ class FileReadingActor() extends Actor {
 
       // notify the target actor that the resource has been closed
       target ! ClosingFile(resource)
+
+      // archive the resource
+      config.archivingActor ! resource
     }
   }
 
