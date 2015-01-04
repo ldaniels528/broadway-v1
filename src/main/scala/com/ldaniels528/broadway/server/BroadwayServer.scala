@@ -2,9 +2,9 @@ package com.ldaniels528.broadway.server
 
 import java.io.File
 
-import akka.actor.{ActorSystem, Props}
 import com.ldaniels528.broadway.BroadwayTopology
-import com.ldaniels528.broadway.core.actors.ArchivalActor
+import com.ldaniels528.broadway.core.actors.Actors.Implicits._
+import com.ldaniels528.broadway.core.actors.ArchivingActor
 import com.ldaniels528.broadway.core.resources._
 import com.ldaniels528.broadway.core.topology.{Feed, Location, TopologyConfig, TopologyRuntime}
 import com.ldaniels528.broadway.core.util.FileHelper._
@@ -24,14 +24,14 @@ import scala.util.{Failure, Success}
  */
 class BroadwayServer(config: ServerConfig) {
   private lazy val logger = LoggerFactory.getLogger(getClass)
-  private val system = ActorSystem("BroadwaySystem")
+  private implicit val system = config.system
   private implicit val ec = system.dispatcher
   private implicit val rt = new TopologyRuntime()
   private val fileWatcher = new FileMonitor(system)
   private val reported = TrieMap[String, Throwable]()
 
   // create the system actors
-  private val archivingActor = system.actorOf(Props(new ArchivalActor(config)))
+  private val archivingActor = config.addActor(new ArchivingActor(config))
 
   /**
    * Start the server
@@ -51,7 +51,7 @@ class BroadwayServer(config: ServerConfig) {
         location.toFile foreach { directory =>
           // watch the "incoming" directory for processing files
           fileWatcher.listenForFiles(directory) { file =>
-            process(location, file)
+            handleIncomingFile(location, file)
           }
         }
       }
@@ -66,26 +66,26 @@ class BroadwayServer(config: ServerConfig) {
   }
 
   /**
-   * Processes the given file
-   * @param file the given file
+   * Handles the the given incoming file
+   * @param file the given incoming [[File]]
    */
-  private def process(location: Location, file: File) {
+  private def handleIncomingFile(location: Location, file: File) {
     location.findFeed(file.getName) match {
-      case Some(feed) => processETL(feed, file)
+      case Some(feed) => processFeed(feed, file)
       case None => noMappedProcess(location, file)
     }
     ()
   }
 
   /**
-   * Processes the given file via an ETL process
+   * Processes the given feed via a topology
    * @param feed the given [[Feed]]
    * @param file the given [[File]]
    */
-  private def processETL(feed: Feed, file: File) = {
+  private def processFeed(feed: Feed, file: File) = {
     feed.topology foreach { td =>
       // lookup the topology
-      rt.getTopology(td) match {
+      rt.getTopology(config, td) match {
         case Success(topology) =>
           val fileName = file.getName
           logger.info(s"${topology.name}: Moving file '$fileName' to '${config.getWorkDirectory}' for processing...")
@@ -110,6 +110,12 @@ class BroadwayServer(config: ServerConfig) {
     }
   }
 
+  /**
+   * Processes the given file with the given topology
+   * @param topology the given [[BroadwayTopology]]
+   * @param file the given [[File]]
+   * @return a promise of resulting the termination of the process
+   */
   private def executeTopology(topology: BroadwayTopology, file: File) = Future {
     val name = topology.name
     logger.info(s"$name: Processing '${file.getAbsolutePath}'....")

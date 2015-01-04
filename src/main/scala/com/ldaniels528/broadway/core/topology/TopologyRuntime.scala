@@ -1,7 +1,9 @@
 package com.ldaniels528.broadway.core.topology
 
 import java.util.Properties
+
 import com.ldaniels528.broadway.BroadwayTopology
+import com.ldaniels528.broadway.server.ServerConfig
 import com.ldaniels528.trifecta.util.OptionHelper._
 
 import scala.collection.concurrent.TrieMap
@@ -22,16 +24,18 @@ class TopologyRuntime() {
 
   def getPropertiesByID(id: String): Option[Properties] = properties.get(id)
 
-  def getTopology(td: TopologyDescriptor): Try[BroadwayTopology] = Try {
-    topologies.getOrElseUpdate(td.id, instantiateTopology(td.className))
+  def getTopology(config: ServerConfig, td: TopologyDescriptor): Try[BroadwayTopology] = Try {
+    topologies.getOrElseUpdate(td.id, instantiateTopology(config, td.className))
   }
 
   def getTopologyByID(id: String): BroadwayTopology = {
     topologies.get(id) orDie s"Topology ID '$id' not found"
   }
 
-  private def instantiateTopology(className: String) = {
-    Class.forName(className).newInstance().asInstanceOf[BroadwayTopology]
+  private def instantiateTopology(config: ServerConfig, className: String) = {
+    val topologyClass = Class.forName(className)
+    val cons = topologyClass.getConstructors()(0)
+    cons.newInstance(config).asInstanceOf[BroadwayTopology]
   }
 
 }

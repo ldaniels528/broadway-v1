@@ -2,18 +2,56 @@ package com.ldaniels528.broadway.server
 
 import java.io.File
 
+import akka.actor.{Actor, ActorRef, ActorSystem, Props}
+import com.ldaniels528.broadway.core.actors.Actors._
 import com.ldaniels528.broadway.core.resources._
 import com.ldaniels528.broadway.core.util.FileHelper._
 import com.ldaniels528.broadway.server.ServerConfig._
 import com.ldaniels528.trifecta.util.OptionHelper._
 import com.ldaniels528.trifecta.util.PropertiesHelper._
 
+import scala.reflect.ClassTag
+
 /**
  * Server Config
  * @author Lawrence Daniels <lawrence.daniels@gmail.com>
  */
-case class ServerConfig(props: java.util.Properties,
-                        httpInfo: Option[HttpInfo]) {
+case class ServerConfig(props: java.util.Properties, httpInfo: Option[HttpInfo]) {
+  implicit val system = ActorSystem("BroadwaySystem")
+
+  /**
+   * Adds a new actor to the topology
+   * @param parallelism the number of actors to create
+   * @tparam T the actor type
+   * @return an [[akka.actor.ActorRef]]
+   */
+  def addActor[T <: Actor : ClassTag](parallelism: Int = 1): BWxActorRef = {
+    actorClosure((1 to parallelism) map (_ => system.actorOf(Props[T]())))
+  }
+
+  /**
+   * Adds a new actor to the topology
+   * @param actor the given [[Actor]]
+   * @param parallelism the number of actors to create
+   * @tparam T the actor type
+   * @return an [[akka.actor.ActorRef]]
+   */
+  def addActor[T <: Actor : ClassTag](actor: => T, parallelism: Int = 1): BWxActorRef = {
+    actorClosure((1 to parallelism) map (_ => system.actorOf(Props(actor))))
+  }
+
+  /**
+   * Returns a closure to a function that exposes an actor (round robin) from the actor pool
+   * @param actors the given pool of [[ActorRef]]
+   * @return a closure to a function that exposes an actor (round robin) from the actor pool
+   */
+  private def actorClosure(actors: Seq[ActorRef]) = {
+    var index = 0
+    () => {
+      index += 1
+      actors(index % actors.length)
+    }
+  }
 
   def getRootDirectory = new File(props.asOpt[String](BaseDir).orDie(s"Required property '$BaseDir' is missing"))
 
