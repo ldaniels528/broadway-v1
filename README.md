@@ -106,6 +106,10 @@ class StockQuoteLookupActor(target: BWxActorRef)(implicit ec: ExecutionContext) 
 }
 ```
 
+Broadway provides an actor-based, event-based I/O system. Notice above, your code may react to messages that indicate
+the opening (`OpeningFile`) or closing (`ClosingFile`) of a resource (e.g. file) or when a line of text has been
+passed (`TextLine`).
+
 The following code needs no explanation, it's simply a collection of Kafka constants that could have just as easily
 been placed in a properties file.
 
