@@ -6,7 +6,7 @@ import akka.actor.Actor
 import com.ldaniels528.broadway.BroadwayNarrative
 import com.ldaniels528.broadway.core.actors.Actors.Implicits._
 import com.ldaniels528.broadway.core.resources._
-import com.ldaniels528.broadway.core.topology.{Feed, Location, TopologyConfig, TopologyRuntime}
+import com.ldaniels528.broadway.core.narrative._
 import com.ldaniels528.broadway.core.util.FileHelper._
 import com.ldaniels528.broadway.core.util.FileMonitor
 import com.ldaniels528.broadway.server.BroadwayServer._
@@ -25,7 +25,7 @@ class BroadwayServer(config: ServerConfig) {
   private lazy val logger = LoggerFactory.getLogger(getClass)
   private implicit val system = config.system
   private implicit val ec = system.dispatcher
-  private implicit val rt = new TopologyRuntime()
+  private implicit val rt = new NarrativeRuntime()
   private val fileWatcher = new FileMonitor(system)
   private val reported = TrieMap[String, Throwable]()
 
@@ -43,7 +43,7 @@ class BroadwayServer(config: ServerConfig) {
     config.init()
 
     // load the topology configurations
-    val topologyConfigs = TopologyConfig.loadTopologyConfigs(config.getTopologiesDirectory)
+    val topologyConfigs = NarrativeConfig.loadNarrativeConfigs(config.getTopologiesDirectory)
 
     // setup listeners for all configured locations
     topologyConfigs foreach { tc =>
@@ -80,7 +80,7 @@ class BroadwayServer(config: ServerConfig) {
   private def processFeed(feed: Feed, file: File) = {
     feed.topology foreach { td =>
       // lookup the topology
-      rt.getTopology(config, td) match {
+      rt.getNarrative(config, td) match {
         case Success(topology) =>
           val fileName = file.getName
           logger.info(s"${topology.name}: Moving file '$fileName' to '${config.getWorkDirectory}' for processing...")

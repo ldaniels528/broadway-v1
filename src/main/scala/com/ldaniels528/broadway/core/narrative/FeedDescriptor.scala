@@ -1,4 +1,4 @@
-package com.ldaniels528.broadway.core.topology
+package com.ldaniels528.broadway.core.narrative
 
 import java.util.UUID
 
@@ -7,12 +7,12 @@ import java.util.UUID
  * @param name the name of the feed
  * @param matching the feed matching strategy
  * @param dependencies the given feed dependencies
- * @param topology the topology to execute
+ * @param narrative the narrative to execute
  */
 case class FeedDescriptor(name: String,
                           matching: String,
                           dependencies: Seq[FeedDescriptor] = Nil,
-                          topology: Option[TopologyDescriptor] = None) {
+                          narrative: Option[NarrativeDescriptor] = None) {
   val uuid = UUID.randomUUID().toString
 
   /**
@@ -31,6 +31,6 @@ case class FeedDescriptor(name: String,
     }
   }
 
-  def toFeed(implicit rt: TopologyRuntime): Feed = rt.getFeed(this)
+  def toFeed(implicit rt: NarrativeRuntime): Feed = rt.getFeed(this)
 
 }

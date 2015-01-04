@@ -1,4 +1,4 @@
-package com.ldaniels528.broadway.core.topology
+package com.ldaniels528.broadway.core.narrative
 
 import java.io.File
 
@@ -16,7 +16,7 @@ case class Location(id: String, path: String, feeds: Seq[FeedDescriptor]) {
    * @param rt the implicit topology runtime
    * @return an option of a [[Feed]]
    */
-  def findFeed(name: String)(implicit rt: TopologyRuntime): Option[Feed] = {
+  def findFeed(name: String)(implicit rt: NarrativeRuntime): Option[Feed] = {
     feeds.find(_.matches(name)) map (_.toFeed)
   }
 

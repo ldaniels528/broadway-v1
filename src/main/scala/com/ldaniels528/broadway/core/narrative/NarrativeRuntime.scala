@@ -1,4 +1,4 @@
-package com.ldaniels528.broadway.core.topology
+package com.ldaniels528.broadway.core.narrative
 
 import java.util.Properties
 
@@ -10,26 +10,26 @@ import scala.collection.concurrent.TrieMap
 import scala.util.Try
 
 /**
- * Represents a topology runtime
+ * Represents a narrative runtime
  * @author Lawrence Daniels <lawrence.daniels@gmail.com>
  */
-class TopologyRuntime() {
+class NarrativeRuntime() {
   private val feeds = TrieMap[String, Feed]()
-  private val topologies = TrieMap[String, BroadwayNarrative]()
+  private val narratives = TrieMap[String, BroadwayNarrative]()
   private val properties = TrieMap[String, Properties]()
 
   def getFeed(fd: FeedDescriptor): Feed = {
-    feeds.getOrElseUpdate(fd.uuid, Feed(fd.uuid, fd.name, fd.dependencies map (_.toFeed(this)), fd.topology))
+    feeds.getOrElseUpdate(fd.uuid, Feed(fd.uuid, fd.name, fd.dependencies map (_.toFeed(this)), fd.narrative))
   }
 
   def getPropertiesByID(id: String): Option[Properties] = properties.get(id)
 
-  def getTopology(config: ServerConfig, td: TopologyDescriptor): Try[BroadwayNarrative] = Try {
-    topologies.getOrElseUpdate(td.id, instantiateTopology(config, td.className))
+  def getNarrative(config: ServerConfig, td: NarrativeDescriptor): Try[BroadwayNarrative] = Try {
+    narratives.getOrElseUpdate(td.id, instantiateTopology(config, td.className))
   }
 
-  def getTopologyByID(id: String): BroadwayNarrative = {
-    topologies.get(id) orDie s"Topology ID '$id' not found"
+  def getNarrativeByID(id: String): BroadwayNarrative = {
+    narratives.get(id) orDie s"Topology ID '$id' not found"
   }
 
   private def instantiateTopology(config: ServerConfig, className: String) = {

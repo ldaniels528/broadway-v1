@@ -1,4 +1,4 @@
-package com.ldaniels528.broadway.core.topology
+package com.ldaniels528.broadway.core.narrative
 
 import org.scalatest.Matchers._
 import org.scalatest.mock.MockitoSugar
@@ -8,7 +8,7 @@ import org.scalatest.{FeatureSpec, GivenWhenThen}
  * Topology Configuration Specification
  * @author Lawrence Daniels <lawrence.daniels@gmail.com>
  */
-class TopologyConfigSpec() extends FeatureSpec with GivenWhenThen with MockitoSugar {
+class NarrativeConfigSpec() extends FeatureSpec with GivenWhenThen with MockitoSugar {
 
   info("As a TopologyConfig")
   info("I want to be able to represent Broadway topologies at run-time")
@@ -16,7 +16,7 @@ class TopologyConfigSpec() extends FeatureSpec with GivenWhenThen with MockitoSu
   feature("Feeds can have dependencies") {
     scenario("Feeds should only be processed when all dependencies are satisfied") {
       Given("a topology runtime")
-      implicit val rt = new TopologyRuntime()
+      implicit val rt = new NarrativeRuntime()
 
       And("a collection of feeds with inter-dependencies")
       val feedA = FeedDescriptor(name = "NASDAQ.txt", matching = "exact")

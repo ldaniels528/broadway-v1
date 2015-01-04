@@ -1,4 +1,4 @@
-package com.ldaniels528.broadway.core.topology
+package com.ldaniels528.broadway.core.narrative
 
 import java.util.Properties
 
