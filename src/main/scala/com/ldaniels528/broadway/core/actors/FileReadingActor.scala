@@ -8,6 +8,7 @@ import com.ldaniels528.broadway.core.resources._
 import com.ldaniels528.broadway.core.util.TextFileHelper
 
 import scala.io.Source
+import scala.language.implicitConversions
 
 /**
  * This actor is capable of reading/parsing binary/text files
@@ -89,6 +90,13 @@ class FileReadingActor() extends Actor {
  * @author Lawrence Daniels <lawrence.daniels@gmail.com>
  */
 object FileReadingActor {
+
+  /**
+   * Implicit conversion for using text format handler instances instead of an option of a text format handler
+   * @param handler the given text format handler
+   * @return an option of a text format handler when a text format handler is supplied
+   */
+  implicit def formatHandler2Option(handler: TextFormatHandler): Option[TextFormatHandler] = Option(handler)
 
   /**
    * Represents a block of binary data

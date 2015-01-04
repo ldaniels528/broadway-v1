@@ -15,8 +15,6 @@ object Actors {
 
   object Implicits {
 
-    implicit def formatHandler2Option(handler: TextFormatHandler): Option[TextFormatHandler] = Option(handler)
-
     implicit class ActorExtensions[T <: BWxActorRef](val actor: T) extends AnyVal {
 
       def !(message: Any): Unit = actor() ! message
