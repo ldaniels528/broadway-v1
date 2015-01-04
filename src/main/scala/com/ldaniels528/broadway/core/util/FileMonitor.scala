@@ -1,10 +1,10 @@
-package com.ldaniels528.broadway.server.transporter
+package com.ldaniels528.broadway.core.util
 
 import java.io._
 import java.nio.file.{Paths, StandardWatchEventKinds}
 
 import akka.actor.ActorSystem
-import com.ldaniels528.broadway.server.transporter.FileMonitor._
+import com.ldaniels528.broadway.core.util.FileMonitor.QueuedFile
 import org.slf4j.LoggerFactory
 
 import scala.collection.JavaConversions._

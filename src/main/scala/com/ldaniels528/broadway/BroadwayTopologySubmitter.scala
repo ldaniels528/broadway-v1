@@ -1,4 +1,4 @@
-package com.ldaniels528.broadway.server.etl
+package com.ldaniels528.broadway
 
 /**
  * Broadway Topology Submitter

@@ -1,9 +1,10 @@
 package com.ldaniels528.broadway.core.actors.kafka.avro
 
 import akka.actor.Actor
+import com.ldaniels528.broadway.BroadwayTopology
 import com.ldaniels528.broadway.core.actors.kafka.avro.KafkaAvroConversionActor._
-import com.ldaniels528.broadway.server.etl.BroadwayTopology.BWxActorRef
-import com.ldaniels528.broadway.server.etl.BroadwayTopology.Implicits._
+import BroadwayTopology.BWxActorRef
+import BroadwayTopology.Implicits._
 import com.ldaniels528.trifecta.io.avro.AvroConversion
 import org.apache.avro.Schema
 import org.apache.avro.generic.GenericRecord

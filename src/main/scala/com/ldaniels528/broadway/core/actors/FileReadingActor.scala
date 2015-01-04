@@ -1,11 +1,12 @@
 package com.ldaniels528.broadway.core.actors
 
 import akka.actor.{Actor, ActorRef}
+import com.ldaniels528.broadway.BroadwayTopology
 import com.ldaniels528.broadway.core.actors.FileReadingActor._
 import com.ldaniels528.broadway.core.resources._
 import com.ldaniels528.broadway.core.util.TextFileHelper
-import com.ldaniels528.broadway.server.etl.BroadwayTopology.BWxActorRef
-import com.ldaniels528.broadway.server.etl.BroadwayTopology.Implicits._
+import BroadwayTopology.BWxActorRef
+import BroadwayTopology.Implicits._
 
 import scala.io.Source
 

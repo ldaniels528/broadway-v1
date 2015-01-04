@@ -1,8 +1,7 @@
 package com.ldaniels528.broadway.core.topology
 
 import java.util.Properties
-
-import com.ldaniels528.broadway.server.etl.BroadwayTopology
+import com.ldaniels528.broadway.BroadwayTopology
 import com.ldaniels528.trifecta.util.OptionHelper._
 
 import scala.collection.concurrent.TrieMap

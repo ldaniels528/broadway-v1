@@ -1,12 +1,21 @@
 package com.ldaniels528.broadway.server
 
-import akka.actor.ActorSystem
+import java.io.File
+
+import akka.actor.{ActorSystem, Props}
+import com.ldaniels528.broadway.BroadwayTopology
+import com.ldaniels528.broadway.core.actors.ArchivalActor
 import com.ldaniels528.broadway.core.resources._
-import com.ldaniels528.broadway.core.topology.TopologyConfig
+import com.ldaniels528.broadway.core.topology.{Feed, Location, TopologyConfig, TopologyRuntime}
+import com.ldaniels528.broadway.core.util.FileHelper._
+import com.ldaniels528.broadway.core.util.FileMonitor
 import com.ldaniels528.broadway.server.BroadwayServer._
-import com.ldaniels528.broadway.server.datastore.DataStore
-import com.ldaniels528.broadway.server.transporter.{DataTransporter, FileMonitor}
 import com.ldaniels528.trifecta.util.OptionHelper._
+import org.slf4j.LoggerFactory
+
+import scala.collection.concurrent.TrieMap
+import scala.concurrent.Future
+import scala.util.{Failure, Success}
 
 /**
  * Broadway Server
@@ -14,11 +23,15 @@ import com.ldaniels528.trifecta.util.OptionHelper._
  * @author Lawrence Daniels <lawrence.daniels@gmail.com>
  */
 class BroadwayServer(config: ServerConfig) {
+  private lazy val logger = LoggerFactory.getLogger(getClass)
   private val system = ActorSystem("BroadwaySystem")
   private implicit val ec = system.dispatcher
+  private implicit val rt = new TopologyRuntime()
   private val fileWatcher = new FileMonitor(system)
-  private val dataStore = new DataStore(config)
-  private val transporter = new DataTransporter(config)
+  private val reported = TrieMap[String, Throwable]()
+
+  // create the system actors
+  private val archivingActor = system.actorOf(Props(new ArchivalActor(config)))
 
   /**
    * Start the server
@@ -38,7 +51,7 @@ class BroadwayServer(config: ServerConfig) {
         location.toFile foreach { directory =>
           // watch the "incoming" directory for processing files
           fileWatcher.listenForFiles(directory) { file =>
-            transporter.process(location, file)
+            process(location, file)
           }
         }
       }
@@ -46,10 +59,73 @@ class BroadwayServer(config: ServerConfig) {
 
     // watch the "completed" directory for archiving files
     fileWatcher.listenForFiles(config.getCompletedDirectory) { file =>
-      dataStore.archive(file)
+      archivingActor ! file
       ()
     }
     ()
+  }
+
+  /**
+   * Processes the given file
+   * @param file the given file
+   */
+  private def process(location: Location, file: File) {
+    location.findFeed(file.getName) match {
+      case Some(feed) => processETL(feed, file)
+      case None => noMappedProcess(location, file)
+    }
+    ()
+  }
+
+  /**
+   * Processes the given file via an ETL process
+   * @param feed the given [[Feed]]
+   * @param file the given [[File]]
+   */
+  private def processETL(feed: Feed, file: File) = {
+    feed.topology foreach { td =>
+      // lookup the topology
+      rt.getTopology(td) match {
+        case Success(topology) =>
+          val fileName = file.getName
+          logger.info(s"${topology.name}: Moving file '$fileName' to '${config.getWorkDirectory}' for processing...")
+          val wipFile = new File(config.getWorkDirectory, fileName)
+          move(file, wipFile)
+
+          // start processing
+          executeTopology(topology, wipFile) onComplete {
+            case Success(result) =>
+              move(wipFile, new File(config.getCompletedDirectory, fileName))
+            case Failure(e) =>
+              logger.error(s"${topology.name}: File '$fileName' failed during processing", e)
+              move(wipFile, new File(config.getFailedDirectory, fileName))
+          }
+        case Failure(e) =>
+          if (!reported.contains(td.id)) {
+            logger.error(s"${td.id}: Topology could not be instantiated", e)
+            reported += td.id -> e
+          }
+      }
+
+    }
+  }
+
+  private def executeTopology(topology: BroadwayTopology, file: File) = Future {
+    val name = topology.name
+    logger.info(s"$name: Processing '${file.getAbsolutePath}'....")
+    val start = System.currentTimeMillis()
+    topology.start(FileResource(file.getAbsolutePath))
+    logger.info(s"$name: Completed in ${System.currentTimeMillis() - start} msec")
+  }
+
+  /**
+   * Called when no mapping process is found for the given file
+   * @param file the given [[File]]
+   */
+  private def noMappedProcess(location: Location, file: File) = {
+    val fileName = file.getName
+    logger.info(s"${location.id}: No mappings found for '$fileName'. Moving to '${config.getCompletedDirectory}' for archival.")
+    move(file, new File(config.getCompletedDirectory, fileName))
   }
 
 }

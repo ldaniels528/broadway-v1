@@ -1,10 +1,9 @@
-package com.ldaniels528.broadway.server.etl
+package com.ldaniels528.broadway
 
 import akka.actor.{Actor, ActorRef, ActorSystem, Props}
-import com.ldaniels528.broadway.core.actors.FileReadingActor
+import com.ldaniels528.broadway.BroadwayTopology.BWxActorRef
+import com.ldaniels528.broadway.core.actors.FileReadingActor.TextFormatHandler
 import com.ldaniels528.broadway.core.resources._
-import com.ldaniels528.broadway.server.etl.BroadwayTopology.BWxActorRef
-import FileReadingActor.TextFormatHandler
 import org.slf4j.LoggerFactory
 
 import scala.language.implicitConversions
