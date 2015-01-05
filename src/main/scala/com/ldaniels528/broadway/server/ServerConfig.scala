@@ -24,7 +24,7 @@ case class ServerConfig(props: java.util.Properties, httpInfo: Option[HttpInfo])
   val archivingActor = addActor(new ArchivingActor(this))
 
   /**
-   * Adds a new actor to the topology
+   * Adds a new actor to the narrative
    * @param parallelism the number of actors to create
    * @tparam T the actor type
    * @return an [[akka.actor.ActorRef]]
@@ -34,7 +34,7 @@ case class ServerConfig(props: java.util.Properties, httpInfo: Option[HttpInfo])
   }
 
   /**
-   * Adds a new actor to the topology
+   * Adds a new actor to the narrative
    * @param actor the given [[Actor]]
    * @param parallelism the number of actors to create
    * @tparam T the actor type

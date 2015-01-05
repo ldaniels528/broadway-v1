@@ -18,7 +18,7 @@ class KafkaAvroConsumingActor(topic: String, schemaString: String) extends Actor
   @transient private var consumer_? : Option[KafkaMicroConsumer] = None
 
   override def preStart() = {
-    consumer_?
+    consumer_? // TODO finish this at some point
   }
 
   override def postStop() = {
@@ -28,7 +28,7 @@ class KafkaAvroConsumingActor(topic: String, schemaString: String) extends Actor
 
   override def receive = {
     case Consume(target) =>
-      target ! "X"
+      target ! "X" // TODO finish this at some point
 
     case message =>
       logger.warn(s"Unhandled message $message")
@@ -36,7 +36,7 @@ class KafkaAvroConsumingActor(topic: String, schemaString: String) extends Actor
   }
 
   private def consumer: KafkaMicroConsumer = {
-    null
+    null // TODO finish this at some point
   }
 
 }
