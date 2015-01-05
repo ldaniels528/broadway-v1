@@ -26,12 +26,13 @@ class ThroughputCalculator(label: String) {
       rate = count.toDouble / deltaTime
       lastMessageCount = messageCount
       lastUpdate = System.currentTimeMillis()
-
-      if(System.currentTimeMillis() - lastLogUpdate >= 3000) {
-        logger.info(f"$label: Throughput rate is $rate%.1f")
-        lastLogUpdate = System.currentTimeMillis()
-      }
     }
+
+    if(System.currentTimeMillis() - lastLogUpdate >= 2000) {
+      logger.info(f"$label: Throughput rate is $rate%.1f")
+      lastLogUpdate = System.currentTimeMillis()
+    }
+
     rate
   }
 
