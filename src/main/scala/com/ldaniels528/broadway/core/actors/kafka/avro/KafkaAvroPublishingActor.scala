@@ -10,7 +10,7 @@ import com.ldaniels528.trifecta.io.kafka.{Broker, KafkaPublisher}
 import org.apache.avro.generic.GenericRecord
 import org.slf4j.LoggerFactory
 
-import scala.util.{Failure, Success, Try}
+import scala.util.{Failure, Success}
 
 /**
  * Kafka-Avro Publishing Actor
@@ -33,18 +33,16 @@ class KafkaAvroPublishingActor(topic: String, brokers: String) extends Actor {
   }
 
   private def publish(topic: String, key: Array[Byte], message: Array[Byte], attempts: Int = 1) {
-    Try {
-      publisher.publish(topic, key, message)
-    } match {
+    publisher.publish(topic, key, message) match {
       case Success(_) =>
       case Failure(e: java.net.ConnectException) =>
         if (attempts < 3) {
-          Thread.sleep(10000)
+          Thread.sleep(attempts * 5000)
           publish(topic, key, message, attempts + 1)
         }
-        else logger.error(s"Failed ($attempts times) to get a connection to publish message", e)
+        else logger.error(s"Failed ($attempts times) to get a connection to publish message: ${e.getMessage}")
       case Failure(e) =>
-        logger.error(s"Failed to publish message", e)
+        logger.error(s"Failed to publish message: ${e.getMessage}")
     }
   }
 
