@@ -40,7 +40,7 @@ class KafkaAvroPublishingActor(topic: String, brokers: String) extends Actor {
           Thread.sleep(attempts * 5000)
           publish(topic, key, message, attempts + 1)
         }
-        else logger.error(s"Failed ($attempts times) to get a connection to publish message: ${e.getMessage}")
+        else logger.error(s"Failed ($attempts times) to get a connection to publish message")
       case Failure(e) =>
         logger.error(s"Failed to publish message: ${e.getMessage}")
     }
