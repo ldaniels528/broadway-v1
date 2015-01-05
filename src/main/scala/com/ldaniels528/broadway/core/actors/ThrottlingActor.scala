@@ -10,12 +10,12 @@ import scala.language.postfixOps
  * Throttling Actor
  * @author Lawrence Daniels <lawrence.daniels@gmail.com>
  */
-class ThrottlingActor(host: BWxActorRef, rateLimit: Double) extends Actor {
+class ThrottlingActor(host: BWxActorRef, rateLimit: Double, enabled: Boolean = true) extends Actor {
   private val throttlePerMessage = Math.max(1000d / rateLimit, 1).toLong
 
   override def receive = {
     case message =>
-      Thread.sleep(throttlePerMessage)
+      if(enabled) Thread.sleep(throttlePerMessage)
       host ! message
   }
 
