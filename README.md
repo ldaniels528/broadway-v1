@@ -7,8 +7,8 @@ Broadway is a distributed actor-based processing server, and is optimized for hi
 <a href="http://storm.apache.org/" target="new_window">Apache Storm</a> is a powerful and flexible distributed processing engine,
 which is usually fed by a message-oriented middleware solution (like <a href="http://kafka.apache.org/" target="new_window">Apache Kafka</a>
 or <a href="https://github.com/twitter/kestrel" target="new_window">Twitter Kestrel</a>). The challenge that I've identified,
-is that organizations usually have to build a robust homegrown solution for the high-speed data/file ingestion into
-Kafka or Kestrel. I've built Broadway to help provide a solution to that challenge.
+is that organizations usually have to build a homegrown solution for the high-speed data/file ingestion into Kafka or Kestrel,
+which distracts them from their core focus. I've built Broadway to help provide a solution to that challenge.
 
 ## About Broadway
 
