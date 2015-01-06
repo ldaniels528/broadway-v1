@@ -12,6 +12,12 @@ class RandomAccessFileResource(val path: String) {
   private val file = new File(path).getCanonicalFile
   private val raf = new RandomAccessFile(file, "rw")
 
+  def read(limit: Int) = {
+    val buf = new Array[Byte](limit)
+    val count = raf.read(buf)
+    (buf, count)
+  }
+
   /**
    * Writes the given bytes to the underlying file at the given offset
    * @param offset the given offset

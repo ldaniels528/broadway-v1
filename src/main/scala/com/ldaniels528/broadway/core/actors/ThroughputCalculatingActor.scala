@@ -1,8 +1,7 @@
 package com.ldaniels528.broadway.core.actors
 
 import akka.actor.Actor
-import com.ldaniels528.broadway.core.actors.Actors.BWxActorRef
-import com.ldaniels528.broadway.core.actors.Actors.Implicits._
+import com.ldaniels528.broadway.core.actors.Actors._
 import com.ldaniels528.broadway.core.util.ThroughputCalculator
 
 /**

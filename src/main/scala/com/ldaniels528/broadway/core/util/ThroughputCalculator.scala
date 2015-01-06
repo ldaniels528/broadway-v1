@@ -15,7 +15,7 @@ class ThroughputCalculator(listener: Double => Unit) {
     computeRate()
   }
 
-  private def computeRate(): Double = {
+  private def computeRate() {
     val deltaTime = (System.currentTimeMillis() - lastUpdateMillis).toDouble / 1000d
     if (deltaTime >= 1d) {
       val count = messageCount - lastMessageCount
@@ -24,7 +24,6 @@ class ThroughputCalculator(listener: Double => Unit) {
       lastMessageCount = messageCount
       lastUpdateMillis = System.currentTimeMillis()
     }
-    messagesPerSecond
   }
 
 }
