@@ -147,3 +147,67 @@ And an XML file to describe how files will be mapped to the narrative:
 </narrative-config>
 ```
 
+Broadway aims to provide maximum flexibility by offering two paths for deploying narratives; a Java/Scala-based narrative
+class or an XML-based configuration. The following is an example of a simple XML-based narrative:
+
+```xml
+<broadway-etl name="NASDAQ">
+    <template id="NasdaqTemplate">
+        <field id="symbol" type="text"/>
+        <field id="description" type="text"/>
+    </template>
+
+    <template id="ShockTradeTemplate">
+        <field id="symbol" type="text"/>
+        <field id="exchange" type="text"/>
+        <field id="lastTrade" type="double"/>
+        <field id="tradeDate" type="text"/>
+        <field id="tradeTime" type="text"/>
+        <field id="ask" type="double"/>
+        <field id="bid" type="double"/>
+        <field id="change" type="double"/>
+        <field id="changePct" type="double"/>
+        <field id="prevClose" type="double"/>
+        <field id="open" type="double"/>
+        <field id="close" type="double"/>
+        <field id="high" type="double"/>
+        <field id="low" type="double"/>
+        <field id="volume" type="long"/>
+        <field id="marketCap" type="double"/>
+        <field id="errorMessage" type="text"/>
+    </template>
+
+    <service id="YFStockQuoteService"
+             class="com.shocktrade.services.YFStockQuoteService"
+             method="getQuote">
+    </service>
+
+    <!-- The orchestration will set the resource dynamically -->
+    <input-source id="NasdaqSymbolsFile" template="NasdaqTemplate">
+        <device type="file">
+            <path type="dynamic" />
+        </device>
+    </input-source>
+
+    <output-source id="OutputFile" template="ShockTradeTemplate">
+        <device type="file">
+            <path>/Users/ldaniels/nasdaq-flat.txt</path>
+        </device>
+    </output-source>
+
+    <flow input="NasdaqSymbolsFile">
+
+        <invoke service="YFStockQuoteService">
+            <parameters>
+                <param>{{ NasdaqSymbolsFile.symbol }}</param>
+            </parameters>
+
+            <on-response>
+                <write-to device="OutputFile"/>
+            </on-response>
+        </invoke>
+    </flow>
+</broadway-etl>
+```
+
+**NOTE:** XML-based narrative will be available in the next release.
