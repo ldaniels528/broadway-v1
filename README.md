@@ -210,4 +210,4 @@ class or an XML-based configuration. The following is an example of a simple XML
 </broadway-etl>
 ```
 
-**NOTE:** XML-based narrative will be available in the next release.
+**NOTE:** XML-based narrative support will be available in the next release.
