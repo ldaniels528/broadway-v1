@@ -2,6 +2,7 @@ package com.ldaniels528.broadway.core.narrative
 
 import java.util.Properties
 
+import com.ldaniels528.broadway.core.location.{FileLocation, Location}
 import com.ldaniels528.broadway.core.resources._
 import com.ldaniels528.broadway.core.util.XMLHelper._
 import com.ldaniels528.trifecta.util.OptionHelper._
@@ -55,7 +56,7 @@ object NarrativeConfigParser {
   private def parseLocations(topologies: Seq[NarrativeDescriptor], doc: Node) = {
     val tagName = "location"
     (doc \ tagName) map { node =>
-      Location(
+      FileLocation(
         id = node.getAttr(tagName, "id"),
         path = node.getAttr(tagName, "path"),
         feeds = parseFeeds(topologies, node))

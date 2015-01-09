@@ -10,11 +10,4 @@
         <port>9999</port>
     </http>
 
-    <topology class="com.shocktrade.topologies.NASDAQSymbolImportTopology">
-        <feed match="exact">AMEX.txt</feed>
-        <feed match="exact">NASDAQ.txt</feed>
-        <feed match="exact">NYSE.txt</feed>
-        <feed match="exact">OTCBB.txt</feed>
-    </topology>
-
 </broadway>

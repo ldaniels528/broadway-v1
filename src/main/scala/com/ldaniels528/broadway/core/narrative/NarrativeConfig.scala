@@ -2,6 +2,7 @@ package com.ldaniels528.broadway.core.narrative
 
 import java.io.{File, FilenameFilter}
 
+import com.ldaniels528.broadway.core.location.Location
 import com.ldaniels528.broadway.core.resources._
 import org.slf4j.LoggerFactory
 

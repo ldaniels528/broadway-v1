@@ -5,6 +5,7 @@ import java.io.File
 import akka.actor.Actor
 import com.ldaniels528.broadway.BroadwayNarrative
 import com.ldaniels528.broadway.core.actors.Actors._
+import com.ldaniels528.broadway.core.location.{FileLocation, Location}
 import com.ldaniels528.broadway.core.narrative._
 import com.ldaniels528.broadway.core.resources._
 import com.ldaniels528.broadway.core.util.FileHelper._
@@ -47,11 +48,14 @@ class BroadwayServer(config: ServerConfig) {
 
     // setup listeners for all configured locations
     topologyConfigs foreach { tc =>
-      tc.locations foreach { location =>
-        location.toFile foreach { directory =>
-          // watch the "incoming" directory for processing files
-          fileWatcher.listenForFiles(directory)(handleIncomingFile(location, _))
-        }
+
+      // watch the "incoming" directories for processing files
+      tc.locations foreach {
+        case location@FileLocation(id, path, feeds) =>
+          fileWatcher.listenForFiles(directory = new File(path))(handleIncomingFile(location, _))
+
+        case location =>
+          logger.warn(s"Listening is not supported by location '${location.id}'")
       }
     }
 
