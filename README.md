@@ -147,11 +147,12 @@ And an XML file to describe how files will be mapped to the narrative:
 </narrative-config>
 ```
 
-Broadway aims to provide maximum flexibility by offering two paths for deploying narratives; a Java/Scala-based narrative
-class or an XML-based configuration. The following is an example of a simple XML-based narrative:
+Broadway aims to provide maximum flexibility by offering two paths for deploying ETL processes in narratives;
+a Java/Scala-based ETL class or an XML-based ETL configuration. The following is an example of a simple XML-based
+ETL process:
 
 ```xml
-<broadway-etl name="NASDAQ">
+<etl-config name="NASDAQ">
     <template id="NasdaqTemplate">
         <field id="symbol" type="text"/>
         <field id="description" type="text"/>
@@ -207,7 +208,7 @@ class or an XML-based configuration. The following is an example of a simple XML
             </on-response>
         </invoke>
     </flow>
-</broadway-etl>
+</etl-config>
 ```
 
-**NOTE:** XML-based narrative support will be available in the next release.
+**NOTE:** XML-based ETL support will be available in the next release.
