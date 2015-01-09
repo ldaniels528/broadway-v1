@@ -52,6 +52,9 @@ class FileMonitor(system: ActorSystem) {
     path.register(watcher, StandardWatchEventKinds.ENTRY_CREATE)
     logger.info(s"Watching for new files in '${directory.getAbsolutePath}'...")
 
+    // process any files that exist on startup
+    processDirectory(directory, callback)
+
     // retrieve the next watch key
     Future(watcher.take()) map { watchKey =>
       system.scheduler.schedule(initialDelay = 0 seconds, interval = 1 second) {
@@ -66,9 +69,7 @@ class FileMonitor(system: ActorSystem) {
                 logger.info(s"Waiting to consume '${file.getName}' (${directory.getAbsolutePath})...")
 
                 // register to be notified when the file is ready for consumption
-                notifyWhenReady(file)(file => Future {
-                  callback(file); ()
-                })
+                processFile(file, callback)
               }
             }
           }
@@ -76,6 +77,32 @@ class FileMonitor(system: ActorSystem) {
         ()
       }
     }
+  }
+
+  /**
+   * Recursively schedules all files found in the given directory for processing
+   * @param directory the given directory
+   */
+  private def processDirectory(directory: File, callback: File => Unit) {
+    Option(directory.listFiles) foreach {
+      _ foreach {
+        case f if f.isFile => processFile(f, callback)
+        case d if d.isDirectory => processDirectory(d, callback)
+        case _ =>
+      }
+    }
+  }
+
+  /**
+   * Schedules the given file for processing via the given callback function
+   * @param file he given file
+   * @param callback the given callback function
+   */
+  private def processFile(file: File, callback: File => Unit) = {
+    notifyWhenReady(file)(file => Future {
+      callback(file)
+      ()
+    })
   }
 
   /**
