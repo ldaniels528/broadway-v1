@@ -130,7 +130,7 @@ trait KafkaConstants {
 }
 ```
 
-And an XML file to describe how files will be mapped to the narrative:
+And the narrative configuration is an XML file that describes how file feeds are mapped to narratives:
 
 ```xml
 <narrative-config>
@@ -147,9 +147,9 @@ And an XML file to describe how files will be mapped to the narrative:
 </narrative-config>
 ```
 
-Broadway aims to provide maximum flexibility by offering two paths for deploying ETL processes in narratives;
-a Java/Scala-based ETL class or an XML-based ETL configuration. The following is an example of a simple XML-based
-ETL process:
+Broadway aims to provide maximum flexibility by offering two paths for defining narratives within a narrative configuration;
+a Java/Scala-based narrative class or an XML-based narrative definition. The following is an example of a simple XML-based
+narrative definition:
 
 ```xml
 <etl-config name="NASDAQ">
@@ -211,4 +211,4 @@ ETL process:
 </etl-config>
 ```
 
-**NOTE:** XML-based ETL support will be available in the next release.
+**NOTE:** XML-based narrative definition support will be available in the next release.
