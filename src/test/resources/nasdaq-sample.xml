@@ -1,0 +1,45 @@
+<?xml version="1.0" ?>
+<production name="NASDAQ Import">
+
+    <properties id="KafkaProps">
+        <property key="topic" value="shocktrade.quotes.yahoo.avro" />
+        <property key="brokers" value="dev501:9091,dev501:9092,dev501:9093,dev501:9094,dev501:9095,dev501:9096" />
+    </properties>
+
+    <narrative id="QuoteImportNarrative" class="com.shocktrade.topologies.NASDAQSymbolImportNarrative" properties-ref="KafkaProps" />
+
+    <narrative id="EodDataImportNarrative" class="com.shocktrade.topologies.EODDATAImportNarrative" properties-ref="KafkaProps" />
+
+    <narrative id="EodDataImportNarrative2" class="com.shocktrade.topologies.EODDATAImportNarrative">
+        <property key="topic" value="shocktrade.quotes.yahoo.avro" />
+        <property key="brokers" value="dev501:9091,dev501:9092,dev501:9093,dev501:9094,dev501:9095,dev501:9096" />
+    </narrative>
+
+    <location id="NASDAQ" path="/Users/ldaniels/broadway/incoming/nasdaq">
+        <feed match="exact" name="AMEX.txt" narrative-ref="QuoteImportNarrative" />
+        <feed match="exact" name="NASDAQ.txt" narrative-ref="QuoteImportNarrative" />
+        <feed match="exact" name="NYSE.txt" narrative-ref="QuoteImportNarrative" />
+        <feed match="exact" name="OTCBB.txt" narrative-ref="QuoteImportNarrative" />
+    </location>
+
+    <location id="NASDAQ2   " path="/Users/ldaniels/broadway/incoming/dependencies">
+        <feed match="exact" name="AMEX.txt" narrative-ref="QuoteImportNarrative">
+            <depends on="NYSE.txt" />
+        </feed>
+        <feed match="exact" name="NASDAQ.txt" narrative-ref="QuoteImportNarrative" />
+        <feed match="exact" name="NYSE.txt" narrative-ref="QuoteImportNarrative">
+            <depends on="NASDAQ.txt" />
+        </feed>
+        <feed match="exact" name="OTCBB.txt" narrative-ref="QuoteImportNarrative">
+            <depends on="AMEX.txt" />
+        </feed>
+    </location>
+
+    <location id="EODDATA" path="/Users/ldaniels/broadway/incoming/tradingHistory">
+        <feed name="AMEX(.*)[.]txt" match="regex" narrative-ref="EodDataImportNarrative" />
+        <feed name="NASDAQ(.*)[.]txt" match="regex" narrative-ref="EodDataImportNarrative" />
+        <feed name="NYSE(.*)[.]txt" match="regex" narrative-ref="EodDataImportNarrative" />
+        <feed name="OTCBB(.*)[.]txt" match="regex" narrative-ref="EodDataImportNarrative" />
+    </location>
+
+</production>

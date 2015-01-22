@@ -16,6 +16,7 @@ import scala.util.Try
 
 /**
  * File Monitor
+ * @param system the given [[ActorSystem]]
  * @author Lawrence Daniels <lawrence.daniels@gmail.com>
  */
 class FileMonitor(system: ActorSystem) {

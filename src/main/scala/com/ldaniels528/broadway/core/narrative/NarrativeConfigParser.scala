@@ -2,7 +2,7 @@ package com.ldaniels528.broadway.core.narrative
 
 import java.util.Properties
 
-import com.ldaniels528.broadway.core.location.{FileLocation, Location}
+import com.ldaniels528.broadway.core.location.{FileLocation, HttpLocation, Location}
 import com.ldaniels528.broadway.core.resources._
 import com.ldaniels528.broadway.core.util.XMLHelper._
 import com.ldaniels528.trifecta.util.OptionHelper._
@@ -53,13 +53,18 @@ object NarrativeConfigParser {
    * @param doc the given XML node
    * @return a [[Seq]] of [[Location]]
    */
-  private def parseLocations(topologies: Seq[NarrativeDescriptor], doc: Node) = {
+  private def parseLocations(topologies: Seq[NarrativeDescriptor], doc: Node): Seq[Location] = {
     val tagName = "location"
     (doc \ tagName) map { node =>
-      FileLocation(
-        id = node.getAttr(tagName, "id"),
-        path = node.getAttr(tagName, "path"),
-        feeds = parseFeeds(topologies, node))
+      // get the ID, path and feeds
+      val id = node.getAttr(tagName, "id")
+      val path = node.getAttr(tagName, "path")
+      val feeds = parseFeeds(topologies, node)
+
+      path match {
+        case url if url.startsWith("http:") => HttpLocation(id, url, feeds)
+        case _ => FileLocation(id, path, feeds)
+      }
     }
   }
 

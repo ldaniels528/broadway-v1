@@ -13,6 +13,7 @@ case class FeedDescriptor(name: String,
                           matching: String,
                           dependencies: Seq[FeedDescriptor] = Nil,
                           narrative: Option[NarrativeDescriptor] = None) {
+  // get the unique ID
   val uuid = UUID.randomUUID().toString
 
   /**

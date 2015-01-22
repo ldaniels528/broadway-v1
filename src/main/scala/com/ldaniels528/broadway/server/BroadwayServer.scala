@@ -1,15 +1,16 @@
 package com.ldaniels528.broadway.server
 
 import java.io.File
+import java.net.URL
 
 import akka.actor.Actor
 import com.ldaniels528.broadway.BroadwayNarrative
 import com.ldaniels528.broadway.core.actors.Actors._
-import com.ldaniels528.broadway.core.location.{FileLocation, Location}
+import com.ldaniels528.broadway.core.location.{FileLocation, HttpLocation, Location}
 import com.ldaniels528.broadway.core.narrative._
 import com.ldaniels528.broadway.core.resources._
 import com.ldaniels528.broadway.core.util.FileHelper._
-import com.ldaniels528.broadway.core.util.FileMonitor
+import com.ldaniels528.broadway.core.util.{FileMonitor, HttpMonitor}
 import com.ldaniels528.broadway.server.BroadwayServer._
 import com.ldaniels528.trifecta.util.OptionHelper._
 import org.slf4j.LoggerFactory
@@ -27,7 +28,8 @@ class BroadwayServer(config: ServerConfig) {
   private implicit val system = config.system
   private implicit val ec = system.dispatcher
   private implicit val rt = new NarrativeRuntime()
-  private val fileWatcher = new FileMonitor(system)
+  private val fileMonitor = new FileMonitor(system)
+  private val httpMonitor = new HttpMonitor(system)
   private val reported = TrieMap[String, Throwable]()
 
   // create the system actors
@@ -50,30 +52,48 @@ class BroadwayServer(config: ServerConfig) {
     topologyConfigs foreach { tc =>
 
       // watch the "incoming" directories for processing files
-      tc.locations foreach {
-        case location@FileLocation(id, path, feeds) =>
-          fileWatcher.listenForFiles(directory = new File(path))(handleIncomingFile(location, _))
+      tc.locations foreach { location =>
+        logger.info(s"Configuring location ${location.id}...")
+        location match {
+          case site@FileLocation(id, path, feeds) =>
+            fileMonitor.listenForFiles(directory = new File(path))(handleIncomingFile(site, _))
 
-        case location =>
-          logger.warn(s"Listening is not supported by location '${location.id}'")
+          // watch for HTTP files
+          case site@HttpLocation(id, path, feeds) =>
+            val urls = feeds.map(f => s"${site.path}${f.name}")
+            httpMonitor.listenForResources(urls)(handleIncomingResource(site, _))
+
+          case site =>
+            logger.warn(s"Listening is not supported by location '${site.id}'")
+        }
       }
     }
 
     // watch the "completed" directory for archiving files
-    fileWatcher.listenForFiles(config.getCompletedDirectory)(archivingActor ! _)
+    fileMonitor.listenForFiles(config.getCompletedDirectory)(archivingActor ! _)
     ()
   }
 
   /**
    * Handles the the given incoming file
+   * @param directory the given [[FileLocation]]
    * @param file the given incoming [[File]]
    */
-  private def handleIncomingFile(location: Location, file: File) {
-    location.findFeed(file.getName) match {
+  private def handleIncomingFile(directory: Location, file: File) {
+    directory.findFeed(file.getName) match {
       case Some(feed) => processFeed(feed, file)
-      case None => noMappedProcess(location, file)
+      case None => noMappedProcess(directory, file)
     }
     ()
+  }
+
+  /**
+   * Handles the the given incoming URL
+   * @param site the given [[HttpLocation]]
+   * @param url the given incoming [[URL]]
+   */
+  private def handleIncomingResource(site: HttpLocation, url: URL) {
+    logger.info(s"url: $url")
   }
 
   /**
@@ -129,7 +149,7 @@ class BroadwayServer(config: ServerConfig) {
  * @author Lawrence Daniels <lawrence.daniels@gmail.com>
  */
 object BroadwayServer {
-  private val Version = "0.1"
+  private val Version = "0.2"
 
   /**
    * Enables command line execution
