@@ -48,6 +48,11 @@ the end of March 2015.
 * [Scala 2.10.4] (http://scala-lang.org/download/)
 * [SBT 0.13+] (http://www.scala-sbt.org/download.html)
 
+#### GitHub/ldaniels528 Dependencies
+
+* [Trifecta 0.18.5] (https://github.com/ldaniels528/trifecta)
+* [Tabular 0.1.0] (https://github.com/ldaniels528/tabular)
+
 ## How it works
 
 Broadway provides a construct called a narrative (e.g. story), which describes the flow for a single processing event.
