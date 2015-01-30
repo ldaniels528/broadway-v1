@@ -29,7 +29,7 @@ case class ServerConfig(props: java.util.Properties, httpInfo: Option[HttpInfo])
    * @tparam T the actor type
    * @return an [[akka.actor.ActorRef]]
    */
-  def addActor[T <: Actor : ClassTag](parallelism: Int = 1): BWxActorRef = {
+  def addActor[T <: Actor : ClassTag](parallelism: Int): BWxActorRef = {
     actorClosure((1 to parallelism) map (_ => system.actorOf(Props[T]())))
   }
 

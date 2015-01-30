@@ -29,6 +29,8 @@ object ProxyServer {
 
     val endPoints = args.toList.sliding(3, 3) map {
       case aSrcPort :: aDestHost :: aDestPort :: Nil => EndPoint(aSrcPort.toInt, aDestHost, aDestPort.toInt)
+      case elems =>
+        throw new IllegalStateException(s"Illegal host format - ${elems.mkString(" ")}")
     }
 
     execute(endPoints)

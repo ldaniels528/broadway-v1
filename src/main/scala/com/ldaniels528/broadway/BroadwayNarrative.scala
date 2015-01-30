@@ -22,7 +22,7 @@ class BroadwayNarrative(val config: ServerConfig, val name: String) {
    * @tparam T the actor type
    * @return an actor reference
    */
-  def addActor[T <: Actor : ClassTag](parallelism: Int = 1) = config.addActor[T](parallelism)
+  def addActor[T <: Actor : ClassTag](parallelism: Int) = config.addActor[T](parallelism)
 
   /**
    * Adds a new actor to the narrative
