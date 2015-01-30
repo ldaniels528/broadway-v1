@@ -51,7 +51,7 @@ libraryDependencies ++= Seq(
 libraryDependencies ++= Seq(
   "com.twitter" %% "bijection-core" % "0.7.2",
   "com.twitter" %% "bijection-avro" % "0.7.2",
-  "com.typesafe.akka" %% "akka-actor" % "2.3.8",
+  "com.typesafe.akka" %% "akka-actor" % "2.3.9",
   "net.liftweb" %% "lift-json" % "3.0-M3",
   "org.apache.avro" % "avro" % "1.7.7",
   "org.apache.curator" % "curator-framework" % "2.7.1",
