@@ -10,7 +10,7 @@ import scala.collection.mutable
 import scala.language.postfixOps
 
 /**
- * MySQL Catalog to Slick Class Generator
+ * MySQL Catalog to Slick Model Generator
  * @author lawrence.daniels@gmail.com
  */
 object MySQLtoSlickGenerator {
@@ -35,44 +35,41 @@ object MySQLtoSlickGenerator {
   def main(args: Array[String]): Unit = {
     args.toList match {
       case url :: catalog :: configPath :: outputPath :: Nil =>
-        val classes = extractClassInfo(catalog, getConnection(url, configPath))
-        generateClasses(catalog, classes, new File(outputPath))
+        val classes = extractModelClass(catalog, getConnection(url, configPath))
+        generateSources(classes, new File(outputPath))
       case _ =>
         throw new IllegalArgumentException(s"${getClass.getName} <url> <catalog> <configFilePath> <outputPath>")
     }
   }
 
   /**
-   * Generates the Slick database model classes
-   * @param catalog the given database catalog
+   * Generates the Slick model source files
    * @param classes the given class information instances
    * @param outputDirectory the given output directory
    */
-  def generateClasses(catalog: String, classes: Seq[ClassInfo], outputDirectory: File): Unit = {
+  def generateSources(classes: Seq[ModelClass], outputDirectory: File): Unit = {
     classes foreach { classInfo =>
       // create the package directory
-      val packageName = catalog.toLowerCase
-      val packageDirectory = new File(outputDirectory, packageName)
+      val packageDirectory = new File(outputDirectory, classInfo.packageName)
       if (!packageDirectory.exists()) packageDirectory.mkdirs()
 
       // create a source file
       val sourceFile = new File(packageDirectory, s"${classInfo.className}.scala")
 
       // generate the source file
-      generateClass(sourceFile, packageName, classInfo)
+      generateSource(classInfo, sourceFile)
     }
     logger.info(s"${classes.size} source file(s) generated.")
   }
 
   /**
    * Generates a Slick model source file
-   * @param sourceFile the given source file destination
-   * @param packageName the given package name
    * @param classInfo the given class information instance
+   * @param sourceFile the given source file destination
    * @see http://stackoverflow.com/questions/22626328/hello-world-example-for-slick-2-0-with-mysql
    */
-  def generateClass(sourceFile: File, packageName: String, classInfo: ClassInfo): Unit = {
-    import classInfo.{className, fields, tableName}
+  def generateSource(classInfo: ModelClass, sourceFile: File): Unit = {
+    import classInfo.{className, fields, packageName, tableName}
 
     // generate the import statements
     var imports = List("scala.slick.driver.MySQLDriver.simple._")
@@ -107,8 +104,9 @@ object MySQLtoSlickGenerator {
    * Generates entity classes foreach table within the given catalog (database)
    * @param catalog the given catalog (database)
    * @param conn the given [[Connection]]
+   * @return a collection of model classes
    */
-  def extractClassInfo(catalog: String, conn: Connection): Seq[ClassInfo] = {
+  def extractModelClass(catalog: String, conn: Connection): Seq[ModelClass] = {
     try {
       // get the database metadata
       val metadata = conn.getMetaData
@@ -135,11 +133,11 @@ object MySQLtoSlickGenerator {
             ordinalPosition <- column.get("ORDINAL_POSITION") map (_.asInstanceOf[Int])
             nullable <- column.get("IS_NULLABLE") map (_ == "YES")
           //_ = logger.info(s"columns: ${column.toSeq.filterNot{ case (k,v) => v == null }}")
-          } yield FieldInfo(columnName, columnName.toSnakeCase, typeName.toScalaType(nullable), nullable, columnSize, ordinalPosition)
+          } yield ModelField(columnName, columnName.toSnakeCase, typeName.toScalaType(nullable), nullable, columnSize, ordinalPosition)
         }
 
         // create a class info instance with sorted fields
-        ClassInfo(tableName, className, fields.sortBy(_.ordinalPosition))
+        ModelClass(tableName, catalog.toLowerCase, className, fields.sortBy(_.ordinalPosition))
       }
     }
     finally {
@@ -176,15 +174,16 @@ object MySQLtoSlickGenerator {
   }
 
   /**
-   * Represents Scala-Slick class information
+   * Represents Scala-Slick table / model class
    * @param tableName the name of the table being represented
    * @param className the name of the class being represented
+   * @param packageName the name of the package the model class resides within
    * @param fields the database columns / class member variables
    */
-  case class ClassInfo(tableName: String, className: String, fields: Seq[FieldInfo])
+  case class ModelClass(tableName: String, packageName: String, className: String, fields: Seq[ModelField])
 
   /**
-   * Represents a Scala-Slick table column / member variable
+   * Represents a Scala-Slick table column / model field
    * @param columnName the name of the column
    * @param fieldName the name of the member variable
    * @param typeName the Scala type name (e.g. "Int")
@@ -192,7 +191,7 @@ object MySQLtoSlickGenerator {
    * @param columnSize the defined column size
    * @param ordinalPosition the original position of the column within the table
    */
-  case class FieldInfo(columnName: String, fieldName: String, typeName: String, nullable: Boolean, columnSize: Int, ordinalPosition: Int)
+  case class ModelField(columnName: String, fieldName: String, typeName: String, nullable: Boolean, columnSize: Int, ordinalPosition: Int)
 
   /**
    * ResultSet Conversions

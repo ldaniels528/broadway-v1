@@ -2,7 +2,7 @@ package com.ldaniels528.broadway.core.jdbc
 
 import java.io.File
 
-import com.ldaniels528.broadway.core.jdbc.MySQLtoSlickGenerator.{ClassInfo, FieldInfo}
+import com.ldaniels528.broadway.core.jdbc.MySQLtoSlickGenerator.{ModelClass, ModelField}
 import org.scalatest.mock.MockitoSugar
 import org.scalatest.{FeatureSpec, GivenWhenThen}
 import org.scalatest.Matchers._
@@ -26,15 +26,15 @@ class MySQLtoSlickGeneratorSpec() extends FeatureSpec with GivenWhenThen with Mo
 
       And("a collection of classes information instances")
       val classes = Seq(
-        ClassInfo("people", "Person", Seq(
-          FieldInfo(columnName = "person_id", fieldName = "personId", typeName = "Long", nullable = false, columnSize = 18, ordinalPosition = 1),
-          FieldInfo(columnName = "first_name", fieldName = "firstName", typeName = "String", nullable = false, columnSize = 65, ordinalPosition = 2),
-          FieldInfo(columnName = "last_name", fieldName = "lastName", typeName = "String", nullable = false, columnSize = 65, ordinalPosition = 3)
+        ModelClass("people", "dummy", "Person", Seq(
+          ModelField(columnName = "person_id", fieldName = "personId", typeName = "Long", nullable = false, columnSize = 18, ordinalPosition = 1),
+          ModelField(columnName = "first_name", fieldName = "firstName", typeName = "String", nullable = false, columnSize = 65, ordinalPosition = 2),
+          ModelField(columnName = "last_name", fieldName = "lastName", typeName = "String", nullable = false, columnSize = 65, ordinalPosition = 3)
         ))
       )
 
       When("the classes are generated")
-      MySQLtoSlickGenerator.generateClasses("dummy", classes, outputDirectory)
+      MySQLtoSlickGenerator.generateSources(classes, outputDirectory)
 
       Then("the output file's content should match the expected result")
       outputDirectory.listFiles().length shouldBe 1
