@@ -15,7 +15,7 @@ class NarrativeConfigParserSpec() extends FeatureSpec with GivenWhenThen with Mo
 
   feature("Topology configurations can be parsed from a classpath resource") {
     scenario("Parse a Narrative configuration from a classpath resource") {
-      Given("a the classpath resource")
+      Given("a classpath resource")
       val resource = ClasspathResource("/shocktrade-nasdaq.xml")
 
       When("the narrative configuration is parsed")
