@@ -40,7 +40,12 @@ object MySQLtoSlickGenerator {
         throw new IllegalArgumentException(s"${getClass.getName} <configPath> <outputPath>")
     }
   }
-  
+
+  /**
+   * Exports all tables within a catalog via JDBC as TypeSafe Slick model source files to the given output path
+   * @param configPath the given JDBC configuration properties
+   * @param outputPath the given output path
+   */
   def exportAsModels(configPath: String, outputPath: String): Unit = {
     generateSources(extractModels(configPath), new File(outputPath))
   }
