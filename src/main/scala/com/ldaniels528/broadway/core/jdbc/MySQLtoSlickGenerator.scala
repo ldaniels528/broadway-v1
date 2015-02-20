@@ -43,53 +43,64 @@ object MySQLtoSlickGenerator {
   }
 
   /**
-   * Generates the Slick database classes
+   * Generates the Slick database model classes
    * @param catalog the given database catalog
-   * @param classes the given [[ClassInfo]] instances
+   * @param classes the given class information instances
    * @param outputDirectory the given output directory
-   * @see http://stackoverflow.com/questions/22626328/hello-world-example-for-slick-2-0-with-mysql
    */
   def generateClasses(catalog: String, classes: Seq[ClassInfo], outputDirectory: File): Unit = {
     classes foreach { classInfo =>
-      import classInfo.{className, fields, tableName}
-
       // create the package directory
       val packageName = catalog.toLowerCase
       val packageDirectory = new File(outputDirectory, packageName)
       if (!packageDirectory.exists()) packageDirectory.mkdirs()
 
       // create a source file
-      val classFile = new File(packageDirectory, s"$className.scala")
-      logger.info(s"Generating '${classFile.getAbsolutePath}'...")
+      val sourceFile = new File(packageDirectory, s"${classInfo.className}.scala")
 
-      // generate the import statements
-      var imports = List("scala.slick.driver.MySQLDriver.simple._")
-      if (classInfo.fields.exists(t => t.typeName == "Date" || t.typeName == "Option[Date]")) imports = "java.sql.Date" :: imports
-
-      // generate the Slick column functions
-      val functions = {
-        fields.map(f => s"""def ${f.fieldName} = column[${f.typeName}]("${f.columnName}")""") ++
-          Seq(s"def * = (${fields.map(_.fieldName).mkString(", ")})")
-      }.indent(tabs = 2)
-
-      // generate the source code
-      new BufferedOutputStream(new FileOutputStream(classFile), 8192) use { out =>
-      out.write(
-          s"""|package $packageName
-              |
-              |${imports map (i => s"import $i\n") mkString}
-              |case class $className(${fields.map(f => s"${f.fieldName}: ${f.typeName}").mkString(", ")})
-              |
-              |object $className {
-              |
-              |  class ${className.toPlural}(tag: Tag) extends Table[(${fields.map(_.typeName).mkString(", ")})](tag, "$tableName") {
-              |$functions
-              |  }
-              |}
-              |""".stripMargin('|').trim.getBytes("UTF-8"))
-      }
+      // generate the source file
+      generateClass(sourceFile, packageName, classInfo)
     }
     logger.info(s"${classes.size} source file(s) generated.")
+  }
+
+  /**
+   * Generates a Slick model source file
+   * @param sourceFile the given source file destination
+   * @param packageName the given package name
+   * @param classInfo the given class information instance
+   * @see http://stackoverflow.com/questions/22626328/hello-world-example-for-slick-2-0-with-mysql
+   */
+  def generateClass(sourceFile: File, packageName: String, classInfo: ClassInfo): Unit = {
+    import classInfo.{className, fields, tableName}
+
+    // generate the import statements
+    var imports = List("scala.slick.driver.MySQLDriver.simple._")
+    if (classInfo.fields.exists(t => t.typeName == "Date" || t.typeName == "Option[Date]")) imports = "java.sql.Date" :: imports
+
+    // generate the Slick column functions
+    val functions = {
+      fields.map(f => s"""def ${f.fieldName} = column[${f.typeName}]("${f.columnName}")""") ++
+        Seq(s"def * = (${fields.map(_.fieldName).mkString(", ")})")
+    }.indent(tabs = 2)
+
+    // generate the source code
+    logger.info(s"Generating '${sourceFile.getAbsolutePath}'...")
+    new BufferedOutputStream(new FileOutputStream(sourceFile), 8192) use { out =>
+      out.write(
+        s"""|package $packageName
+            |
+            |${imports map (i => s"import $i\n") mkString}
+            |case class $className(${fields.map(f => s"${f.fieldName}: ${f.typeName}").mkString(", ")})
+            |
+            |object $className {
+            |
+            |  class ${className.toPlural}(tag: Tag) extends Table[(${fields.map(_.typeName).mkString(", ")})](tag, "$tableName") {
+            |$functions
+            |  }
+            |}
+            |""".stripMargin('|').trim.getBytes("UTF-8"))
+    }
   }
 
   /**
