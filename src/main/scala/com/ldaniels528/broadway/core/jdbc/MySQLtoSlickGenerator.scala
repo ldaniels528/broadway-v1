@@ -18,6 +18,7 @@ object MySQLtoSlickGenerator {
   private val TypeNameMapping = Map(
     "BIGINT" -> "Long",
     "BIT" -> "Boolean",
+    "BLOB" -> "Array[Byte]",
     "DATETIME" -> "Date",
     "DOUBLE" -> "Double",
     "INT" -> "Int",
@@ -25,8 +26,7 @@ object MySQLtoSlickGenerator {
     "TEXT" -> "String",
     "TIMESTAMP" -> "Date",
     "VARBINARY" -> "Array[Byte]",
-    "VARCHAR" -> "String"
-  )
+    "VARCHAR" -> "String")
 
   /**
    * Main entry point
@@ -40,6 +40,51 @@ object MySQLtoSlickGenerator {
       case _ =>
         throw new IllegalArgumentException(s"${getClass.getName} <url> <catalog> <configFilePath> <outputPath>")
     }
+  }
+
+  /**
+   * Generates the Slick database classes
+   * @param catalog the given database catalog
+   * @param classes the given [[ClassInfo]] instances
+   * @param outputDirectory the given output directory
+   * @see http://stackoverflow.com/questions/22626328/hello-world-example-for-slick-2-0-with-mysql
+   */
+  def generateClasses(catalog: String, classes: Seq[ClassInfo], outputDirectory: File): Unit = {
+    classes foreach { classInfo =>
+      import classInfo.{className, fields, tableName}
+
+      // create the package directory
+      val packageName = catalog.toLowerCase
+      val packageDirectory = new File(outputDirectory, packageName)
+      if(!packageDirectory.exists()) packageDirectory.mkdirs()
+
+      // create a source file
+      val classFile = new File(packageDirectory, s"$className.scala")
+      logger.info(s"Generating '${classFile.getAbsolutePath}'...")
+
+      // generate the Slick column functions
+      val functions = {
+        fields.map(f => s"""def ${f.fieldName} = column[${f.typeName}]("${f.columnName}")""") ++
+          Seq(s"def * = (${fields.map(_.fieldName).mkString(", ")})")
+      }.indent
+
+      // generate the source code
+      new BufferedOutputStream(new FileOutputStream(classFile), 8192) use { out =>
+        out.write(
+          s"""|package $packageName
+              |
+              |import java.sql.Date
+              |import scala.slick.driver.MySQLDriver.simple._
+              |
+              |case class $className(${fields.map(f => s"${f.fieldName}: ${f.typeName}").mkString(", ")})
+              |
+              |class ${className.toPlural}(tag: Tag) extends Table[(${fields.map(_.typeName).mkString(", ")})](tag, "$tableName") {
+              |$functions
+              |}
+              |""".stripMargin('|').trim.getBytes("UTF-8"))
+      }
+    }
+    logger.info(s"${classes.size} source file(s) generated.")
   }
 
   /**
@@ -64,7 +109,7 @@ object MySQLtoSlickGenerator {
 
       // transform the table mappings into class information
       tables map { tableName =>
-        val className = toCamelCase(tableName)
+        val className = tableName.toCamelCase
         val columns = metadata.getColumns(catalog, null, tableName, null).toMap
         val fields = columns flatMap { column =>
           for {
@@ -73,7 +118,7 @@ object MySQLtoSlickGenerator {
             columnSize <- column.get("COLUMN_SIZE") map (_.asInstanceOf[Int])
             sqlDataType <- column.get("SQL_DATA_TYPE") map (_.asInstanceOf[Int])
             ordinalPosition <- column.get("ORDINAL_POSITION") map (_.asInstanceOf[Int])
-          } yield FieldInfo(columnName, toSnakeCase(columnName), toScalaType(typeName), sqlDataType, columnSize, ordinalPosition)
+          } yield FieldInfo(columnName, columnName.toSnakeCase, typeName.toScalaType, sqlDataType, columnSize, ordinalPosition)
         }
 
         // create a class info instance with sorted fields
@@ -109,96 +154,9 @@ object MySQLtoSlickGenerator {
 
     if (localFile.exists()) new FileInputStream(resourcePath) use p.load
     else throw new FileNotFoundException(s"File '$resourcePath' not found")
-    logger.info(s"properties = $p")
+    logger.debug(s"Loaded properties: $p")
     p
   }
-
-  /**
-   * Generates the Slick database classes
-   * @param catalog the given database catalog
-   * @param classes the given [[ClassInfo]] instances
-   * @param outputDirectory the given output directory
-   * @see http://stackoverflow.com/questions/22626328/hello-world-example-for-slick-2-0-with-mysql
-   */
-  private def generateClasses(catalog: String, classes: Seq[ClassInfo], outputDirectory: File): Unit = {
-    classes foreach { classInfo =>
-      import classInfo.{className, fields, tableName}
-
-      val packageDirectory = new File(outputDirectory, catalog)
-      if(!packageDirectory.exists()) packageDirectory.mkdirs()
-
-      val classFile = new File(packageDirectory, s"$className.scala")
-      logger.info(s"Generating class '${classFile.getAbsolutePath}'...")
-
-      val functions = fields.map(f => "\t" + s"""def ${f.fieldName} = column[${f.typeName}]("${f.columnName}")""").mkString("\n")
-      val projection = s"\tdef * = (" + fields.map(_.fieldName).mkString(", ") + ")"
-      val classData =
-        s"""|package ${catalog.toLowerCase}
-            |
-            |import java.sql.Date
-            |import scala.slick.driver.MySQLDriver.simple._
-            |
-            |case class $className(${fields.map(f => s"${f.fieldName}: ${f.typeName}").mkString(", ")})
-            |
-            |class ${toPlural(className)}(tag: Tag) extends Table[(${fields.map(_.typeName).mkString(", ")})](tag, "$tableName") {
-            |$functions
-            |$projection
-            |}
-            |""".stripMargin('|').trim
-
-      val out = new BufferedOutputStream(new FileOutputStream(classFile), 8192)
-      out.write(classData.getBytes("UTF-8"))
-      out.flush()
-      out.close()
-    }
-    logger.info("Done.")
-  }
-
-  /**
-   * Returns the plural form of the given noun (e.g. "activity" returns "activities")
-   * @param noun the given singular noun
-   * @return the plural noun
-   */
-  private def toPlural(noun: String): String = {
-    noun match {
-      case s if s.endsWith("y") => s.dropRight(1) + "ies"
-      case s if s.endsWith("s") => s + "es"
-      case s => s + "s"
-    }
-  }
-
-  /**
-   * Converts the given named identifier to camel case (e.g. "TheBigRedBall")
-   * @param name the given named identifier
-   * @return the named identifier as camel case
-   */
-  private def toCamelCase(name: String): String = {
-    name match {
-      case s if s.contains("_") => s.split("[_]") map (s => s.head.toUpper + s.tail) mkString
-      case s => s.head.toUpper + s.tail
-    }
-  }
-
-  /**
-   * Converts the given named identifier to snake case (e.g. "theBigRedBall")
-   * @param name the given named identifier
-   * @return the named identifier as snake case
-   */
-  private def toSnakeCase(name: String): String = {
-    name match {
-      case s if s.contains("_") =>
-        val items = s.split("[_]")
-        (items.head ++ items.tail.map(s => s.head.toUpper + s.tail)) mkString
-      case s => s.head.toLower + s.tail
-    }
-  }
-
-  /**
-   * Returns the given SQL type name as the equivalent Scala type (e.g. "BIGINT" return "Long")
-   * @param typeName the given type name (e.g. "BIGINT")
-   * @return the equivalent Scala type (e.g. "Long")
-   */
-  private def toScalaType(typeName: String): String = TypeNameMapping.getOrElse(typeName, typeName)
 
   /**
    * Represents Scala-Slick class information
@@ -218,7 +176,7 @@ object MySQLtoSlickGenerator {
    * @param ordinalPosition the original position of the column within the table
    */
   case class FieldInfo(columnName: String, fieldName: String, typeName: String, sqlTypeID: Int, columnSize: Int, ordinalPosition: Int)
-
+  
   /**
    * ResultSet Conversions
    * @param rs the given [[ResultSet]]
@@ -247,6 +205,77 @@ object MySQLtoSlickGenerator {
       val metadata = rs.getMetaData
       for (n <- 1 to metadata.getColumnCount) yield metadata.getColumnName(n)
     }
+  }
+
+  /**
+   * String Conversion Utility Functions
+   * @param noun the given host string
+   */
+  implicit class StringConversions(val noun: String) extends AnyVal {
+
+    /**
+     * Returns the plural form of the given noun (e.g. "activity" returns "activities")
+     * @return the plural noun
+     */
+    def toPlural: String = {
+      noun match {
+        case s if s.endsWith("y") => s.dropRight(1) + "ies"
+        case s if s.endsWith("s") => s + "es"
+        case s => s + "s"
+      }
+    }
+
+    /**
+     * Converts the given named identifier to camel case (e.g. "TheBigRedBall")
+     * @return the named identifier as camel case
+     */
+    def toCamelCase: String = {
+      noun match {
+        case s if s.contains("_") => s.split("[_]") map (s => s.head.toUpper + s.tail) mkString
+        case s => s.head.toUpper + s.tail
+      }
+    }
+
+    /**
+     * Converts the given named identifier to snake case (e.g. "theBigRedBall")
+     * @return the named identifier as snake case
+     */
+    def toSnakeCase: String = {
+      noun match {
+        case s if s.contains("_") =>
+          val items = s.split("[_]")
+          (items.head ++ items.tail.map(s => s.head.toUpper + s.tail)) mkString
+        case s => s.head.toLower + s.tail
+      }
+    }
+
+  }
+
+  /**
+   * String Format Conversion Utility Functions
+   * @param lines the given lines of the paragraph to format
+   */
+  implicit class StringFormatConversions(val lines: Seq[String]) extends AnyVal {
+
+    /**
+     * Indents the given lines with a tab and ends each line with a carriage return
+     * @return a string representing the paragraph of lines
+     */
+    def indent: String = lines map('\t' + _) mkString "\n"
+
+  }
+
+  /**
+   * SQL to Scala Type Conversions
+   * @param typeName the given type name
+   */
+  implicit class TypeConversion(val typeName: String) extends AnyVal {
+
+    /**
+     * Returns the given SQL type name as the equivalent Scala type (e.g. "BIGINT" return "Long")
+     * @return the equivalent Scala type (e.g. "Long")
+     */
+    def toScalaType: String = TypeNameMapping.getOrElse(typeName, typeName)
 
   }
 
