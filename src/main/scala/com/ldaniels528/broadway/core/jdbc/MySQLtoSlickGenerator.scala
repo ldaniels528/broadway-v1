@@ -57,7 +57,7 @@ object MySQLtoSlickGenerator {
       logger.info(s"Connected to $productName v$productVersion")
 
       // lookup the defined table types
-      val tableTypes = (metadata.getTableTypes.toMap flatMap (_ map (_._2.toString) toSeq)).toArray
+      val tableTypes = (metadata.getTableTypes.toMap flatMap (_ map (_._2.asInstanceOf[String]) toSeq)).toArray
 
       // lookup all tables within the catalog
       val tables = metadata.getTables(catalog, null, null, tableTypes).toMap flatMap (_.get("TABLE_NAME") map (_.asInstanceOf[String]))
