@@ -49,9 +49,13 @@ libraryDependencies ++= Seq(
 
 // General Dependencies
 libraryDependencies ++= Seq(
+  "com.datastax.cassandra" % "cassandra-driver-core" % "2.1.4",
   "com.twitter" %% "bijection-core" % "0.7.2",
   "com.twitter" %% "bijection-avro" % "0.7.2",
   "com.typesafe.akka" %% "akka-actor" % "2.3.9",
+  "com.typesafe.play" %% "play-ws" % "2.4.0-M2",
+  "com.typesafe.slick" %% "slick" % "2.1.0",
+  "mysql" % "mysql-connector-java" % "5.1.34",
   "net.liftweb" %% "lift-json" % "3.0-M3",
   "org.apache.avro" % "avro" % "1.7.7",
   "org.apache.curator" % "curator-framework" % "2.7.1",
