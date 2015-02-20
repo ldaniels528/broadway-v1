@@ -34,9 +34,11 @@ object MySQLtoSlickGenerator {
    */
   def main(args: Array[String]): Unit = {
     args.toList match {
-      case url :: catalog :: configPath :: Nil => processTables(catalog, getConnection(url, configPath))
+      case url :: catalog :: configPath :: outputPath :: Nil =>
+        val classes = extractClassInfo(catalog, getConnection(url, configPath))
+        generateClasses(catalog, classes, new File(outputPath))
       case _ =>
-        throw new IllegalArgumentException(s"${getClass.getName} <url> <catalog> <configFilePath>")
+        throw new IllegalArgumentException(s"${getClass.getName} <url> <catalog> <configFilePath> <outputPath>")
     }
   }
 
@@ -45,7 +47,7 @@ object MySQLtoSlickGenerator {
    * @param catalog the given catalog (database)
    * @param conn the given [[Connection]]
    */
-  def processTables(catalog: String, conn: Connection) {
+  def extractClassInfo(catalog: String, conn: Connection): Seq[ClassInfo] = {
     try {
       // get the database metadata
       val metadata = conn.getMetaData
@@ -61,7 +63,7 @@ object MySQLtoSlickGenerator {
       val tables = metadata.getTables(catalog, null, null, tableTypes).toMap flatMap (_.get("TABLE_NAME") map (_.asInstanceOf[String]))
 
       // transform the table mappings into class information
-      val classes = tables map { tableName =>
+      tables map { tableName =>
         val className = toCamelCase(tableName)
         val columns = metadata.getColumns(catalog, null, tableName, null).toMap
         val fields = columns flatMap { column =>
@@ -77,13 +79,22 @@ object MySQLtoSlickGenerator {
         // create a class info instance with sorted fields
         ClassInfo(tableName, className, fields.sortBy(_.ordinalPosition))
       }
-
-      // generate the object
-      generateClasses(catalog, classes, new File("/Users/ldaniels/Downloads/Scala"))
     }
     finally {
       conn.close()
     }
+  }
+
+  /**
+   * Creates a database connection
+   * @param configPath the given configuration file path
+   * @return a database [[Connection]]
+   */
+  private def getConnection(url: String, configPath: String): Connection = {
+    val props = loadConnectionProperties(configPath)
+    val conn = java.sql.DriverManager.getConnection(url, props)
+    if(conn == null) throw new IllegalStateException(s"Unable to establish connection to $url")
+    conn
   }
 
   /**
@@ -100,18 +111,6 @@ object MySQLtoSlickGenerator {
     else throw new FileNotFoundException(s"File '$resourcePath' not found")
     logger.info(s"properties = $p")
     p
-  }
-
-  /**
-   * Creates a database connection
-   * @param configPath the given configuration file path
-   * @return a database [[Connection]]
-   */
-  private def getConnection(url: String, configPath: String): Connection = {
-    val props = loadConnectionProperties(configPath)
-    val conn = java.sql.DriverManager.getConnection(url, props)
-    if(conn == null) throw new IllegalStateException(s"Unable to establish connection to $url")
-    conn
   }
 
   /**
