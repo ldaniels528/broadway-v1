@@ -1,8 +1,9 @@
 package com.ldaniels528.broadway.core.jdbc
 
-import java.io.{BufferedOutputStream, File, FileOutputStream}
+import java.io._
 import java.sql.{Connection, ResultSet}
 
+import com.ldaniels528.trifecta.util.ResourceHelper._
 import org.slf4j.LoggerFactory
 
 import scala.collection.mutable
@@ -32,17 +33,10 @@ object MySQLtoSlickGenerator {
    * @param args the given command line arguments
    */
   def main(args: Array[String]): Unit = {
-    // get the catalog and connection
-    val params = for {
-      catalog <- args.headOption
-      conn <- getConnection(args.tail)
-    } yield (catalog, conn)
-
-    // execute the process
-    params match {
-      case Some((catalog, conn)) => processTables(catalog, conn)
+    args.toList match {
+      case url :: catalog :: configPath :: Nil => processTables(catalog, getConnection(url, configPath))
       case _ =>
-        throw new IllegalArgumentException("TableExtractor <catalog> <driverClass> <driverURL> [<user> <password>]")
+        throw new IllegalArgumentException(s"${getClass.getName} <url> <catalog> <configFilePath>")
     }
   }
 
@@ -93,23 +87,31 @@ object MySQLtoSlickGenerator {
   }
 
   /**
-   * Creates a database connection
-   * @param args the given command line arguments
-   * @return a database connection
+   * Loads the connection properties
+   * @param resourcePath the given resource path
+   * @return the connection properties
    */
-  private def getConnection(args: Array[String]): Option[Connection] = {
-    import java.sql.DriverManager
+  private def loadConnectionProperties(resourcePath: String): java.util.Properties = {
+    val p = new java.util.Properties()
+    val localFile = new File(resourcePath)
+    logger.info(s"Attempting to load properties file '${localFile.getAbsolutePath}'...")
 
-    args.toList match {
-      case driverClass :: url :: user :: Nil =>
-        Class.forName(driverClass)
-        Option(DriverManager.getConnection(url, user, ""))
-      case driverClass :: url :: user :: password :: Nil =>
-        Class.forName(driverClass)
-        Option(DriverManager.getConnection(url, user, password))
-      case _ =>
-        None
-    }
+    if (localFile.exists()) new FileInputStream(resourcePath) use p.load
+    else throw new FileNotFoundException(s"File '$resourcePath' not found")
+    logger.info(s"properties = $p")
+    p
+  }
+
+  /**
+   * Creates a database connection
+   * @param configPath the given configuration file path
+   * @return a database [[Connection]]
+   */
+  private def getConnection(url: String, configPath: String): Connection = {
+    val props = loadConnectionProperties(configPath)
+    val conn = java.sql.DriverManager.getConnection(url, props)
+    if(conn == null) throw new IllegalStateException(s"Unable to establish connection to $url")
+    conn
   }
 
   /**
@@ -216,10 +218,10 @@ object MySQLtoSlickGenerator {
   case class FieldInfo(columnName: String, fieldName: String, typeName: String, sqlTypeID: Int, columnSize: Int, ordinalPosition: Int)
 
   /**
-   * Database Conversions
+   * ResultSet Conversions
    * @param rs the given [[ResultSet]]
    */
-  implicit class DBConversions(val rs: ResultSet) extends AnyVal {
+  implicit class ResultSetConversions(val rs: ResultSet) extends AnyVal {
 
     /**
      * Transforms the results into a mapping of key-value pairs
