@@ -3,6 +3,7 @@ package com.ldaniels528.broadway.core.jdbc
 import java.io._
 import java.sql.{Connection, ResultSet}
 
+import com.ldaniels528.trifecta.util.OptionHelper._
 import com.ldaniels528.trifecta.util.ResourceHelper._
 import org.slf4j.LoggerFactory
 
@@ -34,46 +35,48 @@ object MySQLtoSlickGenerator {
    */
   def main(args: Array[String]): Unit = {
     args.toList match {
-      case url :: catalog :: configPath :: outputPath :: Nil =>
-        val classes = extractModelClass(catalog, getConnection(url, configPath))
-        generateSources(classes, new File(outputPath))
+      case configPath :: outputPath :: Nil => exportAsModels(configPath, outputPath)
       case _ =>
-        throw new IllegalArgumentException(s"${getClass.getName} <url> <catalog> <configFilePath> <outputPath>")
+        throw new IllegalArgumentException(s"${getClass.getName} <configPath> <outputPath>")
     }
+  }
+  
+  def exportAsModels(configPath: String, outputPath: String): Unit = {
+    generateSources(extractModels(configPath), new File(outputPath))
   }
 
   /**
    * Generates the Slick model source files
-   * @param classes the given class information instances
+   * @param models the given model class instances
    * @param outputDirectory the given output directory
    */
-  def generateSources(classes: Seq[ModelClass], outputDirectory: File): Unit = {
-    classes foreach { classInfo =>
+  def generateSources(models: Seq[ModelClass], outputDirectory: File): Unit = {
+    models foreach { model =>
       // create the package directory
-      val packageDirectory = new File(outputDirectory, classInfo.packageName)
+      val packageDirectory = new File(outputDirectory, model.packageName)
       if (!packageDirectory.exists()) packageDirectory.mkdirs()
 
       // create a source file
-      val sourceFile = new File(packageDirectory, s"${classInfo.className}.scala")
+      val sourceFile = new File(packageDirectory, s"${model.className}.scala")
 
       // generate the source file
-      generateSource(classInfo, sourceFile)
+      generateSource(model, sourceFile)
     }
-    logger.info(s"${classes.size} source file(s) generated.")
+    logger.info(s"${models.size} source file(s) generated.")
   }
 
   /**
    * Generates a Slick model source file
-   * @param classInfo the given class information instance
+   * @param model the given model class instance
    * @param sourceFile the given source file destination
    * @see http://stackoverflow.com/questions/22626328/hello-world-example-for-slick-2-0-with-mysql
    */
-  def generateSource(classInfo: ModelClass, sourceFile: File): Unit = {
-    import classInfo.{className, fields, packageName, tableName}
+  def generateSource(model: ModelClass, sourceFile: File): Unit = {
+    import model.{className, fields, packageName, tableName}
 
     // generate the import statements
     var imports = List("scala.slick.driver.MySQLDriver.simple._")
-    if (classInfo.fields.exists(t => t.typeName == "Date" || t.typeName == "Option[Date]")) imports = "java.sql.Date" :: imports
+    if (fields.exists(t => t.typeName == "Date" || t.typeName == "Option[Date]")) imports = "java.sql.Date" :: imports
 
     // generate the Slick column functions
     val functions = {
@@ -102,59 +105,56 @@ object MySQLtoSlickGenerator {
 
   /**
    * Generates entity classes foreach table within the given catalog (database)
-   * @param catalog the given catalog (database)
-   * @param conn the given [[Connection]]
+   * @param configPath the given configuration file path
    * @return a collection of model classes
    */
-  def extractModelClass(catalog: String, conn: Connection): Seq[ModelClass] = {
-    try {
-      // get the database metadata
-      val metadata = conn.getMetaData
+  def extractModels(configPath: String): Seq[ModelClass] = {
+    // load the configuration properties
+    val props = loadConnectionProperties(configPath)
+    val catalog = Option(props.getProperty("catalog")).orDie("Required property 'catalog' is missing")
+    val conn = getConnection(props)
 
-      // display the database product name and version
-      val (productName, productVersion) = (metadata.getDatabaseProductName, metadata.getDatabaseProductVersion)
-      logger.info(s"Connected to $productName v$productVersion")
+    // get the database metadata
+    val metadata = conn.getMetaData
 
-      // lookup the defined table types
-      val tableTypes = (metadata.getTableTypes.toMap flatMap (_ map (_._2.asInstanceOf[String]) toSeq)).toArray
+    // display the database product name and version
+    val (productName, productVersion) = (metadata.getDatabaseProductName, metadata.getDatabaseProductVersion)
+    logger.info(s"Connected to $productName v$productVersion")
 
-      // lookup all tables within the catalog
-      val tables = metadata.getTables(catalog, null, null, tableTypes).toMap flatMap (_.get("TABLE_NAME") map (_.asInstanceOf[String]))
+    // lookup the defined table types
+    val tableTypes = (metadata.getTableTypes.toMap flatMap (_ map (_._2.asInstanceOf[String]) toSeq)).toArray
 
-      // transform the table mappings into class information
-      tables map { tableName =>
-        val className = tableName.toCamelCase
-        val columns = metadata.getColumns(catalog, null, tableName, null).toMap
-        val fields = columns flatMap { column =>
-          for {
-            columnName <- column.get("COLUMN_NAME") map (_.asInstanceOf[String])
-            typeName <- column.get("TYPE_NAME") map (_.asInstanceOf[String])
-            columnSize <- column.get("COLUMN_SIZE") map (_.asInstanceOf[Int])
-            ordinalPosition <- column.get("ORDINAL_POSITION") map (_.asInstanceOf[Int])
-            nullable <- column.get("IS_NULLABLE") map (_ == "YES")
-          //_ = logger.info(s"columns: ${column.toSeq.filterNot{ case (k,v) => v == null }}")
-          } yield ModelField(columnName, columnName.toSnakeCase, typeName.toScalaType(nullable), nullable, columnSize, ordinalPosition)
-        }
+    // lookup all tables within the catalog
+    val tables = metadata.getTables(catalog, null, null, tableTypes).toMap flatMap (_.get("TABLE_NAME") map (_.asInstanceOf[String]))
 
-        // create a class info instance with sorted fields
-        ModelClass(tableName, catalog.toLowerCase, className, fields.sortBy(_.ordinalPosition))
+    // transform the table mappings into class information
+    tables map { tableName =>
+      val className = tableName.toCamelCase
+      val columns = metadata.getColumns(catalog, null, tableName, null).toMap
+      val fields = columns flatMap { column =>
+        for {
+          columnName <- column.get("COLUMN_NAME") map (_.asInstanceOf[String])
+          typeName <- column.get("TYPE_NAME") map (_.asInstanceOf[String])
+          columnSize <- column.get("COLUMN_SIZE") map (_.asInstanceOf[Int])
+          ordinalPosition <- column.get("ORDINAL_POSITION") map (_.asInstanceOf[Int])
+          nullable <- column.get("IS_NULLABLE") map (_ == "YES")
+        //_ = logger.info(s"columns: ${column.toSeq.filterNot{ case (k,v) => v == null }}")
+        } yield ModelField(columnName, columnName.toSnakeCase, typeName.toScalaType(nullable), nullable, columnSize, ordinalPosition)
       }
-    }
-    finally {
-      conn.close()
+
+      // create a class info instance with sorted fields
+      ModelClass(tableName, catalog.toLowerCase, className, fields.sortBy(_.ordinalPosition))
     }
   }
 
   /**
    * Creates a database connection
-   * @param configPath the given configuration file path
+   * @param props the given configuration properties
    * @return a database [[Connection]]
    */
-  def getConnection(url: String, configPath: String): Connection = {
-    val props = loadConnectionProperties(configPath)
-    val conn = java.sql.DriverManager.getConnection(url, props)
-    if (conn == null) throw new IllegalStateException(s"Unable to establish connection to $url")
-    conn
+  def getConnection(props: java.util.Properties): Connection = {
+    val url = Option(props.getProperty("url")).orDie("Required property 'url' not found")
+    Option(java.sql.DriverManager.getConnection(url, props)).orDie(s"Unable to establish connection to $url")
   }
 
   /**
@@ -174,7 +174,7 @@ object MySQLtoSlickGenerator {
   }
 
   /**
-   * Represents Scala-Slick table / model class
+   * Represents Scala-Slick table (model class)
    * @param tableName the name of the table being represented
    * @param className the name of the class being represented
    * @param packageName the name of the package the model class resides within
@@ -183,7 +183,7 @@ object MySQLtoSlickGenerator {
   case class ModelClass(tableName: String, packageName: String, className: String, fields: Seq[ModelField])
 
   /**
-   * Represents a Scala-Slick table column / model field
+   * Represents a Scala-Slick table column (model field)
    * @param columnName the name of the column
    * @param fieldName the name of the member variable
    * @param typeName the Scala type name (e.g. "Int")
@@ -295,7 +295,7 @@ object MySQLtoSlickGenerator {
      */
     def toScalaType(nullable: Boolean): String = {
       val myTypeName = TypeNameMapping.getOrElse(typeName, typeName)
-      if(nullable) s"Option[$myTypeName]" else myTypeName
+      if (nullable) s"Option[$myTypeName]" else myTypeName
     }
 
   }

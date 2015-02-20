@@ -24,37 +24,40 @@ class MySQLtoSlickGeneratorSpec() extends FeatureSpec with GivenWhenThen with Mo
       Given("a temporary output directory")
       val outputDirectory = new File(new File(Properties.tmpDir), "MySQLtoSlickGeneratorSpec")
 
-      And("a collection of classes information instances")
-      val classes = Seq(
-        ModelClass("people", "dummy", "Person", Seq(
+      And("a collection of models")
+      val models = Seq(
+        ModelClass(tableName = "people", packageName = "dummy", className = "Person", fields = Seq(
           ModelField(columnName = "person_id", fieldName = "personId", typeName = "Long", nullable = false, columnSize = 18, ordinalPosition = 1),
           ModelField(columnName = "first_name", fieldName = "firstName", typeName = "String", nullable = false, columnSize = 65, ordinalPosition = 2),
           ModelField(columnName = "last_name", fieldName = "lastName", typeName = "String", nullable = false, columnSize = 65, ordinalPosition = 3)
         ))
       )
 
-      When("the classes are generated")
-      MySQLtoSlickGenerator.generateSources(classes, outputDirectory)
+      When("the sources are generated")
+      MySQLtoSlickGenerator.generateSources(models, outputDirectory)
 
       Then("the output file's content should match the expected result")
       outputDirectory.listFiles().length shouldBe 1
 
       val packageDirectory = new File(outputDirectory, "dummy")
       val content = Source.fromFile(new File(packageDirectory, "Person.scala")).getLines().mkString("\n")
+
       content.trim shouldBe
         """|package dummy
-            |
-            |import java.sql.Date
-            |import scala.slick.driver.MySQLDriver.simple._
-            |
-            |case class Person(personId: Long, firstName: String, lastName: String)
-            |
-            |class Persons(tag: Tag) extends Table[(Long, String, String)](tag, "people") {
-            |	def personId = column[Long]("person_id")
-            |	def firstName = column[String]("first_name")
-            |	def lastName = column[String]("last_name")
-            |	def * = (personId, firstName, lastName)
-            |}""".stripMargin('|').trim
+          |
+          |import scala.slick.driver.MySQLDriver.simple._
+          |
+          |case class Person(personId: Long, firstName: String, lastName: String)
+          |
+          |object Person {
+          |
+          |  class Persons(tag: Tag) extends Table[(Long, String, String)](tag, "people") {
+          |		def personId = column[Long]("person_id")
+          |		def firstName = column[String]("first_name")
+          |		def lastName = column[String]("last_name")
+          |		def * = (personId, firstName, lastName)
+          |  }
+          |}""".stripMargin('|').trim
     }
   }
 
