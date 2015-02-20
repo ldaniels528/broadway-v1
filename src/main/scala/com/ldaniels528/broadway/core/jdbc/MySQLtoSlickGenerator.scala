@@ -124,7 +124,10 @@ object MySQLtoSlickGenerator {
     classes foreach { classInfo =>
       import classInfo.{className, fields, tableName}
 
-      val classFile = new File(outputDirectory, s"$className.scala")
+      val packageDirectory = new File(outputDirectory, catalog)
+      if(!packageDirectory.exists()) packageDirectory.mkdirs()
+
+      val classFile = new File(packageDirectory, s"$className.scala")
       logger.info(s"Generating class '${classFile.getAbsolutePath}'...")
 
       val functions = fields.map(f => "\t" + s"""def ${f.fieldName} = column[${f.typeName}]("${f.columnName}")""").mkString("\n")
