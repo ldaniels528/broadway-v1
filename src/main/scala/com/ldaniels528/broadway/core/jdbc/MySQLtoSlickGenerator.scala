@@ -220,7 +220,7 @@ object MySQLtoSlickGenerator {
     def toPlural: String = {
       noun match {
         case s if s.endsWith("y") => s.dropRight(1) + "ies"
-        case s if s.endsWith("s") => s + "es"
+        case s if s.endsWith("s") | s.endsWith("x") => s + "es"
         case s => s + "s"
       }
     }
@@ -231,7 +231,8 @@ object MySQLtoSlickGenerator {
      */
     def toCamelCase: String = {
       noun match {
-        case s if s.contains("_") => s.split("[_]") map (s => s.head.toUpper + s.tail) mkString
+        case s if s.contains("_") => s.split("[_]") map(_.toLowerCase) map (s => s.head.toUpper + s.tail) mkString
+        case s if s.forall(_.isUpper) => s.head.toUpper + s.tail.toLowerCase
         case s => s.head.toUpper + s.tail
       }
     }
@@ -243,8 +244,9 @@ object MySQLtoSlickGenerator {
     def toSnakeCase: String = {
       noun match {
         case s if s.contains("_") =>
-          val items = s.split("[_]")
+          val items = s.split("[_]") map(_.toLowerCase)
           (items.head ++ items.tail.map(s => s.head.toUpper + s.tail)) mkString
+        case s if s.forall(_.isUpper) => s.toLowerCase
         case s => s.head.toLower + s.tail
       }
     }
