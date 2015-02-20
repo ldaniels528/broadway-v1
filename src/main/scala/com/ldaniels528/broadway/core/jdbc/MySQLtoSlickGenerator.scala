@@ -64,7 +64,7 @@ object MySQLtoSlickGenerator {
 
       // generate the import statements
       var imports = List("scala.slick.driver.MySQLDriver.simple._")
-      if (classInfo.fields.exists(_.typeName == "Date")) imports = "java.sql.Date" :: imports
+      if (classInfo.fields.exists(t => t.typeName == "Date" || t.typeName == "Option[Date]")) imports = "java.sql.Date" :: imports
 
       // generate the Slick column functions
       val functions = {
