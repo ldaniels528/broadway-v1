@@ -27,9 +27,9 @@ class MySQLtoSlickGeneratorSpec() extends FeatureSpec with GivenWhenThen with Mo
       And("a collection of classes information instances")
       val classes = Seq(
         ClassInfo("people", "Person", Seq(
-          FieldInfo(columnName = "person_id", fieldName = "personId", typeName = "Long", sqlTypeID = 0, columnSize = 18, ordinalPosition = 1),
-          FieldInfo(columnName = "first_name", fieldName = "firstName", typeName = "String", sqlTypeID = 0, columnSize = 65, ordinalPosition = 2),
-          FieldInfo(columnName = "last_name", fieldName = "lastName", typeName = "String", sqlTypeID = 0, columnSize = 65, ordinalPosition = 3)
+          FieldInfo(columnName = "person_id", fieldName = "personId", typeName = "Long", nullable = false, columnSize = 18, ordinalPosition = 1),
+          FieldInfo(columnName = "first_name", fieldName = "firstName", typeName = "String", nullable = false, columnSize = 65, ordinalPosition = 2),
+          FieldInfo(columnName = "last_name", fieldName = "lastName", typeName = "String", nullable = false, columnSize = 65, ordinalPosition = 3)
         ))
       )
 

@@ -56,30 +56,35 @@ object MySQLtoSlickGenerator {
       // create the package directory
       val packageName = catalog.toLowerCase
       val packageDirectory = new File(outputDirectory, packageName)
-      if(!packageDirectory.exists()) packageDirectory.mkdirs()
+      if (!packageDirectory.exists()) packageDirectory.mkdirs()
 
       // create a source file
       val classFile = new File(packageDirectory, s"$className.scala")
       logger.info(s"Generating '${classFile.getAbsolutePath}'...")
 
+      // generate the import statements
+      var imports = List("scala.slick.driver.MySQLDriver.simple._")
+      if (classInfo.fields.exists(_.typeName == "Date")) imports = "java.sql.Date" :: imports
+
       // generate the Slick column functions
       val functions = {
         fields.map(f => s"""def ${f.fieldName} = column[${f.typeName}]("${f.columnName}")""") ++
           Seq(s"def * = (${fields.map(_.fieldName).mkString(", ")})")
-      }.indent
+      }.indent(tabs = 2)
 
       // generate the source code
       new BufferedOutputStream(new FileOutputStream(classFile), 8192) use { out =>
-        out.write(
+      out.write(
           s"""|package $packageName
               |
-              |import java.sql.Date
-              |import scala.slick.driver.MySQLDriver.simple._
-              |
+              |${imports map (i => s"import $i\n") mkString}
               |case class $className(${fields.map(f => s"${f.fieldName}: ${f.typeName}").mkString(", ")})
               |
-              |class ${className.toPlural}(tag: Tag) extends Table[(${fields.map(_.typeName).mkString(", ")})](tag, "$tableName") {
+              |object $className {
+              |
+              |  class ${className.toPlural}(tag: Tag) extends Table[(${fields.map(_.typeName).mkString(", ")})](tag, "$tableName") {
               |$functions
+              |  }
               |}
               |""".stripMargin('|').trim.getBytes("UTF-8"))
       }
@@ -116,9 +121,10 @@ object MySQLtoSlickGenerator {
             columnName <- column.get("COLUMN_NAME") map (_.asInstanceOf[String])
             typeName <- column.get("TYPE_NAME") map (_.asInstanceOf[String])
             columnSize <- column.get("COLUMN_SIZE") map (_.asInstanceOf[Int])
-            sqlDataType <- column.get("SQL_DATA_TYPE") map (_.asInstanceOf[Int])
             ordinalPosition <- column.get("ORDINAL_POSITION") map (_.asInstanceOf[Int])
-          } yield FieldInfo(columnName, columnName.toSnakeCase, typeName.toScalaType, sqlDataType, columnSize, ordinalPosition)
+            nullable <- column.get("IS_NULLABLE") map (_ == "YES")
+          //_ = logger.info(s"columns: ${column.toSeq.filterNot{ case (k,v) => v == null }}")
+          } yield FieldInfo(columnName, columnName.toSnakeCase, typeName.toScalaType(nullable), nullable, columnSize, ordinalPosition)
         }
 
         // create a class info instance with sorted fields
@@ -135,10 +141,10 @@ object MySQLtoSlickGenerator {
    * @param configPath the given configuration file path
    * @return a database [[Connection]]
    */
-  private def getConnection(url: String, configPath: String): Connection = {
+  def getConnection(url: String, configPath: String): Connection = {
     val props = loadConnectionProperties(configPath)
     val conn = java.sql.DriverManager.getConnection(url, props)
-    if(conn == null) throw new IllegalStateException(s"Unable to establish connection to $url")
+    if (conn == null) throw new IllegalStateException(s"Unable to establish connection to $url")
     conn
   }
 
@@ -171,12 +177,12 @@ object MySQLtoSlickGenerator {
    * @param columnName the name of the column
    * @param fieldName the name of the member variable
    * @param typeName the Scala type name (e.g. "Int")
-   * @param sqlTypeID the given SQL type identifier
+   * @param nullable indicates whether the column value is nullable
    * @param columnSize the defined column size
    * @param ordinalPosition the original position of the column within the table
    */
-  case class FieldInfo(columnName: String, fieldName: String, typeName: String, sqlTypeID: Int, columnSize: Int, ordinalPosition: Int)
-  
+  case class FieldInfo(columnName: String, fieldName: String, typeName: String, nullable: Boolean, columnSize: Int, ordinalPosition: Int)
+
   /**
    * ResultSet Conversions
    * @param rs the given [[ResultSet]]
@@ -231,7 +237,7 @@ object MySQLtoSlickGenerator {
      */
     def toCamelCase: String = {
       noun match {
-        case s if s.contains("_") => s.split("[_]") map(_.toLowerCase) map (s => s.head.toUpper + s.tail) mkString
+        case s if s.contains("_") => s.split("[_]") map (_.toLowerCase) map (s => s.head.toUpper + s.tail) mkString
         case s if s.forall(_.isUpper) => s.head.toUpper + s.tail.toLowerCase
         case s => s.head.toUpper + s.tail
       }
@@ -244,7 +250,7 @@ object MySQLtoSlickGenerator {
     def toSnakeCase: String = {
       noun match {
         case s if s.contains("_") =>
-          val items = s.split("[_]") map(_.toLowerCase)
+          val items = s.split("[_]") map (_.toLowerCase)
           (items.head ++ items.tail.map(s => s.head.toUpper + s.tail)) mkString
         case s if s.forall(_.isUpper) => s.toLowerCase
         case s => s.head.toLower + s.tail
@@ -263,7 +269,7 @@ object MySQLtoSlickGenerator {
      * Indents the given lines with a tab and ends each line with a carriage return
      * @return a string representing the paragraph of lines
      */
-    def indent: String = lines map('\t' + _) mkString "\n"
+    def indent(tabs: Int): String = lines map ("\t" * tabs + _) mkString "\n"
 
   }
 
@@ -277,7 +283,10 @@ object MySQLtoSlickGenerator {
      * Returns the given SQL type name as the equivalent Scala type (e.g. "BIGINT" return "Long")
      * @return the equivalent Scala type (e.g. "Long")
      */
-    def toScalaType: String = TypeNameMapping.getOrElse(typeName, typeName)
+    def toScalaType(nullable: Boolean): String = {
+      val myTypeName = TypeNameMapping.getOrElse(typeName, typeName)
+      if(nullable) s"Option[$myTypeName]" else myTypeName
+    }
 
   }
 
