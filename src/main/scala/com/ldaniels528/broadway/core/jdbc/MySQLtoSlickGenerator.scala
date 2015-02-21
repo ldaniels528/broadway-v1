@@ -55,7 +55,7 @@ object MySQLtoSlickGenerator {
    * @param models the given model class instances
    * @param outputDirectory the given output directory
    */
-  def generateSources(models: Seq[ModelClass], outputDirectory: File): Unit = {
+  private[jdbc] def generateSources(models: Seq[ModelClass], outputDirectory: File): Unit = {
     models foreach { model =>
       // create the package directory
       val packageDirectory = new File(outputDirectory, model.packageName)
@@ -76,7 +76,7 @@ object MySQLtoSlickGenerator {
    * @param sourceFile the given source file destination
    * @see http://stackoverflow.com/questions/22626328/hello-world-example-for-slick-2-0-with-mysql
    */
-  def generateSource(model: ModelClass, sourceFile: File): Unit = {
+  private[jdbc] def generateSource(model: ModelClass, sourceFile: File): Unit = {
     import model.{className, fields, packageName, tableName}
 
     // generate the import statements
@@ -113,7 +113,7 @@ object MySQLtoSlickGenerator {
    * @param configPath the given configuration file path
    * @return a collection of model classes
    */
-  def extractModels(configPath: String): Seq[ModelClass] = {
+  private[jdbc] def extractModels(configPath: String): Seq[ModelClass] = {
     // load the configuration properties
     val props = loadConnectionProperties(configPath)
     val catalog = Option(props.getProperty("catalog")).orDie("Required property 'catalog' is missing")
@@ -157,7 +157,7 @@ object MySQLtoSlickGenerator {
    * @param props the given configuration properties
    * @return a database [[Connection]]
    */
-  def getConnection(props: java.util.Properties): Connection = {
+  private def getConnection(props: java.util.Properties): Connection = {
     val url = Option(props.getProperty("url")).orDie("Required property 'url' not found")
     Option(java.sql.DriverManager.getConnection(url, props)).orDie(s"Unable to establish connection to $url")
   }
