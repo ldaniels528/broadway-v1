@@ -2,7 +2,7 @@ package com.ldaniels528.broadway.core.jdbc
 
 import java.io.File
 
-import com.ldaniels528.broadway.core.jdbc.MySQLtoSlickGenerator.{ModelClass, ModelField}
+import com.ldaniels528.broadway.core.jdbc.MySQLtoSlickGenerator.{TableModel, ColumnModel}
 import org.scalatest.mock.MockitoSugar
 import org.scalatest.{FeatureSpec, GivenWhenThen}
 import org.scalatest.Matchers._
@@ -26,10 +26,10 @@ class MySQLtoSlickGeneratorSpec() extends FeatureSpec with GivenWhenThen with Mo
 
       And("a collection of models")
       val models = Seq(
-        ModelClass(tableName = "people", packageName = "dummy", className = "Person", fields = Seq(
-          ModelField(columnName = "person_id", fieldName = "personId", typeName = "Long", nullable = false, autoincrement = false, columnSize = 18, ordinalPosition = 1),
-          ModelField(columnName = "first_name", fieldName = "firstName", typeName = "String", nullable = false, autoincrement = false, columnSize = 65, ordinalPosition = 2),
-          ModelField(columnName = "last_name", fieldName = "lastName", typeName = "String", nullable = false, autoincrement = false, columnSize = 65, ordinalPosition = 3)
+        TableModel(tableName = "people", packageName = "example", className = "Person", fields = Seq(
+          ColumnModel(columnName = "person_id", fieldName = "personId", typeName = "Long", nullable = false, primaryKey = None, autoincrement = false, columnSize = 18, ordinalPosition = 1),
+          ColumnModel(columnName = "first_name", fieldName = "firstName", typeName = "String", nullable = false, primaryKey = None, autoincrement = false, columnSize = 65, ordinalPosition = 2),
+          ColumnModel(columnName = "last_name", fieldName = "lastName", typeName = "String", nullable = false, primaryKey = None, autoincrement = false, columnSize = 65, ordinalPosition = 3)
         ))
       )
 
@@ -43,7 +43,7 @@ class MySQLtoSlickGeneratorSpec() extends FeatureSpec with GivenWhenThen with Mo
       val content = Source.fromFile(new File(packageDirectory, "Person.scala")).getLines().mkString("\n")
 
       content.trim shouldBe
-        """|package dummy
+        """|package example
           |
           |import scala.slick.driver.MySQLDriver.simple._
           |

@@ -55,7 +55,7 @@ object MySQLtoSlickGenerator {
    * @param models the given model class instances
    * @param outputDirectory the given output directory
    */
-  private[jdbc] def generateSources(models: Seq[ModelClass], outputDirectory: File): Unit = {
+  private[jdbc] def generateSources(models: Seq[TableModel], outputDirectory: File): Unit = {
     models foreach { model =>
       // create the package directory
       val packageDirectory = new File(outputDirectory, model.packageName)
@@ -76,7 +76,7 @@ object MySQLtoSlickGenerator {
    * @param sourceFile the given source file destination
    * @see http://stackoverflow.com/questions/22626328/hello-world-example-for-slick-2-0-with-mysql
    */
-  private[jdbc] def generateSource(model: ModelClass, sourceFile: File): Unit = {
+  private[jdbc] def generateSource(model: TableModel, sourceFile: File): Unit = {
     import model.{className, fields, packageName, tableName}
     // get the entity class name
     val classNamePlural = className.toPlural
@@ -87,10 +87,16 @@ object MySQLtoSlickGenerator {
 
     // generate the Slick column functions
     val functions = {
-      fields.map {
-        case f if f.autoincrement => s"""def ${f.fieldName} = column[${f.typeName}]("${f.columnName}", O.PrimaryKey, O.AutoInc)"""
-        case f => s"""def ${f.fieldName} = column[${f.typeName}]("${f.columnName}")"""
-      } ++ Seq(s"def * = (${fields.map(_.fieldName).mkString(", ")})")
+      val fxSeq = fields.map { c =>
+        val options = c match {
+          case f if f.autoincrement && f.primaryKey.isDefined => ", O.PrimaryKey, O.AutoInc"
+          case f if f.primaryKey.isDefined => ", O.PrimaryKey"
+          case f if f.autoincrement => ", O.AutoInc"
+          case f => ""
+        }
+        s"""def ${c.fieldName} = column[${c.typeName}]("${c.columnName}"$options)"""
+      }
+      fxSeq ++ Seq(s"def * = (${fields.map(_.fieldName).mkString(", ")})")
     }.indent(tabs = 2)
 
     // generate the Slick table handle
@@ -123,7 +129,7 @@ object MySQLtoSlickGenerator {
    * @param configPath the given configuration file path
    * @return a collection of model classes
    */
-  private[jdbc] def extractModels(configPath: String): Seq[ModelClass] = {
+  private[jdbc] def extractModels(configPath: String): Seq[TableModel] = {
     // load the configuration properties
     val props = loadConnectionProperties(configPath)
     val catalog = Option(props.getProperty("catalog")).orDie("Required property 'catalog' is missing")
@@ -145,20 +151,21 @@ object MySQLtoSlickGenerator {
       tables map { tableName =>
         val className = tableName.toCamelCase
         val columns = metadata.getColumns(catalog, null, tableName, null).toMap
+        val primaryKeys = Map(metadata.getPrimaryKeys(null, null, tableName).toPrimaryKeys map(pk => (pk.columnName, pk)):_*)
         val fields = columns flatMap { column =>
           for {
             columnName <- column.get("COLUMN_NAME") map (_.asInstanceOf[String])
             typeName <- column.get("TYPE_NAME") map (_.asInstanceOf[String])
             columnSize <- column.get("COLUMN_SIZE") map (_.asInstanceOf[Int])
             ordinalPosition <- column.get("ORDINAL_POSITION") map (_.asInstanceOf[Int])
+            primaryKey = primaryKeys.get(columnName)
             autoincrement <- column.get("IS_AUTOINCREMENT") map(_ == "YES")
             nullable <- column.get("IS_NULLABLE") map (_ == "YES")
-          _ = logger.info(s"columns: ${column.toSeq.filterNot{ case (k,v) => v == null }}")
-          } yield ModelField(columnName, columnName.toSnakeCase, typeName.toScalaType(nullable), nullable, autoincrement, columnSize, ordinalPosition)
+          } yield ColumnModel(columnName, columnName.toSnakeCase, typeName.toScalaType(nullable), nullable, primaryKey, autoincrement, columnSize, ordinalPosition)
         }
 
         // create a class info instance with sorted fields
-        ModelClass(tableName, catalog.toLowerCase, className, fields.sortBy(_.ordinalPosition))
+        TableModel(tableName, catalog.toLowerCase, className, fields.sortBy(_.ordinalPosition))
       }
     }
   }
@@ -190,16 +197,16 @@ object MySQLtoSlickGenerator {
   }
 
   /**
-   * Represents Scala-Slick table (model class)
+   * Represents Scala-Slick table model
    * @param tableName the name of the table being represented
    * @param className the name of the class being represented
    * @param packageName the name of the package the model class resides within
    * @param fields the database columns / class member variables
    */
-  case class ModelClass(tableName: String, packageName: String, className: String, fields: Seq[ModelField])
+  case class TableModel(tableName: String, packageName: String, className: String, fields: Seq[ColumnModel])
 
   /**
-   * Represents a Scala-Slick table column (model field)
+   * Represents a Scala-Slick table column model
    * @param columnName the name of the column
    * @param fieldName the name of the member variable
    * @param typeName the Scala type name (e.g. "Int")
@@ -207,7 +214,12 @@ object MySQLtoSlickGenerator {
    * @param columnSize the defined column size
    * @param ordinalPosition the original position of the column within the table
    */
-  case class ModelField(columnName: String, fieldName: String, typeName: String, nullable: Boolean, autoincrement: Boolean, columnSize: Int, ordinalPosition: Int)
+  case class ColumnModel(columnName: String, fieldName: String, typeName: String, nullable: Boolean, primaryKey: Option[PrimaryKey], autoincrement: Boolean, columnSize: Int, ordinalPosition: Int)
+
+  /**
+   * Represents a primary key definition
+   */
+  case class PrimaryKey(pkName: String, tableName: String, columnName: String, keySeq: Int)
 
   /**
    * ResultSet Conversions
@@ -226,6 +238,23 @@ object MySQLtoSlickGenerator {
         buf += Map(columnNames map { label => (label, rs.getObject(label))}: _*)
       }
       buf
+    }
+
+    /**
+     * Transforms the result set into a collection of primary key objects
+     * @return a collection of [[PrimaryKey]] objects
+     */
+    def toPrimaryKeys: Seq[PrimaryKey] = {
+      // { TABLE_CAT -> servo, PK_NAME -> PRIMARY, COLUMN_NAME -> actionitem_id, TABLE_NAME -> actionitem, TABLE_SCHEM -> null, KEY_SEQ -> 1 }
+      val buf = mutable.Buffer[PrimaryKey]()
+      while(rs.next()) {
+        val pkName = rs.getString("PK_NAME")
+        val tableName = rs.getString("TABLE_NAME")
+        val columnName = rs.getString("COLUMN_NAME")
+        val keySeq = rs.getInt("KEY_SEQ")
+        buf += PrimaryKey(pkName, tableName, columnName , keySeq)
+      }
+      buf.sortBy(_.keySeq)
     }
 
     /**
