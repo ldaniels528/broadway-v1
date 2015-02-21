@@ -45,7 +45,7 @@ the end of March 2015.
 ## Build Requirements
 
 * [Java SDK 1.7] (http://www.oracle.com/technetwork/java/javase/downloads/jdk7-downloads-1880260.html)
-* [Scala 2.10.4] (http://scala-lang.org/download/)
+* [Scala 2.11.4] (http://scala-lang.org/download/)
 * [SBT 0.13+] (http://www.scala-sbt.org/download.html)
 
 #### GitHub/ldaniels528 Dependencies
