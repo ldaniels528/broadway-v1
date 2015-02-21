@@ -117,38 +117,38 @@ object MySQLtoSlickGenerator {
     // load the configuration properties
     val props = loadConnectionProperties(configPath)
     val catalog = Option(props.getProperty("catalog")).orDie("Required property 'catalog' is missing")
-    val conn = getConnection(props)
+    getConnection(props) use { conn =>
+      // get the database metadata
+      val metadata = conn.getMetaData
 
-    // get the database metadata
-    val metadata = conn.getMetaData
+      // display the database product name and version
+      val (productName, productVersion) = (metadata.getDatabaseProductName, metadata.getDatabaseProductVersion)
+      logger.info(s"Connected to $productName v$productVersion")
 
-    // display the database product name and version
-    val (productName, productVersion) = (metadata.getDatabaseProductName, metadata.getDatabaseProductVersion)
-    logger.info(s"Connected to $productName v$productVersion")
+      // lookup the defined table types
+      val tableTypes = (metadata.getTableTypes.toMap flatMap (_ map (_._2.asInstanceOf[String]) toSeq)).toArray
 
-    // lookup the defined table types
-    val tableTypes = (metadata.getTableTypes.toMap flatMap (_ map (_._2.asInstanceOf[String]) toSeq)).toArray
+      // lookup all tables within the catalog
+      val tables = metadata.getTables(catalog, null, null, tableTypes).toMap flatMap (_.get("TABLE_NAME") map (_.asInstanceOf[String]))
 
-    // lookup all tables within the catalog
-    val tables = metadata.getTables(catalog, null, null, tableTypes).toMap flatMap (_.get("TABLE_NAME") map (_.asInstanceOf[String]))
+      // transform the table mappings into class information
+      tables map { tableName =>
+        val className = tableName.toCamelCase
+        val columns = metadata.getColumns(catalog, null, tableName, null).toMap
+        val fields = columns flatMap { column =>
+          for {
+            columnName <- column.get("COLUMN_NAME") map (_.asInstanceOf[String])
+            typeName <- column.get("TYPE_NAME") map (_.asInstanceOf[String])
+            columnSize <- column.get("COLUMN_SIZE") map (_.asInstanceOf[Int])
+            ordinalPosition <- column.get("ORDINAL_POSITION") map (_.asInstanceOf[Int])
+            nullable <- column.get("IS_NULLABLE") map (_ == "YES")
+          //_ = logger.info(s"columns: ${column.toSeq.filterNot{ case (k,v) => v == null }}")
+          } yield ModelField(columnName, columnName.toSnakeCase, typeName.toScalaType(nullable), nullable, columnSize, ordinalPosition)
+        }
 
-    // transform the table mappings into class information
-    tables map { tableName =>
-      val className = tableName.toCamelCase
-      val columns = metadata.getColumns(catalog, null, tableName, null).toMap
-      val fields = columns flatMap { column =>
-        for {
-          columnName <- column.get("COLUMN_NAME") map (_.asInstanceOf[String])
-          typeName <- column.get("TYPE_NAME") map (_.asInstanceOf[String])
-          columnSize <- column.get("COLUMN_SIZE") map (_.asInstanceOf[Int])
-          ordinalPosition <- column.get("ORDINAL_POSITION") map (_.asInstanceOf[Int])
-          nullable <- column.get("IS_NULLABLE") map (_ == "YES")
-        //_ = logger.info(s"columns: ${column.toSeq.filterNot{ case (k,v) => v == null }}")
-        } yield ModelField(columnName, columnName.toSnakeCase, typeName.toScalaType(nullable), nullable, columnSize, ordinalPosition)
+        // create a class info instance with sorted fields
+        ModelClass(tableName, catalog.toLowerCase, className, fields.sortBy(_.ordinalPosition))
       }
-
-      // create a class info instance with sorted fields
-      ModelClass(tableName, catalog.toLowerCase, className, fields.sortBy(_.ordinalPosition))
     }
   }
 
