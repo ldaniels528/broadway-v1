@@ -78,6 +78,8 @@ object MySQLtoSlickGenerator {
    */
   private[jdbc] def generateSource(model: ModelClass, sourceFile: File): Unit = {
     import model.{className, fields, packageName, tableName}
+    // get the entity class name
+    val classNamePlural = className.toPlural
 
     // generate the import statements
     var imports = List("scala.slick.driver.MySQLDriver.simple._")
@@ -85,9 +87,14 @@ object MySQLtoSlickGenerator {
 
     // generate the Slick column functions
     val functions = {
-      fields.map(f => s"""def ${f.fieldName} = column[${f.typeName}]("${f.columnName}")""") ++
-        Seq(s"def * = (${fields.map(_.fieldName).mkString(", ")})")
+      fields.map {
+        case f if f.autoincrement => s"""def ${f.fieldName} = column[${f.typeName}]("${f.columnName}", O.PrimaryKey, O.AutoInc)"""
+        case f => s"""def ${f.fieldName} = column[${f.typeName}]("${f.columnName}")"""
+      } ++ Seq(s"def * = (${fields.map(_.fieldName).mkString(", ")})")
     }.indent(tabs = 2)
+
+    // generate the Slick table handle
+    val handle = s"val ${tableName.toSnakeCase.toPlural} = TableQuery[$classNamePlural]"
 
     // generate the source code
     logger.info(s"Generating '${sourceFile.getAbsolutePath}'...")
@@ -96,13 +103,16 @@ object MySQLtoSlickGenerator {
         s"""|package $packageName
             |
             |${imports map (i => s"import $i\n") mkString}
-            |case class $className(${fields.map(f => s"${f.fieldName}: ${f.typeName}").mkString(", ")})
+            |class $className(${fields.map(f => s"${f.fieldName}: ${f.typeName}").mkString(", ")})
             |
             |object $className {
             |
-            |  class ${className.toPlural}(tag: Tag) extends Table[(${fields.map(_.typeName).mkString(", ")})](tag, "$tableName") {
+            |  class $classNamePlural(tag: Tag) extends Table[(${fields.map(_.typeName).mkString(", ")})](tag, "$tableName") {
             |$functions
             |  }
+            |
+            |  $handle
+            |
             |}
             |""".stripMargin('|').trim.getBytes("UTF-8"))
     }
@@ -141,9 +151,10 @@ object MySQLtoSlickGenerator {
             typeName <- column.get("TYPE_NAME") map (_.asInstanceOf[String])
             columnSize <- column.get("COLUMN_SIZE") map (_.asInstanceOf[Int])
             ordinalPosition <- column.get("ORDINAL_POSITION") map (_.asInstanceOf[Int])
+            autoincrement <- column.get("IS_AUTOINCREMENT") map(_ == "YES")
             nullable <- column.get("IS_NULLABLE") map (_ == "YES")
-          //_ = logger.info(s"columns: ${column.toSeq.filterNot{ case (k,v) => v == null }}")
-          } yield ModelField(columnName, columnName.toSnakeCase, typeName.toScalaType(nullable), nullable, columnSize, ordinalPosition)
+          _ = logger.info(s"columns: ${column.toSeq.filterNot{ case (k,v) => v == null }}")
+          } yield ModelField(columnName, columnName.toSnakeCase, typeName.toScalaType(nullable), nullable, autoincrement, columnSize, ordinalPosition)
         }
 
         // create a class info instance with sorted fields
@@ -196,7 +207,7 @@ object MySQLtoSlickGenerator {
    * @param columnSize the defined column size
    * @param ordinalPosition the original position of the column within the table
    */
-  case class ModelField(columnName: String, fieldName: String, typeName: String, nullable: Boolean, columnSize: Int, ordinalPosition: Int)
+  case class ModelField(columnName: String, fieldName: String, typeName: String, nullable: Boolean, autoincrement: Boolean, columnSize: Int, ordinalPosition: Int)
 
   /**
    * ResultSet Conversions

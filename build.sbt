@@ -9,7 +9,7 @@ name := "broadway"
 
 organization := "com.ldaniels528"
 
-version := "0.5"
+version := "0.6"
 
 scalaVersion := "2.11.4"
 
