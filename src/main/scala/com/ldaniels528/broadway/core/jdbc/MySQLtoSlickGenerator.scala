@@ -84,14 +84,12 @@ object MySQLtoSlickGenerator {
     val imports = (if (fields.exists(_.typeName.contains("Date"))) List("java.sql.Date") else Nil) ::: List("scala.slick.driver.MySQLDriver.simple._")
     val functions = s"def * = (${fields.map(_.fieldName).mkString(", ")})" :: fields.toList.reverse.map { c =>
       // create the column function arguments (name, primary key and/or autoincrement)
-      val args = s""""${c.columnName}"""" :: (c match {
-        case f if f.autoincrement && f.primaryKey.isDefined => "O.PrimaryKey" :: "O.AutoInc" :: Nil
-        case f if f.autoincrement => "O.AutoInc" :: Nil
-        case f if f.primaryKey.isDefined => "O.PrimaryKey" :: Nil
-        case f => Nil
-      })
+      val args = (s""""${c.columnName}"""" ::
+        (if(c.autoincrement) List("O.AutoInc") else Nil) :::
+          (if(c.primaryKey.isDefined) List("O.PrimaryKey") else Nil)).mkString(", ")
+
       // define the column function
-      s"def ${c.fieldName} = column[${c.typeName}](${args.mkString(", ")})"
+      s"def ${c.fieldName} = column[${c.typeName}]($args)"
     }
 
     // generate the source code
@@ -138,12 +136,13 @@ object MySQLtoSlickGenerator {
       // transform the table mappings into class information
       tables map { tableName =>
         val className = tableName.toCamelCase
-        val columns = metadata.getColumns(catalog, null, tableName, null).toMap
+        val columns = metadata.getColumns(catalog, null, tableName, null).toColumns
         val primaryKeys = metadata.getPrimaryKeys(null, null, tableName).toPrimaryKeys
-        val fields = extractColumnModels(columns, primaryKeys)
+        val foreignKeys = metadata.getExportedKeys(catalog, null, tableName).toForeignKeys
+        val columnModels = extractColumnModels(columns, primaryKeys, foreignKeys)
 
         // create a class info instance with sorted fields
-        TableModel(tableName, catalog.toLowerCase, className, fields.sortBy(_.ordinalPosition))
+        TableModel(tableName, catalog.toLowerCase, className, columnModels.sortBy(_.ordinalPosition))
       }
     }
   }
@@ -154,18 +153,17 @@ object MySQLtoSlickGenerator {
    * @param primaryKeys the given primary keys
    * @return a collection of column models
    */
-  private[jdbc] def extractColumnModels(columns: Seq[Map[String, AnyRef]], primaryKeys: Seq[PrimaryKey]): Seq[ColumnModel] = {
-    val primaryKeyMap = Map(primaryKeys map(pk => (pk.columnName, pk)):_*)
-    columns flatMap { column =>
-      for {
-        columnName <- column.get("COLUMN_NAME") map (_.asInstanceOf[String])
-        typeName <- column.get("TYPE_NAME") map (_.asInstanceOf[String])
-        columnSize <- column.get("COLUMN_SIZE") map (_.asInstanceOf[Int])
-        ordinalPosition <- column.get("ORDINAL_POSITION") map (_.asInstanceOf[Int])
-        primaryKey = primaryKeyMap.get(columnName)
-        autoincrement <- column.get("IS_AUTOINCREMENT") map (_ == "YES")
-        nullable <- column.get("IS_NULLABLE") map (_ == "YES")
-      } yield ColumnModel(columnName, columnName.toSnakeCase, typeName.toScalaType(nullable), nullable, primaryKey, autoincrement, columnSize, ordinalPosition)
+  private[jdbc] def extractColumnModels(columns: Seq[Column],
+                                        primaryKeys: Seq[PrimaryKey],
+                                        foreignKeys: Seq[ForeignKey]): Seq[ColumnModel] = {
+    val primaryKeyMap = Map(primaryKeys map (pk => (pk.columnName, pk)): _*)
+    val foreignKeyMap = Map(foreignKeys map (fk => (fk.pkColumnName, fk)): _*)
+    columns map { c =>
+      val primaryKey = primaryKeyMap.get(c.columnName)
+      val foreignKey = foreignKeyMap.get(c.columnName)
+      //foreignKey.foreach(fk => logger.info(s"foreignKey = $fk"))
+      ColumnModel(c.columnName, c.columnName.toSnakeCase, c.typeName.toScalaType(c.nullable),
+        primaryKey, foreignKey, c.autoincrement, c.columnSize, c.ordinalPosition)
     }
   }
 
@@ -209,22 +207,95 @@ object MySQLtoSlickGenerator {
    * @param columnName the name of the column
    * @param fieldName the name of the member variable
    * @param typeName the Scala type name (e.g. "Int")
-   * @param nullable indicates whether the column value is nullable
    * @param columnSize the defined column size
    * @param ordinalPosition the original position of the column within the table
    */
-  case class ColumnModel(columnName: String, fieldName: String, typeName: String, nullable: Boolean, primaryKey: Option[PrimaryKey], autoincrement: Boolean, columnSize: Int, ordinalPosition: Int)
+  case class ColumnModel(columnName: String, fieldName: String, typeName: String,
+                         primaryKey: Option[PrimaryKey], foreignKey: Option[ForeignKey],
+                         autoincrement: Boolean, columnSize: Int, ordinalPosition: Int)
 
   /**
-   * Represents a primary key definition
+   * Represents a table column
+   * @param columnName  the name of the column
+   * @param typeName the given SQL type name (e.g. "BIGINT")
+   * @param columnSize the column size
+   * @param ordinalPosition the ordinal position of the column within a row
+   * @param autoincrement indicates whether the column is auto-incremented
+   * @param nullable indicates whether the column is nullable
+   */
+  case class Column(columnName: String, typeName: String, columnSize: Int, ordinalPosition: Int,
+                    autoincrement: Boolean, nullable: Boolean)
+
+  /**
+   * Represents a foreign key constraint
+   */
+  case class ForeignKey(fkName: String, fkTableName: String, fkColumnName: String, pkTableName: String, pkColumnName: String,
+                        deleteRule: Int, updateRule: Int, keySeq: Int)
+
+  /**
+   * Represents a primary key constraint
    */
   case class PrimaryKey(pkName: String, tableName: String, columnName: String, keySeq: Int)
 
   /**
-   * ResultSet Conversions
+   * Result Set Conversions
    * @param rs the given [[ResultSet]]
    */
   implicit class ResultSetConversions(val rs: ResultSet) extends AnyVal {
+
+    /**
+     * Transforms the results into a collection of columns
+     * @return a collection of columns
+     */
+    def toColumns: Seq[Column] = {
+      val buf = mutable.ListBuffer[Column]()
+      while(rs.next()) {
+        val columnName = rs.getString("COLUMN_NAME")
+        val typeName = rs.getString("TYPE_NAME")
+        val columnSize = rs.getInt("COLUMN_SIZE")
+        val ordinalPosition = rs.getInt("ORDINAL_POSITION")
+        val autoincrement = "YES" == rs.getString("IS_AUTOINCREMENT")
+        val nullable = "YES" == rs.getString("IS_NULLABLE")
+        buf += Column(columnName, typeName, columnSize, ordinalPosition, autoincrement, nullable)
+      }
+      buf.sortBy(_.ordinalPosition)
+    }
+
+    /**
+     * Transforms the result set into a collection of foreign key objects
+     * @return a collection of [[ForeignKey]] objects
+     */
+    def toForeignKeys: Seq[ForeignKey] = {
+      val buf = mutable.ListBuffer[ForeignKey]()
+      while(rs.next()) {
+        val fkName = rs.getString("FK_NAME")
+        val fkTableName = rs.getString("FKTABLE_NAME")
+        val fkColumnName = rs.getString("FKCOLUMN_NAME")
+        val pkTableName = rs.getString("PKTABLE_NAME")
+        val pkColumnName = rs.getString("PKCOLUMN_NAME")
+        val deleteRule = rs.getInt("DELETE_RULE")
+        val updateRule = rs.getInt("UPDATE_RULE")
+        val keySeq = rs.getInt("KEY_SEQ")
+        buf += ForeignKey(fkName, fkTableName, fkColumnName, pkTableName, pkColumnName, deleteRule, updateRule, keySeq)
+      }
+      buf.sortBy(_.keySeq)
+    }
+
+    /**
+     * Transforms the result set into a collection of primary key objects
+     * @return a collection of [[PrimaryKey]] objects
+     */
+    def toPrimaryKeys: Seq[PrimaryKey] = {
+      val buf = mutable.ListBuffer[PrimaryKey]()
+      while(rs.next()) {
+        val pkName = rs.getString("PK_NAME")
+        val tableName = rs.getString("TABLE_NAME")
+        val columnName = rs.getString("COLUMN_NAME")
+        val keySeq = rs.getInt("KEY_SEQ")
+        buf += PrimaryKey(pkName, tableName, columnName , keySeq)
+      }
+      buf.sortBy(_.keySeq)
+    }
 
     /**
      * Transforms the results into a mapping of key-value pairs
@@ -237,23 +308,6 @@ object MySQLtoSlickGenerator {
         buf += Map(columnNames map { label => (label, rs.getObject(label))}: _*)
       }
       buf
-    }
-
-    /**
-     * Transforms the result set into a collection of primary key objects
-     * @return a collection of [[PrimaryKey]] objects
-     */
-    def toPrimaryKeys: Seq[PrimaryKey] = {
-      // { TABLE_CAT -> servo, PK_NAME -> PRIMARY, COLUMN_NAME -> actionitem_id, TABLE_NAME -> actionitem, TABLE_SCHEM -> null, KEY_SEQ -> 1 }
-      val buf = mutable.Buffer[PrimaryKey]()
-      while(rs.next()) {
-        val pkName = rs.getString("PK_NAME")
-        val tableName = rs.getString("TABLE_NAME")
-        val columnName = rs.getString("COLUMN_NAME")
-        val keySeq = rs.getInt("KEY_SEQ")
-        buf += PrimaryKey(pkName, tableName, columnName , keySeq)
-      }
-      buf.sortBy(_.keySeq)
     }
 
     /**

@@ -27,9 +27,9 @@ class MySQLtoSlickGeneratorSpec() extends FeatureSpec with GivenWhenThen with Mo
       And("a collection of models")
       val models = Seq(
         TableModel(tableName = "people", packageName = "example", className = "Person", fields = Seq(
-          ColumnModel(columnName = "person_id", fieldName = "personId", typeName = "Long", nullable = false, primaryKey = None, autoincrement = false, columnSize = 18, ordinalPosition = 1),
-          ColumnModel(columnName = "first_name", fieldName = "firstName", typeName = "String", nullable = false, primaryKey = None, autoincrement = false, columnSize = 65, ordinalPosition = 2),
-          ColumnModel(columnName = "last_name", fieldName = "lastName", typeName = "String", nullable = false, primaryKey = None, autoincrement = false, columnSize = 65, ordinalPosition = 3)
+          ColumnModel(columnName = "person_id", fieldName = "personId", typeName = "Long", primaryKey = None, foreignKey = None, autoincrement = false, columnSize = 18, ordinalPosition = 1),
+          ColumnModel(columnName = "first_name", fieldName = "firstName", typeName = "String", primaryKey = None, foreignKey = None, autoincrement = false, columnSize = 65, ordinalPosition = 2),
+          ColumnModel(columnName = "last_name", fieldName = "lastName", typeName = "String", primaryKey = None, foreignKey = None, autoincrement = false, columnSize = 65, ordinalPosition = 3)
         ))
       )
 
