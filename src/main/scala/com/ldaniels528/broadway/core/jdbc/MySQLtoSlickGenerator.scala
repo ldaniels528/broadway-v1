@@ -46,9 +46,7 @@ object MySQLtoSlickGenerator {
    * @param configPath the given JDBC configuration properties
    * @param outputPath the given output path
    */
-  def exportAsModels(configPath: String, outputPath: String): Unit = {
-    generateSources(extractModels(configPath), new File(outputPath))
-  }
+  def exportAsModels(configPath: String, outputPath: String) = generateSources(extractTableModels(configPath), new File(outputPath))
 
   /**
    * Generates the Slick model source files
@@ -61,11 +59,13 @@ object MySQLtoSlickGenerator {
       val packageDirectory = new File(outputDirectory, model.packageName)
       if (!packageDirectory.exists()) packageDirectory.mkdirs()
 
-      // create a source file
+      // get a reference to the source code output file
       val sourceFile = new File(packageDirectory, s"${model.className}.scala")
 
-      // generate the source file
-      generateSource(model, sourceFile)
+      // generate the source code and write it to disk
+      logger.info(s"Generating '${sourceFile.getAbsolutePath}'...")
+      val sourceCode = generateSource(model)
+      new BufferedOutputStream(new FileOutputStream(sourceFile), 8192) use(_.write(sourceCode.getBytes("UTF-8")))
     }
     logger.info(s"${models.size} source file(s) generated.")
   }
@@ -73,63 +73,51 @@ object MySQLtoSlickGenerator {
   /**
    * Generates a Slick model source file
    * @param model the given model class instance
-   * @param sourceFile the given source file destination
    * @see http://stackoverflow.com/questions/22626328/hello-world-example-for-slick-2-0-with-mysql
    */
-  private[jdbc] def generateSource(model: TableModel, sourceFile: File): Unit = {
+  private[jdbc] def generateSource(model: TableModel): String = {
     import model.{className, fields, packageName, tableName}
-    // get the entity class name
+
+    // generate the Slick class name, table handle, imports and functions
     val classNamePlural = className.toPlural
-
-    // generate the import statements
-    var imports = List("scala.slick.driver.MySQLDriver.simple._")
-    if (fields.exists(t => t.typeName == "Date" || t.typeName == "Option[Date]")) imports = "java.sql.Date" :: imports
-
-    // generate the Slick column functions
-    val functions = {
-      val fxSeq = fields.map { c =>
-        val options = c match {
-          case f if f.autoincrement && f.primaryKey.isDefined => ", O.PrimaryKey, O.AutoInc"
-          case f if f.primaryKey.isDefined => ", O.PrimaryKey"
-          case f if f.autoincrement => ", O.AutoInc"
-          case f => ""
-        }
-        s"""def ${c.fieldName} = column[${c.typeName}]("${c.columnName}"$options)"""
-      }
-      fxSeq ++ Seq(s"def * = (${fields.map(_.fieldName).mkString(", ")})")
-    }.indent(tabs = 2)
-
-    // generate the Slick table handle
     val handle = s"val ${tableName.toSnakeCase.toPlural} = TableQuery[$classNamePlural]"
+    val imports = (if (fields.exists(_.typeName.contains("Date"))) List("java.sql.Date") else Nil) ::: List("scala.slick.driver.MySQLDriver.simple._")
+    val functions = s"def * = (${fields.map(_.fieldName).mkString(", ")})" :: fields.toList.reverse.map { c =>
+      // create the column function arguments (name, primary key and/or autoincrement)
+      val args = s""""${c.columnName}"""" :: (c match {
+        case f if f.autoincrement && f.primaryKey.isDefined => "O.PrimaryKey" :: "O.AutoInc" :: Nil
+        case f if f.autoincrement => "O.AutoInc" :: Nil
+        case f if f.primaryKey.isDefined => "O.PrimaryKey" :: Nil
+        case f => Nil
+      })
+      // define the column function
+      s"def ${c.fieldName} = column[${c.typeName}](${args.mkString(", ")})"
+    }
 
     // generate the source code
-    logger.info(s"Generating '${sourceFile.getAbsolutePath}'...")
-    new BufferedOutputStream(new FileOutputStream(sourceFile), 8192) use { out =>
-      out.write(
-        s"""|package $packageName
-            |
-            |${imports map (i => s"import $i\n") mkString}
-            |class $className(${fields.map(f => s"${f.fieldName}: ${f.typeName}").mkString(", ")})
-            |
-            |object $className {
-            |
-            |  class $classNamePlural(tag: Tag) extends Table[(${fields.map(_.typeName).mkString(", ")})](tag, "$tableName") {
-            |$functions
-            |  }
-            |
-            |  $handle
-            |
-            |}
-            |""".stripMargin('|').trim.getBytes("UTF-8"))
-    }
+    s"""|package $packageName
+        |
+        |${imports map (i => s"import $i\n") mkString}
+        |class $className(${fields.map(f => s"${f.fieldName}: ${f.typeName}").mkString(", ")})
+        |
+        |object $className {
+        |
+        |  class $classNamePlural(tag: Tag) extends Table[(${fields.map(_.typeName).mkString(", ")})](tag, "$tableName") {
+        |${functions.reverse.indent(tabs = 2)}
+        |  }
+        |
+        |  $handle
+        |
+        |}
+        |""".stripMargin('|').trim
   }
 
   /**
-   * Generates entity classes foreach table within the given catalog (database)
+   * Generates models for each table within the given catalog (database)
    * @param configPath the given configuration file path
-   * @return a collection of model classes
+   * @return a collection of table models
    */
-  private[jdbc] def extractModels(configPath: String): Seq[TableModel] = {
+  private[jdbc] def extractTableModels(configPath: String): Seq[TableModel] = {
     // load the configuration properties
     val props = loadConnectionProperties(configPath)
     val catalog = Option(props.getProperty("catalog")).orDie("Required property 'catalog' is missing")
@@ -151,22 +139,33 @@ object MySQLtoSlickGenerator {
       tables map { tableName =>
         val className = tableName.toCamelCase
         val columns = metadata.getColumns(catalog, null, tableName, null).toMap
-        val primaryKeys = Map(metadata.getPrimaryKeys(null, null, tableName).toPrimaryKeys map(pk => (pk.columnName, pk)):_*)
-        val fields = columns flatMap { column =>
-          for {
-            columnName <- column.get("COLUMN_NAME") map (_.asInstanceOf[String])
-            typeName <- column.get("TYPE_NAME") map (_.asInstanceOf[String])
-            columnSize <- column.get("COLUMN_SIZE") map (_.asInstanceOf[Int])
-            ordinalPosition <- column.get("ORDINAL_POSITION") map (_.asInstanceOf[Int])
-            primaryKey = primaryKeys.get(columnName)
-            autoincrement <- column.get("IS_AUTOINCREMENT") map(_ == "YES")
-            nullable <- column.get("IS_NULLABLE") map (_ == "YES")
-          } yield ColumnModel(columnName, columnName.toSnakeCase, typeName.toScalaType(nullable), nullable, primaryKey, autoincrement, columnSize, ordinalPosition)
-        }
+        val primaryKeys = metadata.getPrimaryKeys(null, null, tableName).toPrimaryKeys
+        val fields = extractColumnModels(columns, primaryKeys)
 
         // create a class info instance with sorted fields
         TableModel(tableName, catalog.toLowerCase, className, fields.sortBy(_.ordinalPosition))
       }
+    }
+  }
+
+  /**
+   * Generates models for each of the given columns
+   * @param columns the given table columns
+   * @param primaryKeys the given primary keys
+   * @return a collection of column models
+   */
+  private[jdbc] def extractColumnModels(columns: Seq[Map[String, AnyRef]], primaryKeys: Seq[PrimaryKey]): Seq[ColumnModel] = {
+    val primaryKeyMap = Map(primaryKeys map(pk => (pk.columnName, pk)):_*)
+    columns flatMap { column =>
+      for {
+        columnName <- column.get("COLUMN_NAME") map (_.asInstanceOf[String])
+        typeName <- column.get("TYPE_NAME") map (_.asInstanceOf[String])
+        columnSize <- column.get("COLUMN_SIZE") map (_.asInstanceOf[Int])
+        ordinalPosition <- column.get("ORDINAL_POSITION") map (_.asInstanceOf[Int])
+        primaryKey = primaryKeyMap.get(columnName)
+        autoincrement <- column.get("IS_AUTOINCREMENT") map (_ == "YES")
+        nullable <- column.get("IS_NULLABLE") map (_ == "YES")
+      } yield ColumnModel(columnName, columnName.toSnakeCase, typeName.toScalaType(nullable), nullable, primaryKey, autoincrement, columnSize, ordinalPosition)
     }
   }
 
@@ -304,7 +303,7 @@ object MySQLtoSlickGenerator {
      */
     def toSnakeCase: String = {
       noun match {
-        case s if s.contains("_") =>
+        case s if s.contains('_') =>
           val items = s.split("[_]") map (_.toLowerCase)
           (items.head ++ items.tail.map(s => s.head.toUpper + s.tail)) mkString
         case s if s.forall(_.isUpper) => s.toLowerCase
@@ -342,7 +341,6 @@ object MySQLtoSlickGenerator {
       val myTypeName = TypeNameMapping.getOrElse(typeName, typeName)
       if (nullable) s"Option[$myTypeName]" else myTypeName
     }
-
   }
 
 }
