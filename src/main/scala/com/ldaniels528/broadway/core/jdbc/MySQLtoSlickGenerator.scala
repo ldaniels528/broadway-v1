@@ -30,6 +30,25 @@ object MySQLtoSlickGenerator {
     "VARCHAR" -> "String")
 
   /**
+   * UPDATE_RULE (int) => What happens to foreign key when primary is updated:
+   * importedKeyNoAction - do not allow update of primary key if it has been imported
+   * importedKeyCascade - change imported key to agree with primary key update
+   * importedKeySetNull - change imported key to NULL if its primary key has been updated
+   * importedKeySetDefault - change imported key to default values if its primary key has been updated
+   * importedKeyRestrict - same as importedKeyNoAction (for ODBC 2.x compatibility)
+   */
+  private val ImportedKeyUpdateRules = {
+    import java.sql.DatabaseMetaData._
+    Map(
+      importedKeyNoAction -> "ForeignKeyAction.NoAction",
+      importedKeyCascade -> "ForeignKeyAction.Cascade",
+      importedKeyRestrict -> "ForeignKeyAction.Restrict",
+      importedKeySetDefault -> "ForeignKeyAction.SetDefault",
+      importedKeySetNull -> "ForeignKeyAction.SetNull"
+    )
+  }
+
+  /**
    * Main entry point
    * @param args the given command line arguments
    */
@@ -122,10 +141,16 @@ object MySQLtoSlickGenerator {
    * @return the foreign key functions
    */
   private[jdbc] def generateForeignKeys(foreignKeys: Seq[ForeignKey]): List[String] = {
-    (foreignKeys map { fk =>
+    (foreignKeys.sortBy(_.keySeq) map { fk =>
       import fk._
-      val fxName = s"${pkTableName.toSnakeCase}By${fkColumnName.toCamelCase}"
-      s"""def $fxName = foreignKey("$fkName", ${fkColumnName.toSnakeCase}, ${pkTableName.toCamelCase}.${pkTableName.toSnakeCase.toPlural})(_.${pkColumnName.toSnakeCase}, onUpdate = ForeignKeyAction.Restrict, onDelete = ForeignKeyAction.Cascade)"""
+      val pkTableNameSC = pkTableName.toSnakeCase
+      val fkFuncName = s"${pkTableNameSC}By${fkColumnName.toCamelCase}"
+      val fkObjName = s"${pkTableName.toCamelCase}.${pkTableNameSC.toPlural}"
+      val args = Seq(
+        Some(s"_.${pkColumnName.toSnakeCase}"),
+        ImportedKeyUpdateRules.get(fk.deleteRule) map ("onDelete = " + _),
+        ImportedKeyUpdateRules.get(fk.updateRule) map ("onUpdate = " + _)).flatten.mkString(", ")
+      s"""def $fkFuncName = foreignKey("$fkName", ${fkColumnName.toSnakeCase}, $fkObjName)($args)"""
     }).toList
   }
 
