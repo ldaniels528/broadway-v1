@@ -118,7 +118,7 @@ object MySQLtoSlickGenerator {
       case Some(fks) =>
         (fks map { fk =>
           import fk._
-          s"""val ${fkName.toSnakeCase} = foreignKey("$fkName", ${fkColumnName.toSnakeCase}, ${pkTableName.toCamelCase}.${pkTableName.toSnakeCase.toPlural})(_.${pkColumnName.toSnakeCase}, onUpdate = ForeignKeyAction.Restrict, onDelete = ForeignKeyAction.Cascade)"""
+          s"""def ${pkTableName.toSnakeCase} = foreignKey("$fkName", ${fkColumnName.toSnakeCase}, ${pkTableName.toCamelCase}.${pkTableName.toSnakeCase.toPlural})(_.${pkColumnName.toSnakeCase}, onUpdate = ForeignKeyAction.Restrict, onDelete = ForeignKeyAction.Cascade)"""
         }).toList
       case None => Nil
     }
