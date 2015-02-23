@@ -111,7 +111,7 @@ object MySQLtoSlickGenerator {
         |${generateForeignKeys(model.foreignKeys) indent(tabs = 2) paragraph}
         |  }
         |
-        |  val ${tableName.toSnakeCase.toPlural} = TableQuery[$tableClassName]
+        |  val ${tableName.toSmallCamel.toPlural} = TableQuery[$tableClassName]
         |
         |}
         |""".stripMargin('|').trim
@@ -143,14 +143,18 @@ object MySQLtoSlickGenerator {
   private[jdbc] def generateForeignKeys(foreignKeys: Seq[ForeignKey]): List[String] = {
     (foreignKeys.sortBy(_.keySeq) map { fk =>
       import fk._
-      val pkTableNameSC = pkTableName.toSnakeCase
-      val fkFuncName = s"${pkTableNameSC}By${fkColumnName.toCamelCase}"
-      val fkObjName = s"${pkTableName.toCamelCase}.${pkTableNameSC.toPlural}"
+      val pkTableSmallCamel = pkTableName.toSmallCamel
+      val fkFuncName = s"${pkTableSmallCamel}By${fkColumnName.toBigCamel}"
+      val fkObjName = s"${pkTableName.toBigCamel}.${pkTableSmallCamel.toPlural}"
+
+      // define the function arguments
       val args = Seq(
-        Some(s"_.${pkColumnName.toSnakeCase}"),
+        Some(s"_.${pkColumnName.toSmallCamel}"),
         ImportedKeyUpdateRules.get(fk.deleteRule) map ("onDelete = " + _),
         ImportedKeyUpdateRules.get(fk.updateRule) map ("onUpdate = " + _)).flatten.mkString(", ")
-      s"""def $fkFuncName = foreignKey("$fkName", ${fkColumnName.toSnakeCase}, $fkObjName)($args)"""
+
+      // return the foreign key function
+      s"""def $fkFuncName = foreignKey("$fkName", ${fkColumnName.toSmallCamel}, $fkObjName)($args)"""
     }).toList
   }
 
@@ -203,7 +207,7 @@ object MySQLtoSlickGenerator {
         TableModel(
           tableName,
           packageName = catalog.toLowerCase,
-          className = tableName.toCamelCase,
+          className = tableName.toBigCamel,
           foreignKeys.getOrElse(tableName, Nil),
           columnModels = createColumnModels(columns, primaryKeys).sortBy(_.ordinalPosition))
       }
@@ -225,7 +229,7 @@ object MySQLtoSlickGenerator {
       import c._
       ColumnModel(
         columnName,
-        fieldName = columnName.toSnakeCase,
+        fieldName = columnName.toSmallCamel,
         typeName = typeName.toScalaType(nullable),
         primaryKey = primaryKeyMap.get(columnName),
         autoincrement,
@@ -429,10 +433,10 @@ object MySQLtoSlickGenerator {
     }
 
     /**
-     * Converts the given named identifier to camel case (e.g. "TheBigRedBall")
-     * @return the named identifier as camel case
+     * Converts the given named identifier to capital camel case (e.g. "TheBigRedBall")
+     * @return the named identifier as big camel case
      */
-    def toCamelCase: String = {
+    def toBigCamel: String = {
       noun match {
         case s if s.contains("_") => s.split("[_]") map (_.toLowerCase) map (s => s.head.toUpper + s.tail) mkString
         case s if s.forall(_.isUpper) => s.head.toUpper + s.tail.toLowerCase
@@ -441,17 +445,28 @@ object MySQLtoSlickGenerator {
     }
 
     /**
-     * Converts the given named identifier to snake case (e.g. "theBigRedBall")
-     * @return the named identifier as snake case
+     * Converts the given named identifier to lowercase camel case (e.g. "theBigRedBall")
+     * @return the named identifier as small camel case
      */
-    def toSnakeCase: String = {
+    def toSmallCamel: String = {
       noun match {
         case s if s.contains('_') =>
           val items = s.split("[_]") map (_.toLowerCase)
           (items.head ++ items.tail.map(s => s.head.toUpper + s.tail)) mkString
         case s if s.forall(_.isUpper) => s.toLowerCase
-        case s => s.head.toLower + s.tail
+        case s =>
+          indexOfLastUpperCase() map (p => s.substring(0, p).toLowerCase + s.substring(p)) getOrElse s.head.toLower + s.tail
       }
+    }
+
+    def indexOfLastUpperCase(start: Int = 0): Option[Int] = {
+      val ca = noun.toCharArray
+      var p = start
+      while(p + 1 < ca.length) {
+        if(!ca(p + 1).isUpper) return Some(p)
+        p += 1
+      }
+      None
     }
 
   }
