@@ -73,20 +73,27 @@ object MySQLtoSlickGenerator {
    * @param outputDirectory the given output directory
    */
   private[jdbc] def generateSources(models: Seq[TableModel], outputDirectory: File): Unit = {
+    var count = 0
     models foreach { model =>
-      // create the package directory
-      val packageDirectory = new File(outputDirectory, model.packageName)
-      if (!packageDirectory.exists()) packageDirectory.mkdirs()
+      // fail-safe
+      if (model.columnModels.length > 22)
+        logger.warn(s"${model.tableName}: The maximum number of columns has been exceeded (${model.columnModels.length} > 22)")
+      else {
+        // create the package directory
+        val packageDirectory = new File(outputDirectory, model.packageName)
+        if (!packageDirectory.exists()) packageDirectory.mkdirs()
 
-      // get a reference to the source code output file
-      val sourceFile = new File(packageDirectory, s"${model.className}.scala")
+        // get a reference to the source code output file
+        val sourceFile = new File(packageDirectory, s"${model.className}.scala")
 
-      // generate the source code and write it to disk
-      logger.info(s"Generating '${sourceFile.getAbsolutePath}'...")
-      val sourceCode = generateSource(model)
-      new BufferedOutputStream(new FileOutputStream(sourceFile), 8192) use(_.write(sourceCode.getBytes("UTF-8")))
+        // generate the source code and write it to disk
+        logger.info(s"Generating '${sourceFile.getAbsolutePath}'...")
+        val sourceCode = generateSource(model)
+        new BufferedOutputStream(new FileOutputStream(sourceFile), 8192) use (_.write(sourceCode.getBytes("UTF-8")))
+        count += 1
+      }
     }
-    logger.info(s"${models.size} source file(s) generated.")
+    logger.info(s"$count source file(s) generated.")
   }
 
   /**
@@ -186,10 +193,10 @@ object MySQLtoSlickGenerator {
       logger.info(s"Connected to $productName v$productVersion")
 
       // lookup the defined table types
-      val tableTypes = (metadata.getTableTypes.toMapSeq flatMap (_ map (_._2.asInstanceOf[String]) toSeq)).toArray
+      val tableTypes = metadata.getTableTypes.transform(_.getString("TABLE_TYPE")).toArray
 
       // lookup all tables within the catalog
-      val tables = metadata.getTables(catalog, null, null, tableTypes).toMapSeq flatMap (_.get("TABLE_NAME") map (_.asInstanceOf[String]))
+      val tables = metadata.getTables(catalog, null, null, tableTypes).transform(_.getString("TABLE_NAME"))
 
       // create a mapping of the foreign keys for each table
       logger.info("Gathering foreign key constraints...")
@@ -199,7 +206,7 @@ object MySQLtoSlickGenerator {
       }: _*)
 
       // transform the table mappings into class information
-      val tableModels = tables map { tableName =>
+      tables map { tableName =>
         logger.info(s"Importing table $tableName...")
         val columns = metadata.getColumns(catalog, null, tableName, null).toColumns
         val primaryKeys = metadata.getPrimaryKeys(null, null, tableName).toPrimaryKeys
@@ -211,8 +218,6 @@ object MySQLtoSlickGenerator {
           foreignKeys.getOrElse(tableName, Nil),
           columnModels = createColumnModels(columns, primaryKeys).sortBy(_.ordinalPosition))
       }
-
-      tableModels
     }
   }
 
@@ -325,17 +330,15 @@ object MySQLtoSlickGenerator {
      * @return a collection of columns
      */
     def toColumns: Seq[Column] = {
-      val buf = mutable.ListBuffer[Column]()
-      while(rs.next()) {
+      transform { rs =>
         val columnName = rs.getString("COLUMN_NAME")
         val typeName = rs.getString("TYPE_NAME")
         val columnSize = rs.getInt("COLUMN_SIZE")
         val ordinalPosition = rs.getInt("ORDINAL_POSITION")
         val autoincrement = "YES" == rs.getString("IS_AUTOINCREMENT")
         val nullable = "YES" == rs.getString("IS_NULLABLE")
-        buf += Column(columnName, typeName, columnSize, ordinalPosition, autoincrement, nullable)
-      }
-      buf.sortBy(_.ordinalPosition)
+        Column(columnName, typeName, columnSize, ordinalPosition, autoincrement, nullable)
+      }.sortBy(_.ordinalPosition)
     }
 
     /**
@@ -343,8 +346,7 @@ object MySQLtoSlickGenerator {
      * @return a collection of [[ForeignKey]] objects
      */
     def toForeignKeys: Seq[ForeignKey] = {
-      val buf = mutable.ListBuffer[ForeignKey]()
-      while(rs.next()) {
+      transform { rs =>
         val fkName = rs.getString("FK_NAME")
         val fkTableName = rs.getString("FKTABLE_NAME")
         val fkColumnName = rs.getString("FKCOLUMN_NAME")
@@ -353,48 +355,40 @@ object MySQLtoSlickGenerator {
         val deleteRule = rs.getInt("DELETE_RULE")
         val updateRule = rs.getInt("UPDATE_RULE")
         val keySeq = rs.getInt("KEY_SEQ")
-        buf += ForeignKey(fkName, pkTableName, pkColumnName, fkTableName, fkColumnName, deleteRule, updateRule, keySeq)
-        //logger.info(s"rs = ${toMap.toSeq.filterNot(_._2 == null)}")
-      }
-      buf.sortBy(_.keySeq)
+        ForeignKey(fkName, pkTableName, pkColumnName, fkTableName, fkColumnName, deleteRule, updateRule, keySeq)
+      }.sortBy(_.keySeq)
     }
+
+    /**
+     * Transforms the results into a mapping of key-value pairs
+     * @return a mapping of key-value pairs
+     */
+    def toMap: Map[String, AnyRef] = Map(getColumnNames(rs) map (label => (label, rs.getObject(label))): _*)
 
     /**
      * Transforms the result set into a collection of primary key objects
      * @return a collection of [[PrimaryKey]] objects
      */
     def toPrimaryKeys: Seq[PrimaryKey] = {
-      val buf = mutable.ListBuffer[PrimaryKey]()
-      while(rs.next()) {
+      transform { rs =>
         val pkName = rs.getString("PK_NAME")
         val tableName = rs.getString("TABLE_NAME")
         val columnName = rs.getString("COLUMN_NAME")
         val keySeq = rs.getInt("KEY_SEQ")
-        buf += PrimaryKey(pkName, tableName, columnName , keySeq)
-      }
-      buf.sortBy(_.keySeq)
+        PrimaryKey(pkName, tableName, columnName , keySeq)
+      }.sortBy(_.keySeq)
     }
 
     /**
-     * Transforms the results into a mapping of key-value pairs
-     * @return a mapping of key-value pairs
+     * Transforms a given row of results into typed results
+     * @param f the transformation function
+     * @tparam T the return type
+     * @return the collection of typed results
      */
-    def toMapSeq: Seq[Map[String, AnyRef]] = {
-      val columnNames = getColumnNames(rs)
-      val buf = mutable.Buffer[Map[String, AnyRef]]()
-      while (rs.next()) {
-        buf += Map(columnNames map { label => (label, rs.getObject(label))}: _*)
-      }
+    def transform[T](f: ResultSet => T): Seq[T] = {
+      val buf = mutable.Buffer[T]()
+      while (rs.next()) buf += f(rs)
       buf
-    }
-
-    /**
-     * Transforms the results into a mapping of key-value pairs
-     * @return a mapping of key-value pairs
-     */
-    def toMap: Map[String, AnyRef] = {
-      val columnNames = getColumnNames(rs)
-      Map(columnNames map { label => (label, rs.getObject(label))}: _*)
     }
 
     /**
@@ -404,7 +398,7 @@ object MySQLtoSlickGenerator {
      */
     private def getColumnNames(rs: ResultSet): Seq[String] = {
       val metadata = rs.getMetaData
-      for (n <- 1 to metadata.getColumnCount) yield metadata.getColumnName(n)
+      (1 to metadata.getColumnCount) map metadata.getColumnName
     }
   }
 
