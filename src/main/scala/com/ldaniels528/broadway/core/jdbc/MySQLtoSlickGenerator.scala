@@ -76,38 +76,52 @@ object MySQLtoSlickGenerator {
    * @see http://stackoverflow.com/questions/22626328/hello-world-example-for-slick-2-0-with-mysql
    */
   private[jdbc] def generateSource(model: TableModel): String = {
-    import model.{className, fields, packageName, tableName}
+    import model.{className, columnModels, packageName, tableName}
 
-    // generate the Slick class name, table handle, imports and functions
-    val classNamePlural = className.toPlural
-    val handle = s"val ${tableName.toSnakeCase.toPlural} = TableQuery[$classNamePlural]"
-    val imports = (if (fields.exists(_.typeName.contains("Date"))) List("java.sql.Date") else Nil) ::: List("scala.slick.driver.MySQLDriver.simple._")
-    val functions = s"def * = (${fields.map(_.fieldName).mkString(", ")})" :: fields.toList.reverse.map { c =>
-      // create the column function arguments (name, primary key and/or autoincrement)
+    val tableClassName = className.toPlural
+    s"""|package $packageName
+        |
+        |${generateImports(columnModels) map ("import " + _) mkString "\n"}
+        |
+        |class $className(${columnModels.map(f => s"${f.fieldName}: ${f.typeName}").mkString(", ")})
+        |
+        |object $className {
+        |
+        |  class $tableClassName(tag: Tag) extends Table[(${columnModels.map(_.typeName).mkString(", ")})](tag, "$tableName") {
+        |${generateColumnFunctions(columnModels) indent(tabs = 2)}
+        |
+        |${generateForeignKeys(columnModels) indent(tabs = 2)}
+        |  }
+        |
+        |  val ${tableName.toSnakeCase.toPlural} = TableQuery[$tableClassName]
+        |
+        |}
+        |""".stripMargin('|').trim
+  }
+
+  private[jdbc] def generateColumnFunctions(columnModels: Seq[ColumnModel]): List[String] = {
+    val functions = columnModels.toList.map { c =>
+      // create the column function arguments (name, options*)
       val args = (s""""${c.columnName}"""" ::
-        (if(c.autoincrement) List("O.AutoInc") else Nil) :::
-          (if(c.primaryKey.isDefined) List("O.PrimaryKey") else Nil)).mkString(", ")
+        (if (c.autoincrement) List("O.AutoInc") else Nil) :::
+        (if (c.primaryKey.isDefined) List("O.PrimaryKey") else Nil)).mkString(", ")
 
       // define the column function
       s"def ${c.fieldName} = column[${c.typeName}]($args)"
     }
+    functions ::: s"def * = (${columnModels.map(_.fieldName).mkString(", ")})" :: Nil
+  }
 
-    // generate the source code
-    s"""|package $packageName
-        |
-        |${imports map (i => s"import $i\n") mkString}
-        |class $className(${fields.map(f => s"${f.fieldName}: ${f.typeName}").mkString(", ")})
-        |
-        |object $className {
-        |
-        |  class $classNamePlural(tag: Tag) extends Table[(${fields.map(_.typeName).mkString(", ")})](tag, "$tableName") {
-        |${functions.reverse.indent(tabs = 2)}
-        |  }
-        |
-        |  $handle
-        |
-        |}
-        |""".stripMargin('|').trim
+  private[jdbc] def generateForeignKeys(columnModels: Seq[ColumnModel]): Seq[String] = {
+    columnModels.flatMap(_.foreignKey) map { fk =>
+      import fk._
+      s"""//val ${fkName.toSnakeCase} = foreignKey("$fkName", ${pkColumnName.toSnakeCase}, ${fkTableName.toCamelCase}.${fkTableName.toSnakeCase.toPlural})(_.${fkColumnName.toSnakeCase}, onUpdate = ForeignKeyAction.Restrict, onDelete = ForeignKeyAction.Cascade)"""
+    }
+  }
+
+  private[jdbc] def generateImports(columnModels: Seq[ColumnModel]): List[String] = {
+    List("scala.slick.driver.MySQLDriver.simple._") :::
+      (if (columnModels.exists(_.typeName.contains("Date"))) List("java.sql.Date") else Nil)
   }
 
   /**
@@ -119,7 +133,7 @@ object MySQLtoSlickGenerator {
     // load the configuration properties
     val props = loadConnectionProperties(configPath)
     val catalog = Option(props.getProperty("catalog")).orDie("Required property 'catalog' is missing")
-    getConnection(props) use { conn =>
+    openConnection(props) use { conn =>
       // get the database metadata
       val metadata = conn.getMetaData
 
@@ -135,44 +149,52 @@ object MySQLtoSlickGenerator {
 
       // transform the table mappings into class information
       tables map { tableName =>
-        val className = tableName.toCamelCase
+        logger.info(s"Analyzing table $tableName...")
         val columns = metadata.getColumns(catalog, null, tableName, null).toColumns
         val primaryKeys = metadata.getPrimaryKeys(null, null, tableName).toPrimaryKeys
         val foreignKeys = metadata.getExportedKeys(catalog, null, tableName).toForeignKeys
-        val columnModels = extractColumnModels(columns, primaryKeys, foreignKeys)
-
-        // create a class info instance with sorted fields
-        TableModel(tableName, catalog.toLowerCase, className, columnModels.sortBy(_.ordinalPosition))
+        
+        TableModel(
+          tableName,
+          packageName = catalog.toLowerCase,
+          className = tableName.toCamelCase,
+          columnModels = createColumnModels(columns, primaryKeys, foreignKeys).sortBy(_.ordinalPosition))
       }
     }
   }
 
   /**
-   * Generates models for each of the given columns
+   * Creates the column models for the given columns, primary keys and foreign keys
    * @param columns the given table columns
-   * @param primaryKeys the given primary keys
+   * @param primaryKeys the given collection of primary keys
+   * @param foreignKeys the given collection of foreign keys
    * @return a collection of column models
    */
-  private[jdbc] def extractColumnModels(columns: Seq[Column],
+  private[jdbc] def createColumnModels(columns: Seq[Column],
                                         primaryKeys: Seq[PrimaryKey],
                                         foreignKeys: Seq[ForeignKey]): Seq[ColumnModel] = {
     val primaryKeyMap = Map(primaryKeys map (pk => (pk.columnName, pk)): _*)
     val foreignKeyMap = Map(foreignKeys map (fk => (fk.pkColumnName, fk)): _*)
     columns map { c =>
-      val primaryKey = primaryKeyMap.get(c.columnName)
-      val foreignKey = foreignKeyMap.get(c.columnName)
-      //foreignKey.foreach(fk => logger.info(s"foreignKey = $fk"))
-      ColumnModel(c.columnName, c.columnName.toSnakeCase, c.typeName.toScalaType(c.nullable),
-        primaryKey, foreignKey, c.autoincrement, c.columnSize, c.ordinalPosition)
+      import c._
+      ColumnModel(
+        columnName,
+        fieldName = columnName.toSnakeCase,
+        typeName = typeName.toScalaType(nullable),
+        primaryKey = primaryKeyMap.get(columnName),
+        foreignKey = foreignKeyMap.get(columnName),
+        autoincrement,
+        columnSize,
+        ordinalPosition)
     }
   }
 
   /**
-   * Creates a database connection
+   * Opens a database connection
    * @param props the given configuration properties
    * @return a database [[Connection]]
    */
-  private def getConnection(props: java.util.Properties): Connection = {
+  private def openConnection(props: java.util.Properties): Connection = {
     val url = Option(props.getProperty("url")).orDie("Required property 'url' not found")
     Option(java.sql.DriverManager.getConnection(url, props)).orDie(s"Unable to establish connection to $url")
   }
@@ -198,9 +220,14 @@ object MySQLtoSlickGenerator {
    * @param tableName the name of the table being represented
    * @param className the name of the class being represented
    * @param packageName the name of the package the model class resides within
-   * @param fields the database columns / class member variables
+   * @param columnModels the given column models (database/class column definitions)
    */
-  case class TableModel(tableName: String, packageName: String, className: String, fields: Seq[ColumnModel])
+  case class TableModel(tableName: String, packageName: String, className: String, columnModels: Seq[ColumnModel]) {
+    private val columnModelMap = Map(columnModels.map(cm => (cm.columnName, cm)):_*)
+
+    def get(columnName: String): Option[ColumnModel] = columnModelMap.get(columnName)
+
+  }
 
   /**
    * Represents a Scala-Slick table column model
@@ -229,7 +256,9 @@ object MySQLtoSlickGenerator {
   /**
    * Represents a foreign key constraint
    */
-  case class ForeignKey(fkName: String, fkTableName: String, fkColumnName: String, pkTableName: String, pkColumnName: String,
+  case class ForeignKey(fkName: String,
+                        pkTableName: String, pkColumnName: String,
+                        fkTableName: String, fkColumnName: String,
                         deleteRule: Int, updateRule: Int, keySeq: Int)
 
   /**
@@ -276,7 +305,7 @@ object MySQLtoSlickGenerator {
         val deleteRule = rs.getInt("DELETE_RULE")
         val updateRule = rs.getInt("UPDATE_RULE")
         val keySeq = rs.getInt("KEY_SEQ")
-        buf += ForeignKey(fkName, fkTableName, fkColumnName, pkTableName, pkColumnName, deleteRule, updateRule, keySeq)
+        buf += ForeignKey(fkName, pkTableName, pkColumnName, fkTableName, fkColumnName, deleteRule, updateRule, keySeq)
       }
       buf.sortBy(_.keySeq)
     }
