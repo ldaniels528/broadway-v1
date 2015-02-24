@@ -16,18 +16,36 @@ import scala.language.postfixOps
  */
 object MySQLtoSlickGenerator {
   private lazy val logger = LoggerFactory.getLogger(getClass)
-  private val TypeNameMapping = Map(
-    "BIGINT" -> "Long",
-    "BIT" -> "Boolean",
-    "BLOB" -> "Array[Byte]",
-    "DATETIME" -> "Date",
-    "DOUBLE" -> "Double",
-    "INT" -> "Int",
-    "LONGTEXT" -> "String",
-    "TEXT" -> "String",
-    "TIMESTAMP" -> "Date",
-    "VARBINARY" -> "Array[Byte]",
-    "VARCHAR" -> "String")
+  private val DataTypeMapping = {
+    import java.sql.Types._
+    Map(
+      BIGINT -> "Long",
+      BIT -> "Boolean",
+      BLOB -> "Array[Byte]",
+      BOOLEAN -> "Boolean",
+      CHAR -> "String",
+      CLOB -> "Array[Char]",
+      DATE -> "java.sql.Date",
+      DECIMAL -> "Double", //BigDecimal?
+      DOUBLE -> "Double",
+      FLOAT -> "Float",
+      INTEGER -> "Int",
+      JAVA_OBJECT -> "AnyRef",
+      LONGNVARCHAR -> "String",
+      LONGVARCHAR -> "String",
+      LONGVARBINARY -> "Array[Byte]",
+      NCHAR -> "String",
+      OTHER -> "AnyRef",
+      REAL -> "Float",
+      SMALLINT -> "Short",
+      SQLXML -> "java.sql.SQLXML",
+      TIME -> "java.util.Date",
+      TIMESTAMP -> "java.sql.Timestamp",
+      TINYINT -> "Byte",
+      VARBINARY -> "Array[Byte]",
+      VARCHAR -> "String"
+    )
+  }
 
   /**
    * UPDATE_RULE (int) => What happens to foreign key when primary is updated:
@@ -199,7 +217,7 @@ object MySQLtoSlickGenerator {
       val tables = metadata.getTables(catalog, null, null, tableTypes).transform(_.getString("TABLE_NAME"))
 
       // create a mapping of the foreign keys for each table
-      logger.info("Gathering foreign key constraints...")
+      logger.info(s"Gathering foreign key constraints for ${tables.length} tables...")
       val foreignKeys = Map(tables flatMap { tableName =>
         logger.info(s"Retrieving foreign keys for table $tableName...")
         metadata.getExportedKeys(catalog, null, tableName).toForeignKeys groupBy(_.fkTableName)
@@ -235,7 +253,7 @@ object MySQLtoSlickGenerator {
       ColumnModel(
         columnName,
         fieldName = columnName.toSmallCamel,
-        typeName = typeName.toScalaType(nullable),
+        typeName,
         primaryKey = primaryKeyMap.get(columnName),
         autoincrement,
         columnSize,
@@ -305,7 +323,6 @@ object MySQLtoSlickGenerator {
    */
   case class Column(columnName: String, typeName: String, columnSize: Int, ordinalPosition: Int,
                     autoincrement: Boolean, nullable: Boolean)
-
   /**
    * Represents a foreign key constraint
    */
@@ -332,13 +349,27 @@ object MySQLtoSlickGenerator {
     def toColumns: Seq[Column] = {
       transform { rs =>
         val columnName = rs.getString("COLUMN_NAME")
-        val typeName = rs.getString("TYPE_NAME")
+        val dataType = rs.getInt("DATA_TYPE")
+        val sqlTypeName = rs.getString("TYPE_NAME")
         val columnSize = rs.getInt("COLUMN_SIZE")
         val ordinalPosition = rs.getInt("ORDINAL_POSITION")
         val autoincrement = "YES" == rs.getString("IS_AUTOINCREMENT")
         val nullable = "YES" == rs.getString("IS_NULLABLE")
-        Column(columnName, typeName, columnSize, ordinalPosition, autoincrement, nullable)
+        Column(columnName, toDataType(sqlTypeName, dataType, nullable), columnSize, ordinalPosition, autoincrement, nullable)
       }.sortBy(_.ordinalPosition)
+    }
+
+    /**
+     * Returns the appropriate Java type for the given SQL-based data type
+     * @param sqlTypeName the given SQL type name (e.g. "BIGINT")
+     * @param dataType the given JDBC SQL type
+     * @param nullable indicates whether the type is nullable
+     * @return the appropriate Java type
+     */
+    private def toDataType(sqlTypeName: String, dataType: Int, nullable: Boolean): String = {
+      DataTypeMapping.get(dataType) map { myTypeName =>
+        if (nullable) s"Option[$myTypeName]" else myTypeName
+      } orDie s"Type '$sqlTypeName' (type index = $dataType) not recognized"
     }
 
     /**
@@ -477,22 +508,6 @@ object MySQLtoSlickGenerator {
      */
     def indent(tabs: Int): String = lines map ("\t" * tabs + _) mkString "\n"
 
-  }
-
-  /**
-   * SQL to Scala Type Conversions
-   * @param typeName the given type name
-   */
-  implicit class TypeConversion(val typeName: String) extends AnyVal {
-
-    /**
-     * Returns the given SQL type name as the equivalent Scala type (e.g. "BIGINT" return "Long")
-     * @return the equivalent Scala type (e.g. "Long")
-     */
-    def toScalaType(nullable: Boolean): String = {
-      val myTypeName = TypeNameMapping.getOrElse(typeName, typeName)
-      if (nullable) s"Option[$myTypeName]" else myTypeName
-    }
   }
 
 }
