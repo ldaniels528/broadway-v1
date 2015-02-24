@@ -2,8 +2,8 @@ package com.ldaniels528.broadway.server
 
 import java.io.File
 
-import akka.actor.{Actor, ActorRef, ActorSystem, Props}
-import com.ldaniels528.broadway.core.actors.Actors._
+import akka.actor.{Actor, ActorSystem, Props}
+import akka.routing.RoundRobinPool
 import com.ldaniels528.broadway.core.actors.ArchivingActor
 import com.ldaniels528.broadway.core.resources._
 import com.ldaniels528.broadway.core.util.FileHelper._
@@ -18,7 +18,7 @@ import scala.reflect.ClassTag
  * @author Lawrence Daniels <lawrence.daniels@gmail.com>
  */
 case class ServerConfig(props: java.util.Properties, httpInfo: Option[HttpInfo]) {
-  implicit val system = ActorSystem("BroadwaySystem")
+  implicit val system = ActorSystem(props.getOrElse("broadway.actor.system", "BroadwaySystem"))
 
   // create the system actors
   val archivingActor = addActor(new ArchivingActor(this))
@@ -29,8 +29,8 @@ case class ServerConfig(props: java.util.Properties, httpInfo: Option[HttpInfo])
    * @tparam T the actor type
    * @return an [[akka.actor.ActorRef]]
    */
-  def addActor[T <: Actor : ClassTag](parallelism: Int): BWxActorRef = {
-    actorClosure((1 to parallelism) map (_ => system.actorOf(Props[T]())))
+  def addActor[T <: Actor : ClassTag](parallelism: Int) = {
+    system.actorOf(Props[T].withRouter(RoundRobinPool(nrOfInstances = parallelism)))
   }
 
   /**
@@ -40,21 +40,8 @@ case class ServerConfig(props: java.util.Properties, httpInfo: Option[HttpInfo])
    * @tparam T the actor type
    * @return an [[akka.actor.ActorRef]]
    */
-  def addActor[T <: Actor : ClassTag](actor: => T, parallelism: Int = 1): BWxActorRef = {
-    actorClosure((1 to parallelism) map (_ => system.actorOf(Props(actor))))
-  }
-
-  /**
-   * Returns a closure to a function that exposes an actor (round robin) from the actor pool
-   * @param actors the given pool of [[ActorRef]]
-   * @return a closure to a function that exposes an actor (round robin) from the actor pool
-   */
-  private def actorClosure(actors: Seq[ActorRef]) = {
-    var index = 0
-    () => {
-      index += 1
-      actors(index % actors.length)
-    }
+  def addActor[T <: Actor : ClassTag](actor: => T, parallelism: Int = 1) = {
+    system.actorOf(Props[T].withRouter(RoundRobinPool(nrOfInstances = parallelism)))
   }
 
   def getRootDirectory = new File(props.asOpt[String](BaseDir).orDie(s"Required property '$BaseDir' is missing"))
