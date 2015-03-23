@@ -29,6 +29,7 @@ object MySQLtoSlickGenerator {
       DECIMAL -> "Double", //BigDecimal?
       DOUBLE -> "Double",
       FLOAT -> "Float",
+      REAL -> "Float",
       INTEGER -> "Int",
       JAVA_OBJECT -> "AnyRef",
       LONGNVARCHAR -> "String",
@@ -128,18 +129,18 @@ object MySQLtoSlickGenerator {
         |${generateImports(columnModels) map ("import " + _) mkString "\n"}
         |
         |class $className(${columnModels.map(f => s"${f.fieldName}: ${f.typeName}").mkString(", ")})
+                                                                                                     |
+                                                                                                     |object $className {
+                                                                                                                         |
+                                                                                                                         | class $tableClassName(tag: Tag) extends Table[(${columnModels.map(_.typeName).mkString(", ")})](tag, "$tableName") {
+                                                                                                                                                                                                                                             |${generateColumnFunctions(columnModels) indent (tabs = 2)}
+        |${generateForeignKeys(model.foreignKeys) indent (tabs = 2) paragraph}
+        | }
         |
-        |object $className {
-        |
-        |  class $tableClassName(tag: Tag) extends Table[(${columnModels.map(_.typeName).mkString(", ")})](tag, "$tableName") {
-        |${generateColumnFunctions(columnModels) indent(tabs = 2)}
-        |${generateForeignKeys(model.foreignKeys) indent(tabs = 2) paragraph}
-        |  }
-        |
-        |  val ${tableName.toSmallCamel.toPlural} = TableQuery[$tableClassName]
-        |
-        |}
-        |""".stripMargin('|').trim
+        | val ${tableName.toSmallCamel.toPlural} = TableQuery[$tableClassName]
+                                                                               |
+                                                                               |}
+                                                                               |""".stripMargin('|').trim
   }
 
   /**
@@ -220,7 +221,7 @@ object MySQLtoSlickGenerator {
       logger.info(s"Gathering foreign key constraints for ${tables.length} tables...")
       val foreignKeys = Map(tables flatMap { tableName =>
         logger.info(s"Retrieving foreign keys for table $tableName...")
-        metadata.getExportedKeys(catalog, null, tableName).toForeignKeys groupBy(_.fkTableName)
+        metadata.getExportedKeys(catalog, null, tableName).toForeignKeys groupBy (_.fkTableName)
       }: _*)
 
       // transform the table mappings into class information
@@ -295,7 +296,7 @@ object MySQLtoSlickGenerator {
    * @param columnModels the given column models (database/class column definitions)
    */
   case class TableModel(tableName: String, packageName: String, className: String, foreignKeys: Seq[ForeignKey], columnModels: Seq[ColumnModel]) {
-    private val columnModelMap = Map(columnModels.map(cm => (cm.columnName, cm)):_*)
+    private val columnModelMap = Map(columnModels.map(cm => (cm.columnName, cm)): _*)
 
     def get(columnName: String): Option[ColumnModel] = columnModelMap.get(columnName)
 
@@ -323,6 +324,7 @@ object MySQLtoSlickGenerator {
    */
   case class Column(columnName: String, typeName: String, columnSize: Int, ordinalPosition: Int,
                     autoincrement: Boolean, nullable: Boolean)
+
   /**
    * Represents a foreign key constraint
    */
@@ -406,7 +408,7 @@ object MySQLtoSlickGenerator {
         val tableName = rs.getString("TABLE_NAME")
         val columnName = rs.getString("COLUMN_NAME")
         val keySeq = rs.getInt("KEY_SEQ")
-        PrimaryKey(pkName, tableName, columnName , keySeq)
+        PrimaryKey(pkName, tableName, columnName, keySeq)
       }.sortBy(_.keySeq)
     }
 
@@ -443,7 +445,7 @@ object MySQLtoSlickGenerator {
      * Adds a new line at the start of the given string expression
      * @return the given string expression with a new line added or the input string
      */
-    def paragraph: String = if(noun.trim.nonEmpty) "\n" + noun else noun
+    def paragraph: String = if (noun.trim.nonEmpty) "\n" + noun else noun
 
     /**
      * Returns the plural form of the given noun (e.g. "activity" returns "activities")
@@ -463,7 +465,7 @@ object MySQLtoSlickGenerator {
      */
     def toBigCamel: String = {
       noun match {
-        case s if s.contains("_") => s.split("[_]") map (_.toLowerCase) map (s => s.head.toUpper + s.tail) mkString
+        case s if s.contains("_") => s.split("[_]") map (_.toLowerCase) filter(_.nonEmpty) map (s => s.head.toUpper + s.tail) mkString
         case s if s.forall(_.isUpper) => s.head.toUpper + s.tail.toLowerCase
         case s => s.head.toUpper + s.tail
       }
@@ -475,8 +477,8 @@ object MySQLtoSlickGenerator {
      */
     def toSmallCamel: String = {
       noun match {
-        case s if s.contains('_') =>
-          val items = s.split("[_]") map (_.toLowerCase)
+        case s if s.length > 1 && s.contains('_') =>
+          val items = s.split("[_]") map (_.toLowerCase) filter(_.nonEmpty)
           (items.head ++ items.tail.map(s => s.head.toUpper + s.tail)) mkString
         case s if s.forall(_.isUpper) => s.toLowerCase
         case s =>
@@ -487,8 +489,8 @@ object MySQLtoSlickGenerator {
     def indexOfLastUpperCase(start: Int = 0): Option[Int] = {
       val ca = noun.toCharArray
       var p = start
-      while(p + 1 < ca.length) {
-        if(!ca(p + 1).isUpper) return Some(p)
+      while (p + 1 < ca.length) {
+        if (!ca(p + 1).isUpper) return Some(p)
         p += 1
       }
       None
