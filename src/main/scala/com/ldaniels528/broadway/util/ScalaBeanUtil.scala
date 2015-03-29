@@ -58,7 +58,7 @@ class ScalaBeanUtil() {
       }): _*)
 
     // get the destination class
-    val destClass = m.erasure.asInstanceOf[Class[S]]
+    val destClass = m.runtimeClass.asInstanceOf[Class[S]]
 
     // lookup the default constructor
     val cons = destClass.getConstructors()(0)
@@ -120,7 +120,7 @@ class ScalaBeanUtil() {
       case v if v == null => getDefaultValue(returnType)
 
       // if the value is an Option[T] ...
-      case o: Option[_] if returnType != classOf[Option[_]] => o.getOrElse(null).asInstanceOf[Object]
+      case o: Option[_] if returnType != classOf[Option[_]] => o.map(_.asInstanceOf[Object]).orNull
 
       // look for exception cases by return type
       case _ =>

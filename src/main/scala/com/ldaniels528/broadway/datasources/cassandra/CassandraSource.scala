@@ -32,6 +32,13 @@ class CassandraSource(cluster: Cluster) {
     invokeCQL(query, toObjects(args map (_._2)))
   }
 
+  /**
+   * Asynchronously inserts the given key value pairs into the given table
+   * @param table the given table name
+   * @param bean the given bean, which contains the properties to insert
+   * @param session the given [[Session]]
+   * @return a promise of a result set
+   */
   def insert[T](table: String, bean: T)(implicit session: Session): Future[ResultSet] = {
     insert(table, Cascade.mapify(bean).toSeq: _*)
   }
@@ -53,7 +60,7 @@ class CassandraSource(cluster: Cluster) {
   def openSession(keySpace: String): Session = cluster.connect(keySpace)
 
   private def toObjects(values: Seq[Any]) = values map {
-    case o: Option[_] => o.getOrElse(null).asInstanceOf[Object]
+    case o: Option[_] => o.map(_.asInstanceOf[Object]).orNull
     case x => x.asInstanceOf[Object]
   }
 
