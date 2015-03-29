@@ -90,7 +90,7 @@ The class below is an optional custom actor that will perform the stock symbol l
 record to the Kafka publishing actor (a built-in component).
 
 ```scala
-class StockQuoteLookupActor(target: BWxActorRef)(implicit ec: ExecutionContext) extends Actor {
+class StockQuoteLookupActor(target: ActorRef)(implicit ec: ExecutionContext) extends Actor {
   private val parameters = YFStockQuoteService.getParams(
     "symbol", "exchange", "lastTrade", "tradeDate", "tradeTime", "ask", "bid", "change", "changePct",
     "prevClose", "open", "close", "high", "low", "volume", "marketCap", "errorMessage")

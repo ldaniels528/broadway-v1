@@ -1,7 +1,6 @@
 package com.ldaniels528.broadway.core.actors
 
 import akka.actor.{Actor, ActorRef}
-import com.ldaniels528.broadway.core.actors.Actors._
 import com.ldaniels528.broadway.core.actors.FileReadingActor._
 import com.ldaniels528.broadway.core.resources._
 import com.ldaniels528.broadway.core.util.TextFileHelper
@@ -27,7 +26,7 @@ class FileReadingActor(config: ServerConfig) extends Actor {
    * @param target the given target actor
    * @param resource the resource to read from
    */
-  private def copyBinary(target: BWxActorRef, resource: ReadableResource) {
+  private def copyBinary(target: ActorRef, resource: ReadableResource) {
     // use 64K blocks
     val buf = new Array[Byte](65536)
     resource.getInputStream foreach { in =>
@@ -69,7 +68,7 @@ class FileReadingActor(config: ServerConfig) extends Actor {
    * @param resource the resource to read from
    * @param formatHandler the optional text handler
    */
-  private def copyText(target: BWxActorRef, resource: ReadableResource, formatHandler: Option[TextFormatHandler]) {
+  private def copyText(target: ActorRef, resource: ReadableResource, formatHandler: Option[TextFormatHandler]) {
     var lineNo = 1
     resource.getInputStream foreach { in =>
       // notify the target actor that the resource has been opened
@@ -123,7 +122,7 @@ object FileReadingActor {
    * @param resource the resource representing the content
    * @param target the given target [[ActorRef]]
    */
-  case class CopyBinary(resource: ReadableResource, target: BWxActorRef)
+  case class CopyBinary(resource: ReadableResource, target: ActorRef)
 
   /**
    * This message initiates a process to copy the contents of a file (as ASCII) to the given target actor
@@ -133,7 +132,7 @@ object FileReadingActor {
    * @see CSV
    * @see Delimited
    */
-  case class CopyText(resource: ReadableResource, target: BWxActorRef, handler: Option[TextFormatHandler] = None)
+  case class CopyText(resource: ReadableResource, target: ActorRef, handler: Option[TextFormatHandler] = None)
 
   /**
    * This message is sent when the given resource is opened for reading

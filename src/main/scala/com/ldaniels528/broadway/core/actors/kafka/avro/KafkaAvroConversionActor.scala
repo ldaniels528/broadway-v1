@@ -1,7 +1,6 @@
 package com.ldaniels528.broadway.core.actors.kafka.avro
 
-import akka.actor.Actor
-import com.ldaniels528.broadway.core.actors.Actors._
+import akka.actor.{Actor, ActorRef}
 import com.ldaniels528.broadway.core.actors.kafka.avro.KafkaAvroConversionActor._
 import com.ldaniels528.trifecta.io.avro.AvroConversion
 import org.apache.avro.Schema
@@ -35,8 +34,8 @@ class KafkaAvroConversionActor(schemaString: String) extends Actor {
  */
 object KafkaAvroConversionActor {
 
-  case class Decode(bytes: Array[Byte], target: BWxActorRef)
+  case class Decode(bytes: Array[Byte], target: ActorRef)
 
-  case class Encode(record: GenericRecord, target: BWxActorRef)
+  case class Encode(record: GenericRecord, target: ActorRef)
 
 }

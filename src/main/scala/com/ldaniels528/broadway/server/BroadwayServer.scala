@@ -5,7 +5,6 @@ import java.net.URL
 
 import akka.actor.Actor
 import com.ldaniels528.broadway.BroadwayNarrative
-import com.ldaniels528.broadway.core.actors.Actors._
 import com.ldaniels528.broadway.core.location.{FileLocation, HttpLocation, Location}
 import com.ldaniels528.broadway.core.narrative._
 import com.ldaniels528.broadway.core.resources._

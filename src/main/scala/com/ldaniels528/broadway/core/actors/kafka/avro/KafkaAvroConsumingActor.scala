@@ -1,7 +1,6 @@
 package com.ldaniels528.broadway.core.actors.kafka.avro
 
-import akka.actor.Actor
-import com.ldaniels528.broadway.core.actors.Actors._
+import akka.actor.{Actor, ActorRef}
 import com.ldaniels528.broadway.core.actors.kafka.avro.KafkaAvroConsumingActor._
 import com.ldaniels528.trifecta.io.kafka.KafkaMicroConsumer
 import org.apache.avro.Schema
@@ -46,6 +45,6 @@ class KafkaAvroConsumingActor(topic: String, schemaString: String) extends Actor
  */
 object KafkaAvroConsumingActor {
 
-  case class Consume(target: BWxActorRef)
+  case class Consume(target: ActorRef)
 
 }
