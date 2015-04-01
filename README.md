@@ -40,7 +40,7 @@ Additionally, since Broadway is a file-centric processing system, it supports fe
 
 Broadway is currently pre-alpha quality software, and although it will currently run simple topologies, there's still
 some work to do before it's ready for use by the general public. The current ETA is to have the system ready for action by
-the end of March 2015.
+the end of May 2015.
 
 ## Build Requirements
 
