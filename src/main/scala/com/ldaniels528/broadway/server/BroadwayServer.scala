@@ -15,6 +15,7 @@ import com.ldaniels528.trifecta.util.OptionHelper._
 import org.slf4j.LoggerFactory
 
 import scala.collection.concurrent.TrieMap
+import scala.concurrent.duration._
 import scala.util.{Failure, Success}
 
 /**
@@ -32,23 +33,50 @@ class BroadwayServer(config: ServerConfig) {
   private val reported = TrieMap[String, Throwable]()
 
   // create the system actors
-  private val archivingActor = config.archivingActor
-  private val processingActor = config.addActor(new TopologyProcessingActor(config))
+  private lazy val archivingActor = config.archivingActor
+  private lazy val processingActor = config.addActor(new TopologyProcessingActor(config))
+
+  // setup the HTTP server
+  private val httpServer = config.httpInfo.map(hi => new BroadwayHttpServer(host = hi.host, port = hi.port))
 
   /**
    * Start the server
    */
   def start() {
-    System.out.println(s"Broadway Server v$Version")
+    logger.info(s"Broadway Server v$Version")
 
     // initialize the configuration
     config.init()
 
+    // optionally start the HTTP server
+    for {
+      info <- config.httpInfo
+      listener <- httpServer
+    } {
+      logger.info(s"Starting HTTP listener (interface ${info.host} port ${info.port})...")
+      listener.start()
+    }
+
     // load the topology configurations
     val topologyConfigs = NarrativeConfig.loadNarrativeConfigs(config.getTopologiesDirectory)
 
-    // setup listeners for all configured locations
+    // setup listeners for all configured locations and triggers
     topologyConfigs foreach { tc =>
+
+      // setup scheduled jobs
+      system.scheduler.schedule(0.seconds, 5.minute, new Runnable {
+        override def run() {
+          tc.triggers foreach { trigger =>
+            if (trigger.isReady(System.currentTimeMillis())) {
+              rt.getNarrative(config, trigger.narrative) foreach { narrative =>
+                logger.info(s"Invoking narrative '${trigger.narrative.id}'...")
+                val resource = trigger.resource.getOrElse(LoopbackResource(s"T${System.currentTimeMillis}"))
+                processingActor ! RunJob(narrative, resource)
+              }
+            }
+          }
+        }
+      })
 
       // watch the "incoming" directories for processing files
       tc.locations foreach { location =>
@@ -111,16 +139,8 @@ class BroadwayServer(config: ServerConfig) {
           move(file, wipFile)
 
           // start the topology using the file as its input source
-          processingActor ! RunTopology(topology, FileResource(wipFile.getAbsolutePath))
+          processingActor ! RunJob(topology, FileResource(wipFile.getAbsolutePath))
 
-        /*
-        executeTopology(topology, wipFile) onComplete {
-          case Success(result) =>
-            move(wipFile, new File(config.getCompletedDirectory, fileName))
-          case Failure(e) =>
-            logger.error(s"${topology.name}: File '$fileName' failed during processing", e)
-            move(wipFile, new File(config.getFailedDirectory, fileName))
-        }*/
         case Failure(e) =>
           if (!reported.contains(td.id)) {
             logger.error(s"${td.id}: Topology could not be instantiated", e)
@@ -148,7 +168,7 @@ class BroadwayServer(config: ServerConfig) {
  * @author Lawrence Daniels <lawrence.daniels@gmail.com>
  */
 object BroadwayServer {
-  private val Version = "0.2"
+  private val Version = "0.7"
 
   /**
    * Enables command line execution
@@ -172,18 +192,18 @@ object BroadwayServer {
    */
   class TopologyProcessingActor(config: ServerConfig) extends Actor {
     override def receive = {
-      case RunTopology(topology, resource) =>
-        topology.start(resource)
+      case RunJob(narrative, resource) =>
+        narrative.start(resource)
       case message =>
         unhandled(message)
     }
   }
 
   /**
-   * This message causes the the given topology to be invoked; consuming the given resource
-   * @param topology the given [[BroadwayNarrative]]
-   * @param resource the given [[ReadableResource]]
+   * This message causes the the given narrative to be invoked; consuming the given resource
+   * @param narrative the given [[BroadwayNarrative]]
+   * @param resource the given [[Resource]]
    */
-  case class RunTopology(topology: BroadwayNarrative, resource: ReadableResource)
+  case class RunJob(narrative: BroadwayNarrative, resource: Resource)
 
 }

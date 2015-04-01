@@ -26,7 +26,7 @@ class MongoDBActor(client: () => MongoClient, databaseName: String) extends Acto
   override def receive = {
     case Find(name, query, fields) =>
       val theSender = sender()
-      getCollection(name).foreach(_.find(query, fields) foreach (theSender ! _))
+      getCollection(name).foreach(_.find(query, fields) foreach (theSender ! MongoResult(_)))
 
     case FindAndModify(name, query, fields, sort, update, remove, returnNew, upsert) =>
       val theSender = sender()
@@ -134,5 +134,7 @@ object MongoDBActor {
                     doc: DBObject,
                     multi: Boolean = false,
                     concern: WriteConcern = WriteConcern.JournalSafe)
+
+  case class MongoResult(doc: DBObject)
 
 }

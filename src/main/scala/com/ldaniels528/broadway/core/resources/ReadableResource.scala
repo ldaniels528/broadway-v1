@@ -6,10 +6,12 @@ import java.io.InputStream
  * Represents a readable resource
  * @author Lawrence Daniels <lawrence.daniels@gmail.com>
  */
-trait ReadableResource extends Serializable {
+trait ReadableResource extends Resource {
 
-  def getResourceName: Option[String]
-
+  /**
+   * Returns an option of an input stream
+   * @return an option of an input stream
+   */
   def getInputStream: Option[InputStream]
 
 }

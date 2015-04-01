@@ -1,10 +1,12 @@
 package com.ldaniels528.broadway.server
 
 import com.ldaniels528.broadway.core.resources._
+import com.ldaniels528.broadway.core.schedules.Scheduling
 import com.ldaniels528.broadway.core.util.XMLHelper._
 import com.ldaniels528.broadway.server.ServerConfig.HttpInfo
 import com.ldaniels528.trifecta.util.PropertiesHelper._
 
+import scala.util.{Failure, Success, Try}
 import scala.xml._
 
 /**
@@ -21,9 +23,7 @@ object ServerConfigParser {
   def parse(resource: ReadableResource): Option[ServerConfig] = {
     resource.getInputStream map { in =>
       val xml = XML.load(in)
-      new ServerConfig(
-        parseDirectories(xml),
-        parseHttp(xml))
+      new ServerConfig(parseDirectories(xml), parseHttpInfo(xml))
     }
   }
 
@@ -45,7 +45,7 @@ object ServerConfigParser {
    * @param doc the given XML node
    * @return an [[Option]] of a [[HttpInfo]]
    */
-  private def parseHttp(doc: Node) = {
+  private def parseHttpInfo(doc: Node) = {
     ((doc \ "http") map { node =>
       val host = (node \ "host").text
       val port = (node \ "port").text

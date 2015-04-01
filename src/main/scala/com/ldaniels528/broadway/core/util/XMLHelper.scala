@@ -16,11 +16,11 @@ object XMLHelper {
    */
   implicit class NodeExtensions(val node: Node) extends AnyVal {
 
-    def getAttr(tagName: String, name: String) = {
-      (node \ s"@$name").headOption map (_.text) orDie s"Required attribute '$name' not found in element $tagName"
+    def getAttr(tagName: String, name: String): String = {
+      getAttrOpt(name) orDie s"Required attribute '$name' not found in element $tagName"
     }
 
-    def getAttrOpt(name: String) = (node \ s"@$name").headOption map (_.text)
+    def getAttrOpt(name: String): Option[String] = (node \ s"@$name").headOption map (_.text)
 
     def getText(name: String) = (node \ name).headOption map (_.text)
 

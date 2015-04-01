@@ -23,7 +23,7 @@ ivyScala := ivyScala.value map {
   _.copy(overrideScalaVersion = true)
 }
 
-seq(sbtavro.SbtAvro.avroSettings: _*)
+Seq(sbtavro.SbtAvro.avroSettings: _*)
 
 (version in avroConfig) := avroVersion
 
@@ -31,16 +31,18 @@ seq(sbtavro.SbtAvro.avroSettings: _*)
 
 (sourceDirectory in avroConfig) := file("src/main/resources/avro")
 
+(javaSource in avroConfig) := file("src/main/java")
+
 scalacOptions ++= Seq("-deprecation", "-encoding", "UTF-8", "-feature", "-target:jvm-1.7", "-unchecked",
   "-Ywarn-adapted-args", "-Ywarn-value-discard", "-Xlint")
 
 javacOptions ++= Seq("-Xlint:deprecation", "-Xlint:unchecked", "-source", "1.7", "-target", "1.7", "-g:vars")
 
-mainClass in assembly := Some("com.ldaniels528.broadway.BroadwayServer")
+mainClass in assembly := Some("com.ldaniels528.broadway.server.BroadwayServer")
 
 test in assembly := {}
 
-jarName in assembly := "broadway" + version.value + ".bin.jar"
+jarName in assembly := "broadway-" + version.value + ".bin.jar"
 
 mergeStrategy in assembly <<= (mergeStrategy in assembly) { (old) =>
   {
@@ -53,6 +55,7 @@ mergeStrategy in assembly <<= (mergeStrategy in assembly) { (old) =>
 
 // Shocktrade Dependencies
 libraryDependencies ++= Seq(
+  "com.ldaniels528" %% "shocktrade-services" % "0.2.9",
   "com.ldaniels528" %% "tabular" % "0.1.0",
   "com.ldaniels528" %% "trifecta" % "0.18.15"
 )

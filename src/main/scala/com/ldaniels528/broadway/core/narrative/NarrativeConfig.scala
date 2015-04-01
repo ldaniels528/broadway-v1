@@ -4,6 +4,8 @@ import java.io.{File, FilenameFilter}
 
 import com.ldaniels528.broadway.core.location.Location
 import com.ldaniels528.broadway.core.resources._
+import com.ldaniels528.broadway.core.schedules.Scheduling
+import com.ldaniels528.broadway.core.triggers.Trigger
 import org.slf4j.LoggerFactory
 
 /**
@@ -12,8 +14,9 @@ import org.slf4j.LoggerFactory
  */
 case class NarrativeConfig(locations: Seq[Location],
                            propertySets: Seq[PropertySet],
-                           topologies: Seq[NarrativeDescriptor])
-
+                           schedules: Seq[Scheduling],
+                           topologies: Seq[NarrativeDescriptor],
+                           triggers: Seq[Trigger])
 
 /**
  * Topology Configuration Singleton

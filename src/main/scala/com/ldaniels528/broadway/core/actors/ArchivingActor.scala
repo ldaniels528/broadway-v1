@@ -29,6 +29,7 @@ class ArchivingActor(config: ServerConfig) extends Actor {
       resource match {
         case FileResource(path) =>
           FileHelper.archive(new File(path), config.getArchiveDirectory)
+          ()
         case _ =>
           logger.warn(s"Resource '$resource' cannot be moved to archive")
       }

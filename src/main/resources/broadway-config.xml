@@ -1,0 +1,13 @@
+<?xml version="1.0" ?>
+<broadway-config>
+
+    <directories>
+        <base>/Users/ldaniels/broadway</base>
+    </directories>
+
+    <http>
+        <host>0.0.0.0</host>
+        <port>9999</port>
+    </http>
+
+</broadway-config>

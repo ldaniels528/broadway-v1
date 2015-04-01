@@ -4,10 +4,13 @@ import java.util.Properties
 
 import com.ldaniels528.broadway.core.location.{FileLocation, HttpLocation, Location}
 import com.ldaniels528.broadway.core.resources._
+import com.ldaniels528.broadway.core.schedules.Scheduling
+import com.ldaniels528.broadway.core.triggers.Trigger
 import com.ldaniels528.broadway.core.util.XMLHelper._
 import com.ldaniels528.trifecta.util.OptionHelper._
 import com.ldaniels528.trifecta.util.PropertiesHelper._
 
+import scala.util.{Failure, Success, Try}
 import scala.xml.{Node, XML}
 
 /**
@@ -24,11 +27,17 @@ object NarrativeConfigParser {
   def parse(resource: ReadableResource): Option[NarrativeConfig] = {
     resource.getInputStream map { in =>
       val doc = XML.load(in)
-      val topologies = parseTopologies(doc)
+      val narratives = parseNarratives(doc)
+      val schedules = parseSchedules(doc)
+      val resources = parseResources(doc)
+      val triggers = parseTriggers(doc, narratives, schedules, resources)
+
       new NarrativeConfig(
-        locations = parseLocations(topologies, doc),
+        locations = parseLocations(narratives, doc),
         propertySets = parsePropertiesRef(doc),
-        topologies)
+        schedules,
+        narratives,
+        triggers)
     }
   }
 
@@ -108,17 +117,86 @@ object NarrativeConfigParser {
     }
   }
 
+  private def parseResources(doc: Node) = {
+    val tagName = "resource"
+    (doc \ tagName) map { node =>
+      val id = node.getAttr(tagName, "id")
+      val className = node.getAttr(tagName, "class")
+
+      instantiate(id, className) match {
+        case Success(resource: Resource) => UserResource(id, resource)
+        case Success(unknown) =>
+          throw new IllegalStateException(s"Resource '$id' (class $className}) does not implement ${classOf[Resource].getName}")
+        case Failure(e) =>
+          throw new IllegalStateException(s"Failed to load resource '$id' (class $className})")
+      }
+    }
+  }
+
+  /**
+   * Parses the <code>schedule</code> tag
+   * @param doc the given XML node
+   * @return a collection of [[Scheduling]] objects
+   */
+  private def parseSchedules(doc: Node) = {
+    val tagName = "schedule"
+    (doc \ tagName) map { node =>
+      val id = node.getAttr(tagName, "id")
+      val className = node.getAttr(tagName, "class")
+
+      instantiate(id, className) match {
+        case Success(schedule: Scheduling) => schedule
+        case Success(unknown) =>
+          throw new IllegalStateException(s"Schedule '$id' (class $className}) does not implement ${classOf[Scheduling].getName}")
+        case Failure(e) =>
+          throw new IllegalStateException(s"Failed to load schedule '$id' (class $className})")
+      }
+    }
+  }
+
+  private def instantiate(id: String, className: String) = Try {
+    val `class` = Class.forName(className)
+    val constructor = `class`.getConstructor(classOf[String])
+    constructor.newInstance(id)
+  }
+
   /**
    * Parses the <code>narrative</code> tags
    * @param doc the given XML node
    * @return a [[Seq]] of [[NarrativeDescriptor]]
    */
-  private def parseTopologies(doc: Node) = {
+  private def parseNarratives(doc: Node) = {
     val tagName = "narrative"
     (doc \ tagName) map { node =>
       val id = node.getAttr(tagName, "id")
       val className = node.getAttr(tagName, "class")
       NarrativeDescriptor(id, className, getTopologyPropertiesRef(node))
+    }
+  }
+
+  /**
+   * Parses the <code>trigger</code> tags
+   * @param doc the given XML node
+   * @return a [[Seq]] of [[Trigger]]
+   */
+  private def parseTriggers(doc: Node,
+                            narrativeSeq: Seq[NarrativeDescriptor],
+                            scheduleSeq: Seq[Scheduling],
+                            resourceSeq: Seq[UserResource]) = {
+    val narratives = Map(narrativeSeq.map(n => (n.id, n)): _*)
+    val schedules = Map(scheduleSeq.map(s => (s.id, s)): _*)
+    val resources = Map(resourceSeq.map(r => (r.id, r.resource)): _*)
+
+    val tagName = "trigger"
+    (doc \ "trigger") map { node =>
+      val scheduleId = node.getAttr(tagName, "schedule-ref")
+      val narrativeId = node.getAttr(tagName, "narrative-ref")
+      val resourceId = node.getAttrOpt("resource-ref")
+
+      val schedule = schedules.get(scheduleId).orDie(s"Schedule '$scheduleId' was not found")
+      val narrative = narratives.get(narrativeId).orDie(s"Narrative '$narrativeId' was not found")
+      val resource = resourceId.flatMap(resources.get) // TODO check to see if resource is populated
+      Trigger(narrative, schedule, resource)
     }
   }
 
@@ -130,5 +208,7 @@ object NarrativeConfigParser {
       }
     }
   }
+
+  case class UserResource(id: String, resource: Resource)
 
 }

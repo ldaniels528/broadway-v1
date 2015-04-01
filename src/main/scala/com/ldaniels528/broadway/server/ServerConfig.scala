@@ -21,17 +21,7 @@ case class ServerConfig(props: java.util.Properties, httpInfo: Option[HttpInfo])
   implicit val system = ActorSystem(props.getOrElse("broadway.actor.system", "BroadwaySystem"))
 
   // create the system actors
-  val archivingActor = addActor(new ArchivingActor(this))
-
-  /**
-   * Adds a new actor to the narrative
-   * @param parallelism the number of actors to create
-   * @tparam T the actor type
-   * @return an [[akka.actor.ActorRef]]
-   */
-  def addActor[T <: Actor : ClassTag](parallelism: Int) = {
-    system.actorOf(Props[T].withRouter(RoundRobinPool(nrOfInstances = parallelism)))
-  }
+  lazy val archivingActor = addActor(new ArchivingActor(this))
 
   /**
    * Adds a new actor to the narrative
@@ -41,7 +31,7 @@ case class ServerConfig(props: java.util.Properties, httpInfo: Option[HttpInfo])
    * @return an [[akka.actor.ActorRef]]
    */
   def addActor[T <: Actor : ClassTag](actor: => T, parallelism: Int = 1) = {
-    system.actorOf(Props[T].withRouter(RoundRobinPool(nrOfInstances = parallelism)))
+    system.actorOf(Props(actor).withRouter(RoundRobinPool(nrOfInstances = parallelism)))
   }
 
   def getRootDirectory = new File(props.asOpt[String](BaseDir).orDie(s"Required property '$BaseDir' is missing"))
