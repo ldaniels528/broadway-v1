@@ -34,7 +34,8 @@ Additionally, since Broadway is a file-centric processing system, it supports fe
 * An Actor-based I/O system with builtin support for:
   * Binary files
   * Text files (XML, JSON, CSV, delimited, fixed field-length, and hierarchical)
-  * Kafka
+  * Kafka (including Avro)
+  * MongoDB
 * File archival and retention strategies
 * Resource limits (e.g. limit the number of Kafka connections)
 
@@ -58,98 +59,135 @@ the end of May 2015.
 Broadway provides a construct called a narrative (e.g. story), which describes the flow for a single processing event.
 The proceeding example is a Broadway narrative that performs the following flow:
 
-* Extracts stock symbols from a tabbed-delimited file.
-* Retrieves stock quotes (via a custom service) for each symbol.
-* Converts the stock quotes to <a href="http://avro.apache.org/" target="avro">Avro</a> records.
-* Publishes each Avro record to a Kafka topic (shocktrade.quotes.yahoo.avro)
+* Extracts historical stock quotes from a tabbed-delimited file.
+* Encodes the stock quotes as <a href="http://avro.apache.org/" target="avro">Avro</a> records.
+* Publishes each Avro record to a Kafka topic (eoddata.tradinghistory.avro)
 
-Below is the Broadway narrative that implements the flow described above:
+We'll start with the anthology, which is an XML file (comprised of one or more narratives) that describes the flow of 
+the process; in this case, how file feeds are mapped to their respective processing endpoints (actors):
+
+```xml
+<anthology id="EodData" version="1.0">
+    <!-- Narratives -->
+
+    <narrative id="EodDataImportNarrative"
+               class="com.shocktrade.datacenter.narratives.EodDataImportNarrative">
+        <properties>
+            <property key="kafka.topic">eoddata.tradinghistory.avro</property>
+            <property key="zookeeper.connect">dev801:2181</property>
+        </properties>
+    </narrative>
+
+    <!-- Location Triggers -->
+
+    <location id="EodData" path="/Users/ldaniels/broadway/incoming/tradingHistory">
+        <feed name="AMEX_(.*)[.]txt" match="regex" narrative-ref="EodDataImportNarrative"/>
+        <feed name="NASDAQ_(.*)[.]txt" match="regex" narrative-ref="EodDataImportNarrative"/>
+        <feed name="NYSE_(.*)[.]txt" match="regex" narrative-ref="EodDataImportNarrative"/>
+        <feed name="OTCBB_(.*)[.]txt" match="regex" narrative-ref="EodDataImportNarrative"/>
+    </location>
+
+</anthology>
+```
+
+The following is the Broadway narrative that implements the flow described above:
 
 ```scala
-class StockQuoteImportNarrative(config: ServerConfig) extends BroadwayNarrative(config, "Stock Quote Import")
-with KafkaConstants {
-  // create a file reader actor to read lines from the incoming resource
-  val fileReader = addActor(new FileReadingActor(config))
-
-  // create a Kafka publishing actor for stock quotes
-  val quotePublisher = addActor(new KafkaAvroPublishingActor(quotesTopic, brokers))
-
-  // create a stock quote lookup actor
-  val quoteLookup = addActor(new StockQuoteLookupActor(quotePublisher))
-
-  onStart { resource =>
-    // start the processing by submitting a request to the file reader actor
-    fileReader ! CopyText(resource, quoteLookup, handler = Delimited("[\t]"))
-  }
-}
+    class EodDataImportNarrative(config: ServerConfig, id: String, props: Properties)
+      extends BroadwayNarrative(config, id, props) {
+    
+      // extract the properties we need
+      val kafkaTopic = props.getOrDie("kafka.topic")
+      val zkConnect = props.getOrDie("zookeeper.connect")
+    
+      // create a file reader actor to read lines from the incoming resource
+      lazy val fileReader = prepareActor(new FileReadingActor(config), parallelism = 10)
+    
+      // create a Kafka publishing actor
+      lazy val kafkaPublisher = prepareActor(new KafkaPublishingActor(zkConnect), parallelism = 10)
+    
+      // create a EOD data transformation actor
+      lazy val eodDataToAvroActor = prepareActor(new EodDataToAvroActor(kafkaTopic, kafkaPublisher), parallelism = 10)
+    
+      onStart {
+        case Some(resource: ReadableResource) =>
+          // start the processing by submitting a request to the file reader actor
+          fileReader ! CopyText(resource, eodDataToAvroActor, handler = Delimited("[,]"))
+        case _ =>
+      }
+    }
 ```
 
 **NOTE:** The `KafkaAvroPublishingActor` and `FileReadingActor` actors are builtin components of Broadway.
 
-The class below is an optional custom actor that will perform the stock symbol look-ups and then pass an Avro-encoded
+The class below is an optional custom actor that will perform the Avro encoding and then pass an Avro-encoded
 record to the Kafka publishing actor (a built-in component).
 
 ```scala
-class StockQuoteLookupActor(target: ActorRef)(implicit ec: ExecutionContext) extends Actor {
-  private val parameters = YFStockQuoteService.getParams(
-    "symbol", "exchange", "lastTrade", "tradeDate", "tradeTime", "ask", "bid", "change", "changePct",
-    "prevClose", "open", "close", "high", "low", "volume", "marketCap", "errorMessage")
-
-  override def receive = {
-    case OpeningFile(resource) =>
-      ResourceTracker.start(resource)
-
-    case ClosingFile(resource) =>
-      ResourceTracker.stop(resource)
-
-    case TextLine(resource, lineNo, line, tokens) =>
-      tokens.headOption foreach { symbol =>
-        YahooFinanceServices.getStockQuote(symbol, parameters) foreach { quote =>
-          val builder = com.shocktrade.avro.CSVQuoteRecord.newBuilder()
-          AvroConversion.copy(quote, builder)
-          target ! builder.build()
-        }
+    class EodDataToAvroActor(topic: String, kafkaActor: ActorRef) extends Actor {
+      private val sdf = new SimpleDateFormat("yyyyMMdd")
+    
+      override def receive = {
+        case OpeningFile(resource) =>
+          ResourceTracker.start(resource)
+    
+        case ClosingFile(resource) =>
+          ResourceTracker.stop(resource)
+    
+        case TextLine(resource, lineNo, line, tokens) =>
+          // skip the header line
+          if (lineNo != 1) {
+            kafkaActor ! PublishAvro(topic, toAvro(resource, tokens))
+          }
+    
+        case message =>
+          unhandled(message)
+      }
+    
+      private def toAvro(resource: ReadableResource, tokens: Seq[String]) = {
+        val items = tokens map (_.trim) map (s => if (s.isEmpty) None else Some(s))
+        def item(index: Int) = if (index < items.length) items(index) else None
+    
+        com.shocktrade.avro.EodDataRecord.newBuilder()
+          .setSymbol(item(0).orNull)
+          .setExchange(resource.getResourceName.flatMap(extractExchange).orNull)
+          .setTradeDate(item(1).flatMap(_.asEPOC(sdf)).map(n => n: JLong).orNull)
+          .setOpen(item(2).flatMap(_.asDouble).map(n => n: JDouble).orNull)
+          .setHigh(item(3).flatMap(_.asDouble).map(n => n: JDouble).orNull)
+          .setLow(item(4).flatMap(_.asDouble).map(n => n: JDouble).orNull)
+          .setClose(item(5).flatMap(_.asDouble).map(n => n: JDouble).orNull)
+          .setVolume(item(6).flatMap(_.asLong).map(n => n: JLong).orNull)
+          .build()
       }
 
-    case message =>
-      unhandled(message)
-  }
-}
+      private def extractExchange(name: String) = name.indexOptionOf("_") map (name.substring(0, _))
+    
+    }
 ```
 
 Broadway provides an actor-based, event-based I/O system. Notice above, your code may react to messages that indicate
 the opening (`OpeningFile`) or closing (`ClosingFile`) of a resource (e.g. file) or when a line of text has been
 passed (`TextLine`).
 
-The following code needs no explanation, it's simply a collection of Kafka constants that could have just as easily
-been placed in a properties file.
+Finally, here is the Avro definition that we're using to encode the records:
 
-```scala
-trait KafkaConstants {
-  val eodDataTopic = "shocktrade.eoddata.yahoo.avro"
-  val keyStatsTopic = "shocktrade.keystats.yahoo.avro"
-  val quotesTopic = "shocktrade.quotes.yahoo.avro"
-
-  val zkHost = "dev501:2181"
-  val brokers = "dev501:9091,dev501:9092,dev501:9093,dev501:9094,dev501:9095,dev501:9096"
+```json
+{
+    "type": "record",
+    "name": "EodDataRecord",
+    "namespace": "com.shocktrade.avro",
+    "fields":[
+        { "name": "symbol", "type":"string", "doc":"stock symbol" },
+        { "name": "exchange", "type":["null", "string"], "doc":"stock exchange", "default":null },
+        { "name": "tradeDate", "type":["null", "long"], "doc":"last sale date", "default":null },
+        { "name": "open", "type":["null", "double"], "doc":"open price", "default":null },
+        { "name": "close", "type":["null", "double"], "doc":"close price", "default":null },
+        { "name": "high", "type":["null", "double"], "doc":"day's high price", "default":null },
+        { "name": "low", "type":["null", "double"], "doc":"day's low price", "default":null },
+        { "name": "volume", "type":["null", "long"], "doc":"day's volume", "default":null }
+    ],
+    "doc": "A schema for EodData quotes"
 }
-```
-
-And the narrative configuration is an XML file that describes how file feeds are mapped to narratives:
-
-```xml
-<narrative-config>
-
-    <narrative id="QuoteImportNarrative" class="com.shocktrade.topologies.StockQuoteImportNarrative" />
-
-    <location id="CSVQuotes" path="/Users/ldaniels/broadway/incoming/csvQuotes">
-        <feed match="exact" name="AMEX.txt" narrative-ref="QuoteImportNarrative" />
-        <feed match="exact" name="NASDAQ.txt" narrative-ref="QuoteImportNarrative" />
-        <feed match="exact" name="NYSE.txt" narrative-ref="QuoteImportNarrative" />
-        <feed match="exact" name="OTCBB.txt" narrative-ref="QuoteImportNarrative" />
-    </location>
-
-</narrative-config>
 ```
 
 Broadway aims to provide maximum flexibility by offering two paths for defining narratives within a narrative configuration;
