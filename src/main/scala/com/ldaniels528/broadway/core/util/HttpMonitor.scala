@@ -25,9 +25,9 @@ class HttpMonitor(system: ActorSystem) {
     override def run() = checkSitesForFiles()
   })
 
-  def listenForResources(urls: Seq[String])(callback: URL => Unit): Unit = {
+  def listenForResources(watcherName:String, urls: Seq[String])(callback: URL => Unit): Unit = {
     sites ++= urls.map { path =>
-      logger.info(s"Watching for updates to resource '$path'...")
+      logger.info(s"$watcherName is watching for updates to resource '$path'...")
       new URL(path) -> callback
     }
   }

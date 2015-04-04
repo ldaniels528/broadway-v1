@@ -1,7 +1,7 @@
 package com.ldaniels528.broadway.core.actors.kafka
 
 import akka.actor.{Actor, ActorLogging, ActorRef}
-import com.ldaniels528.broadway.core.actors.kafka.KafkaAvroConsumingActor.startConsumer
+import com.ldaniels528.broadway.core.actors.kafka.KafkaAvroConsumingActor.AvroMessageReceived
 import com.ldaniels528.broadway.core.actors.kafka.KafkaConsumingActor.{StartConsuming, StopConsuming}
 import com.ldaniels528.trifecta.io.avro.AvroConversion
 import com.ldaniels528.trifecta.io.kafka.{Broker, KafkaMicroConsumer}
@@ -18,19 +18,19 @@ import scala.concurrent.{ExecutionContext, Future}
  */
 class KafkaAvroConsumingActor(zkConnectionString: String, schemaString: String) extends Actor with ActorLogging {
   private val registrations = TrieMap[(String, ActorRef), Future[Seq[Unit]]]()
+  implicit lazy val zk = ZKProxy(zkConnectionString)
 
   import context.dispatcher
 
   override def receive = {
     case StartConsuming(topic, target) =>
       log.info(s"Registering topic '$topic' to $target...")
-      registrations.putIfAbsent((topic, target), startConsumer(zkConnectionString, topic, schema, target))
+      registrations.putIfAbsent((topic, target), startConsumer(topic, target))
 
     case StopConsuming(topic, target) =>
       log.info(s"Canceling registration of topic '$topic' to $target...")
-      registrations.get((topic, target)) match {
-        case Some(task) => // TODO cancel the future
-        case None =>
+      registrations.get((topic, target)) foreach { task =>
+        // TODO cancel the future
       }
 
     case message =>
@@ -38,7 +38,14 @@ class KafkaAvroConsumingActor(zkConnectionString: String, schemaString: String) 
       unhandled(message)
   }
 
-  private def schema = new Schema.Parser().parse(schemaString)
+  private def startConsumer(topic: String, target: ActorRef)(implicit ec: ExecutionContext): Future[Seq[Unit]] = {
+    val schema = new Schema.Parser().parse(schemaString)
+    val brokerList = KafkaMicroConsumer.getBrokerList
+    val brokers = (0 to brokerList.size - 1) zip brokerList map { case (n, b) => Broker(b.host, b.port, n) }
+    KafkaMicroConsumer.observe(topic, brokers) { md =>
+      target ! AvroMessageReceived(topic, md.partition, md.offset, md.key, AvroConversion.decodeRecord(schema, md.message))
+    }
+  }
 
 }
 
@@ -47,18 +54,6 @@ class KafkaAvroConsumingActor(zkConnectionString: String, schemaString: String) 
  * @author Lawrence Daniels <lawrence.daniels@gmail.com>
  */
 object KafkaAvroConsumingActor {
-
-  private def startConsumer(zkConnectionString: String,
-                            topic: String,
-                            schema: Schema,
-                            target: ActorRef)(implicit ec: ExecutionContext): Future[Seq[Unit]] = {
-    implicit val zk = ZKProxy(zkConnectionString)
-    val brokerList = KafkaMicroConsumer.getBrokerList
-    val brokers = (0 to brokerList.size - 1) zip brokerList map { case (n, b) => Broker(b.host, b.port, n) }
-    KafkaMicroConsumer.observe(topic, brokers) { md =>
-      target ! AvroMessageReceived(topic, md.partition, md.offset, md.key, AvroConversion.decodeRecord(schema, md.message))
-    }
-  }
 
   /**
    * This message is sent to all registered actors when a message is available for

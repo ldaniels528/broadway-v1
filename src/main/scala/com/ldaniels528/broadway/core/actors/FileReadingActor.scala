@@ -14,7 +14,6 @@ import scala.language.implicitConversions
  * @author Lawrence Daniels <lawrence.daniels@gmail.com>
  */
 class FileReadingActor(config: ServerConfig) extends Actor {
-
   override def receive = {
     case CopyBinary(resource, target) => copyBinary(target, resource)
     case CopyText(resource, target, handler) => copyText(target, resource, handler)

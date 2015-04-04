@@ -1,8 +1,9 @@
-package com.ldaniels528.broadway.thirdparty.mongodb
+package com.ldaniels528.broadway.core.actors.nosql
 
 import akka.actor.Actor
-import com.ldaniels528.broadway.thirdparty.mongodb.MongoDBActor._
+import com.ldaniels528.broadway.core.actors.nosql.MongoDBActor._
 import com.mongodb.casbah.Imports.{DBObject => Q, _}
+import com.mongodb.casbah.commons.conversions.scala.RegisterJodaTimeConversionHelpers
 import com.mongodb.{DBObject, ServerAddress}
 
 import scala.collection.concurrent.TrieMap
@@ -15,6 +16,9 @@ import scala.collection.concurrent.TrieMap
 class MongoDBActor(client: () => MongoClient, databaseName: String) extends Actor {
   private val collections = TrieMap[String, MongoCollection]()
   private var conn_? : Option[MongoClient] = None
+
+  // register the time/date helpers
+  RegisterJodaTimeConversionHelpers()
 
   override def preStart() = conn_? = Option(client())
 

@@ -1,10 +1,9 @@
 package com.ldaniels528.broadway.server
 
-import java.io.File
+import java.io.{File, FilenameFilter}
 import java.net.URL
 
-import akka.actor.Actor
-import com.ldaniels528.broadway.BroadwayNarrative
+import com.ldaniels528.broadway.core.actors.NarrativeProcessingActor.RunJob
 import com.ldaniels528.broadway.core.location.{FileLocation, HttpLocation, Location}
 import com.ldaniels528.broadway.core.narrative._
 import com.ldaniels528.broadway.core.resources._
@@ -32,9 +31,7 @@ class BroadwayServer(config: ServerConfig) {
   private val httpMonitor = new HttpMonitor(system)
   private val reported = TrieMap[String, Throwable]()
 
-  // create the system actors
-  private lazy val archivingActor = config.archivingActor
-  private lazy val processingActor = config.addActor(new TopologyProcessingActor(config))
+  import config.{archivingActor, processingActor}
 
   // setup the HTTP server
   private val httpServer = config.httpInfo.map(hi => new BroadwayHttpServer(host = hi.host, port = hi.port))
@@ -57,21 +54,19 @@ class BroadwayServer(config: ServerConfig) {
       listener.start()
     }
 
-    // load the topology configurations
-    val topologyConfigs = NarrativeConfig.loadNarrativeConfigs(config.getTopologiesDirectory)
-
-    // setup listeners for all configured locations and triggers
-    topologyConfigs foreach { tc =>
+    // load the anthologies
+    val anthologies = loadAnthologies(config.getAnthologiesDirectory)
+    anthologies foreach { anthology =>
+      logger.info(s"Configuring anthology '${anthology.id}'...")
 
       // setup scheduled jobs
       system.scheduler.schedule(0.seconds, 5.minute, new Runnable {
         override def run() {
-          tc.triggers foreach { trigger =>
+          anthology.triggers foreach { trigger =>
             if (trigger.isReady(System.currentTimeMillis())) {
               rt.getNarrative(config, trigger.narrative) foreach { narrative =>
                 logger.info(s"Invoking narrative '${trigger.narrative.id}'...")
-                val resource = trigger.resource.getOrElse(LoopbackResource(s"T${System.currentTimeMillis}"))
-                processingActor ! RunJob(narrative, resource)
+                processingActor ! RunJob(narrative, trigger.resource)
               }
             }
           }
@@ -79,16 +74,16 @@ class BroadwayServer(config: ServerConfig) {
       })
 
       // watch the "incoming" directories for processing files
-      tc.locations foreach { location =>
-        logger.info(s"Configuring location ${location.id}...")
+      anthology.locations foreach { location =>
+        logger.info(s"Configuring location '${location.id}'...")
         location match {
           case site@FileLocation(id, path, feeds) =>
-            fileMonitor.listenForFiles(directory = new File(path))(handleIncomingFile(site, _))
+            fileMonitor.listenForFiles(id, directory = new File(path))(handleIncomingFile(site, _))
 
           // watch for HTTP files
           case site@HttpLocation(id, path, feeds) =>
             val urls = feeds.map(f => s"${site.path}${f.name}")
-            httpMonitor.listenForResources(urls)(handleIncomingResource(site, _))
+            httpMonitor.listenForResources(id, urls)(handleIncomingResource(site, _))
 
           case site =>
             logger.warn(s"Listening is not supported by location '${site.id}'")
@@ -97,19 +92,19 @@ class BroadwayServer(config: ServerConfig) {
     }
 
     // watch the "completed" directory for archiving files
-    fileMonitor.listenForFiles(config.getCompletedDirectory)(archivingActor ! _)
+    fileMonitor.listenForFiles("Broadway", config.getCompletedDirectory)(archivingActor ! _)
     ()
   }
 
   /**
    * Handles the the given incoming file
-   * @param directory the given [[FileLocation]]
+   * @param location the given [[FileLocation]]
    * @param file the given incoming [[File]]
    */
-  private def handleIncomingFile(directory: Location, file: File) {
-    directory.findFeed(file.getName) match {
+  private def handleIncomingFile(location: Location, file: File) {
+    location.findFeed(file.getName) match {
       case Some(feed) => processFeed(feed, file)
-      case None => noMappedProcess(directory, file)
+      case None => noMappedProcess(location, file)
     }
     ()
   }
@@ -124,30 +119,43 @@ class BroadwayServer(config: ServerConfig) {
   }
 
   /**
-   * Processes the given feed via a topology
+   * Loads all anthologies from the given directory
+   * @param directory the given directory
+   * @return the collection of successfully parsed [[Anthology]] objects
+   */
+  private def loadAnthologies(directory: File): Seq[Anthology] = {
+    logger.info(s"Searching for narrative configuration files in '${directory.getAbsolutePath}'...")
+    val xmlFile = directory.listFiles(new FilenameFilter {
+      override def accept(dir: File, name: String): Boolean = name.toLowerCase.endsWith(".xml")
+    })
+    xmlFile.toSeq flatMap (f => AnthologyParser.parse(FileResource(f.getAbsolutePath)))
+  }
+
+  /**
+   * Processes the given feed via a narrative
    * @param feed the given [[Feed]]
    * @param file the given [[File]]
    */
   private def processFeed(feed: Feed, file: File) = {
-    feed.topology foreach { td =>
-      // lookup the topology
+    // TODO what about feeds that have no narrative?
+    feed.narrative foreach { td =>
+      // lookup the narrative
       rt.getNarrative(config, td) match {
-        case Success(topology) =>
+        case Success(narrative) =>
           val fileName = file.getName
-          logger.info(s"${topology.name}: Moving file '$fileName' to '${config.getWorkDirectory}' for processing...")
+          logger.info(s"${narrative.name}: Moving file '$fileName' to '${config.getWorkDirectory}' for processing...")
           val wipFile = new File(config.getWorkDirectory, fileName)
           move(file, wipFile)
 
           // start the topology using the file as its input source
-          processingActor ! RunJob(topology, FileResource(wipFile.getAbsolutePath))
+          processingActor ! RunJob(narrative, Option(FileResource(wipFile.getAbsolutePath)))
 
         case Failure(e) =>
           if (!reported.contains(td.id)) {
-            logger.error(s"${td.id}: Topology could not be instantiated", e)
+            logger.error(s"${td.id}: Narrative could not be instantiated", e)
             reported += td.id -> e
           }
       }
-
     }
   }
 
@@ -168,7 +176,7 @@ class BroadwayServer(config: ServerConfig) {
  * @author Lawrence Daniels <lawrence.daniels@gmail.com>
  */
 object BroadwayServer {
-  private val Version = "0.7"
+  private val Version = "0.8"
 
   /**
    * Enables command line execution
@@ -185,25 +193,5 @@ object BroadwayServer {
     }
     new BroadwayServer(config.orDie("No configuration file (broadway-config.xml) found")).start()
   }
-
-  /**
-   * This is an internal use actor that is responsible for processing topologies
-   * @author Lawrence Daniels <lawrence.daniels@gmail.com>
-   */
-  class TopologyProcessingActor(config: ServerConfig) extends Actor {
-    override def receive = {
-      case RunJob(narrative, resource) =>
-        narrative.start(resource)
-      case message =>
-        unhandled(message)
-    }
-  }
-
-  /**
-   * This message causes the the given narrative to be invoked; consuming the given resource
-   * @param narrative the given [[BroadwayNarrative]]
-   * @param resource the given [[Resource]]
-   */
-  case class RunJob(narrative: BroadwayNarrative, resource: Resource)
 
 }

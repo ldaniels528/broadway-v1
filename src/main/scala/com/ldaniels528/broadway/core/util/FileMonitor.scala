@@ -46,12 +46,14 @@ class FileMonitor(system: ActorSystem) {
    * @param callback the given callback function
    */
   @throws[IOException]
-  def listenForFiles(directory: File)(callback: File => Unit) = {
+  def listenForFiles(watcherName: String, directory: File)(callback: File => Unit) = {
+    import StandardWatchEventKinds._
+
     // create the watcher service, and register for new file events
     val path = Paths.get(directory.getAbsolutePath)
     val watcher = path.getFileSystem.newWatchService()
-    path.register(watcher, StandardWatchEventKinds.ENTRY_CREATE)
-    logger.info(s"Watching for new files in '${directory.getAbsolutePath}'...")
+    Seq(ENTRY_CREATE, ENTRY_MODIFY) map (path.register(watcher, _))
+    logger.info(s"$watcherName is watching for new files in '${directory.getAbsolutePath}'...")
 
     // process any files that exist on startup
     processDirectory(directory, callback)
@@ -64,7 +66,7 @@ class FileMonitor(system: ActorSystem) {
           val events = watchKey.pollEvents()
           if (events.nonEmpty) {
             for (event <- events) {
-              if (event.kind() == StandardWatchEventKinds.ENTRY_CREATE) {
+              if (event.kind() == ENTRY_CREATE || event.kind() == ENTRY_MODIFY) {
                 // get a reference to the new file
                 val file = new File(directory, event.context().toString)
                 logger.info(s"Waiting to consume '${file.getName}' (${directory.getAbsolutePath})...")
@@ -99,12 +101,7 @@ class FileMonitor(system: ActorSystem) {
    * @param file he given file
    * @param callback the given callback function
    */
-  private def processFile(file: File, callback: File => Unit) = {
-    notifyWhenReady(file)(file => Future {
-      callback(file)
-      ()
-    })
-  }
+  private def processFile(file: File, callback: File => Unit) = notifyWhenReady(file)(callback)
 
   /**
    * notifies the caller when the file is ready

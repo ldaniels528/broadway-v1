@@ -4,7 +4,7 @@ import java.io.File
 
 import akka.actor.{Actor, ActorSystem, Props}
 import akka.routing.RoundRobinPool
-import com.ldaniels528.broadway.core.actors.ArchivingActor
+import com.ldaniels528.broadway.core.actors.{ArchivingActor, NarrativeProcessingActor}
 import com.ldaniels528.broadway.core.resources._
 import com.ldaniels528.broadway.core.util.FileHelper._
 import com.ldaniels528.broadway.server.ServerConfig._
@@ -21,20 +21,23 @@ case class ServerConfig(props: java.util.Properties, httpInfo: Option[HttpInfo])
   implicit val system = ActorSystem(props.getOrElse("broadway.actor.system", "BroadwaySystem"))
 
   // create the system actors
-  lazy val archivingActor = addActor(new ArchivingActor(this))
+  lazy val archivingActor = prepareActor(new ArchivingActor(this))
+  lazy val processingActor = prepareActor(new NarrativeProcessingActor(this), parallelism = 10)
 
   /**
-   * Adds a new actor to the narrative
+   * Prepares a new actor for execution within the narrative
    * @param actor the given [[Actor]]
    * @param parallelism the number of actors to create
    * @tparam T the actor type
    * @return an [[akka.actor.ActorRef]]
    */
-  def addActor[T <: Actor : ClassTag](actor: => T, parallelism: Int = 1) = {
+  def prepareActor[T <: Actor : ClassTag](actor: => T, parallelism: Int = 1) = {
     system.actorOf(Props(actor).withRouter(RoundRobinPool(nrOfInstances = parallelism)))
   }
 
   def getRootDirectory = new File(props.asOpt[String](BaseDir).orDie(s"Required property '$BaseDir' is missing"))
+
+  def getAnthologiesDirectory = new File(getRootDirectory, "anthologies")
 
   def getArchiveDirectory = new File(getRootDirectory, "archive")
 
@@ -44,8 +47,6 @@ case class ServerConfig(props: java.util.Properties, httpInfo: Option[HttpInfo])
 
   def getIncomingDirectory = new File(getRootDirectory, "incoming")
 
-  def getTopologiesDirectory = new File(getRootDirectory, "topologies")
-
   def getWorkDirectory = new File(getRootDirectory, "work")
 
   /**
@@ -53,7 +54,7 @@ case class ServerConfig(props: java.util.Properties, httpInfo: Option[HttpInfo])
    */
   def init() = Seq(
     getArchiveDirectory, getCompletedDirectory, getFailedDirectory,
-    getIncomingDirectory, getTopologiesDirectory, getWorkDirectory) foreach ensureExistence
+    getIncomingDirectory, getAnthologiesDirectory, getWorkDirectory) foreach ensureExistence
 
 }
 

@@ -41,7 +41,7 @@ class NarrativeRuntime() {
    * @return an outcome of a [[BroadwayNarrative]]
    */
   def getNarrative(config: ServerConfig, td: NarrativeDescriptor): Try[BroadwayNarrative] = Try {
-    narratives.getOrElseUpdate(td.id, instantiateTopology(config, td.className))
+    narratives.getOrElseUpdate(td.id, instantiateTopology(config, td.id, td.className, td.properties))
   }
 
   /**
@@ -59,10 +59,10 @@ class NarrativeRuntime() {
    * @param className the given class name
    * @return the [[BroadwayNarrative]]
    */
-  private def instantiateTopology(config: ServerConfig, className: String) = {
+  private def instantiateTopology(config: ServerConfig, id: String, className: String, props: Properties) = {
     val topologyClass = Class.forName(className)
     val cons = topologyClass.getConstructors()(0)
-    cons.newInstance(config).asInstanceOf[BroadwayNarrative]
+    cons.newInstance(config, id, props).asInstanceOf[BroadwayNarrative]
   }
 
 }

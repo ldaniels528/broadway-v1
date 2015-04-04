@@ -6,39 +6,53 @@ import com.ldaniels528.broadway.core.location.{FileLocation, HttpLocation, Locat
 import com.ldaniels528.broadway.core.resources._
 import com.ldaniels528.broadway.core.schedules.Scheduling
 import com.ldaniels528.broadway.core.triggers.Trigger
+import com.ldaniels528.broadway.core.util.PropertiesHelper._
 import com.ldaniels528.broadway.core.util.XMLHelper._
 import com.ldaniels528.trifecta.util.OptionHelper._
-import com.ldaniels528.trifecta.util.PropertiesHelper._
 
 import scala.util.{Failure, Success, Try}
 import scala.xml.{Node, XML}
 
 /**
- * Topology Configuration Parser Singleton
+ * Anthology Configuration Parser
  * @author Lawrence Daniels <lawrence.daniels@gmail.com>
  */
-object NarrativeConfigParser {
+object AnthologyParser {
 
   /**
    * Parses the given resource and returns an option of a narrative configuration
    * @param resource the given [[ReadableResource]]
-   * @return an option of a [[NarrativeConfig]]
+   * @return an option of a [[Anthology]]
    */
-  def parse(resource: ReadableResource): Option[NarrativeConfig] = {
+  def parse(resource: ReadableResource): Option[Anthology] = {
     resource.getInputStream map { in =>
       val doc = XML.load(in)
+      val id = doc.getAttr("anthology", "id")
       val narratives = parseNarratives(doc)
       val schedules = parseSchedules(doc)
       val resources = parseResources(doc)
       val triggers = parseTriggers(doc, narratives, schedules, resources)
 
-      new NarrativeConfig(
+      new Anthology(
+        id,
         locations = parseLocations(narratives, doc),
-        propertySets = parsePropertiesRef(doc),
+        propertySets = parseNamedPropertiesRef(doc),
         schedules,
         narratives,
         triggers)
     }
+  }
+
+  /**
+   * Creates a new class instance
+   * @param id the given object identifier
+   * @param className the given class name for which to instantiate
+   * @return the instantiated class
+   */
+  private def instantiate(id: String, className: String) = Try {
+    val `class` = Class.forName(className)
+    val constructor = `class`.getConstructor(classOf[String])
+    constructor.newInstance(id)
   }
 
   /**
@@ -85,7 +99,7 @@ object NarrativeConfigParser {
   private def parseProperty(doc: Node): Seq[(String, String)] = {
     val tagName = "property"
     (doc \ tagName) map { node =>
-      (node.getAttr(tagName, "key"), node.getAttr(tagName, "value"))
+      (node.getAttr(tagName, "key"), node.text)
     }
   }
 
@@ -95,6 +109,15 @@ object NarrativeConfigParser {
    * @return a [[Seq]] of [[java.util.Properties]]
    */
   private def parseProperties(doc: Node) = {
+    Map((doc \ "properties") flatMap parseProperty: _*).toProps
+  }
+
+  /**
+   * Parses the <code>properties</code> tags
+   * @param doc the given XML node
+   * @return a [[Seq]] of [[java.util.Properties]]
+   */
+  private def parseNamedProperties(doc: Node) = {
     val tagName = "properties"
     (doc \ tagName) map { node =>
       val id = node.getAttr(tagName, "id")
@@ -108,12 +131,21 @@ object NarrativeConfigParser {
    * @param doc the given XML node
    * @return a [[Seq]] of [[PropertySet]]
    */
-  private def parsePropertiesRef(doc: Node) = {
+  private def parseNamedPropertiesRef(doc: Node) = {
     val tagName = "properties-ref"
     (doc \ tagName) map { node =>
       val id = node.getAttr(tagName, "id")
       val props = Map(parseProperty(node): _*).toProps
       PropertySet(id, props)
+    }
+  }
+
+  private def parsePropertiesRef(node: Node): NarrativeRuntime => Properties = {
+    { rt =>
+      node.getAttrOpt("properties-ref") match {
+        case Some(refId) => rt.getPropertiesByID(refId).orDie(s"A properties set for '$refId' could not be found")
+        case None => Map(parseProperty(node): _*).toProps
+      }
     }
   }
 
@@ -154,12 +186,6 @@ object NarrativeConfigParser {
     }
   }
 
-  private def instantiate(id: String, className: String) = Try {
-    val `class` = Class.forName(className)
-    val constructor = `class`.getConstructor(classOf[String])
-    constructor.newInstance(id)
-  }
-
   /**
    * Parses the <code>narrative</code> tags
    * @param doc the given XML node
@@ -170,7 +196,7 @@ object NarrativeConfigParser {
     (doc \ tagName) map { node =>
       val id = node.getAttr(tagName, "id")
       val className = node.getAttr(tagName, "class")
-      NarrativeDescriptor(id, className, getTopologyPropertiesRef(node))
+      NarrativeDescriptor(id, className, parseProperties(node))
     }
   }
 
@@ -197,15 +223,6 @@ object NarrativeConfigParser {
       val narrative = narratives.get(narrativeId).orDie(s"Narrative '$narrativeId' was not found")
       val resource = resourceId.flatMap(resources.get) // TODO check to see if resource is populated
       Trigger(narrative, schedule, resource)
-    }
-  }
-
-  private def getTopologyPropertiesRef(node: Node): NarrativeRuntime => Properties = {
-    { rt =>
-      node.getAttrOpt("properties-ref") match {
-        case Some(refId) => rt.getPropertiesByID(refId).orDie(s"A properties set for '$refId' could not be found")
-        case None => Map(parseProperty(node): _*).toProps
-      }
     }
   }
 

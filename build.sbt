@@ -9,9 +9,9 @@ name := "broadway"
 
 organization := "com.ldaniels528"
 
-version := "0.7"
+version := "0.8"
 
-scalaVersion := "2.11.5"
+scalaVersion := "2.11.6"
 
 val akakVersion = "2.3.9"
 val avroVersion = "1.7.7"
@@ -30,8 +30,6 @@ Seq(sbtavro.SbtAvro.avroSettings: _*)
 (stringType in avroConfig) := "String"
 
 (sourceDirectory in avroConfig) := file("src/main/resources/avro")
-
-(javaSource in avroConfig) := file("src/main/java")
 
 scalacOptions ++= Seq("-deprecation", "-encoding", "UTF-8", "-feature", "-target:jvm-1.7", "-unchecked",
   "-Ywarn-adapted-args", "-Ywarn-value-discard", "-Xlint")

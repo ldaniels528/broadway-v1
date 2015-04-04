@@ -31,6 +31,10 @@ object PropertiesHelper {
       Option(props.get(key)) map (_.asInstanceOf[T])
     }
 
+    def getOrDie(key: String): String = {
+      Option(props.getProperty(key)).map(_.trim).getOrElse(throw new IllegalArgumentException(s"Required property '$key' was not found"))
+    }
+
     def getOrElse(key: String, default: => String): String = {
       Option(props.getProperty(key)).map(_.trim).getOrElse(default)
     }

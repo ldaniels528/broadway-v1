@@ -2,20 +2,17 @@ package com.ldaniels528.broadway.core.actors
 
 import java.io.File
 
-import akka.actor.Actor
+import akka.actor.{Actor, ActorLogging}
 import com.ldaniels528.broadway.core.actors.ArchivingActor.ArchiveFile
 import com.ldaniels528.broadway.core.resources.{FileResource, ReadableResource}
 import com.ldaniels528.broadway.core.util.FileHelper
 import com.ldaniels528.broadway.server.ServerConfig
-import org.slf4j.LoggerFactory
 
 /**
  * This actor is responsible for archiving resources; moving them into a long-term storage area.
  * @author Lawrence Daniels <lawrence.daniels@gmail.com>
  */
-class ArchivingActor(config: ServerConfig) extends Actor {
-  private lazy val logger = LoggerFactory.getLogger(getClass)
-
+class ArchivingActor(config: ServerConfig) extends Actor with ActorLogging {
   override def receive = {
     case ArchiveFile(file, archiveDirectory) =>
       FileHelper.archive(file, archiveDirectory)
@@ -31,7 +28,7 @@ class ArchivingActor(config: ServerConfig) extends Actor {
           FileHelper.archive(new File(path), config.getArchiveDirectory)
           ()
         case _ =>
-          logger.warn(s"Resource '$resource' cannot be moved to archive")
+          log.warning(s"Resource '$resource' cannot be moved to archive")
       }
 
     case message =>

@@ -2,6 +2,7 @@ package com.ldaniels528.broadway.core.actors
 
 import akka.actor.{Actor, ActorRef}
 
+import scala.concurrent.duration._
 import scala.language.postfixOps
 
 /**
@@ -11,10 +12,12 @@ import scala.language.postfixOps
 class ThrottlingActor(host: ActorRef, rateLimit: Double, enabled: Boolean = true) extends Actor {
   private val throttlePerMessage = Math.max(1000d / rateLimit, 1).toLong
 
+  import context.dispatcher
+
   override def receive = {
     case message =>
-      if (enabled) Thread.sleep(throttlePerMessage)
-      host ! message
+      context.system.scheduler.scheduleOnce(throttlePerMessage.milliseconds, host, message)
+      ()
   }
 
 }
