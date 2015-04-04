@@ -16,20 +16,20 @@ As mentioned above, Broadway is a distributed actor-based processing server, and
 ingestion. As such, Broadway is meant to be a complement to systems like Storm, and not necessarily an alternative.
 
 Why the name Broadway? I chose the name Broadway (e.g. Broadway plays or musicals) because it's an actor-based system.
-As such you'll encounter terms such as director, narrative and producer once Broadway's documentation is complete.
+As such you'll encounter terms such as anthology, director, narrative and producer once Broadway's documentation is complete.
 
 ## Features
 
 Broadway provides three main functions:
 
-* *Transporting of Files* via a built-in orchestration server, which also has the capability to download files and/or moving files from one location (site) to another.
+* *Transporting of Files* via a built-in orchestration server, which also has the capability to download files and/or move files from one location (site) to another.
 * *Extract, Transform and Loading* and is tailored toward processing flat files (XML, JSON, CSV, delimited, fixed field-length, and hierarchical)
 * *File archival system*, which provides the capability for warehousing processed files.
 
 Additionally, since Broadway is a file-centric processing system, it supports features like:
 * File-processing dependencies (e.g. File "A" must be processed before Files "B" and "C" can be processed)
 * File-processing schedulers and triggers
-  * Directories can be watched for specific files (or using pattern matching) and then processed and archived.
+  * Directories can be watched for specific file names (or match file names via regular expressions) which can then be processed and archived.
   * Files can be limited to being processed at certain times or days of the week.
 * An Actor-based I/O system with builtin support for:
   * Binary files
@@ -39,9 +39,9 @@ Additionally, since Broadway is a file-centric processing system, it supports fe
 * File archival and retention strategies
 * Resource limits (e.g. limit the number of Kafka connections)
 
-Broadway is currently pre-alpha quality software, and although it will currently run simple topologies, there's still
-some work to do before it's ready for use by the general public. The current ETA is to have the system ready for action by
-the end of May 2015.
+Broadway is currently pre-alpha quality software, and although it will currently run simple topologies (anthologies), 
+there's still some work to do before it's ready for use by the general public. The current ETA is to have the system 
+ready for action by the end of May 2015.
 
 ## Build Requirements
 
@@ -189,69 +189,3 @@ Finally, here is the Avro definition that we're using to encode the records:
     "doc": "A schema for EodData quotes"
 }
 ```
-
-Broadway aims to provide maximum flexibility by offering two paths for defining narratives within a narrative configuration;
-a Java/Scala-based narrative class or an XML-based narrative definition. The following is an example of a simple XML-based
-narrative definition:
-
-```xml
-<etl-config name="NASDAQ">
-    <template id="NasdaqTemplate">
-        <field id="symbol" type="text"/>
-        <field id="description" type="text"/>
-    </template>
-
-    <template id="ShockTradeTemplate">
-        <field id="symbol" type="text"/>
-        <field id="exchange" type="text"/>
-        <field id="lastTrade" type="double"/>
-        <field id="tradeDate" type="text"/>
-        <field id="tradeTime" type="text"/>
-        <field id="ask" type="double"/>
-        <field id="bid" type="double"/>
-        <field id="change" type="double"/>
-        <field id="changePct" type="double"/>
-        <field id="prevClose" type="double"/>
-        <field id="open" type="double"/>
-        <field id="close" type="double"/>
-        <field id="high" type="double"/>
-        <field id="low" type="double"/>
-        <field id="volume" type="long"/>
-        <field id="marketCap" type="double"/>
-        <field id="errorMessage" type="text"/>
-    </template>
-
-    <service id="YFStockQuoteService"
-             class="com.shocktrade.services.YFStockQuoteService"
-             method="getQuote">
-    </service>
-
-    <!-- The orchestration will set the resource dynamically -->
-    <input-source id="NasdaqSymbolsFile" template="NasdaqTemplate">
-        <device type="file">
-            <path type="dynamic" />
-        </device>
-    </input-source>
-
-    <output-source id="OutputFile" template="ShockTradeTemplate">
-        <device type="file">
-            <path>/Users/ldaniels/nasdaq-flat.txt</path>
-        </device>
-    </output-source>
-
-    <flow input="NasdaqSymbolsFile">
-
-        <invoke service="YFStockQuoteService">
-            <parameters>
-                <param>{{ NasdaqSymbolsFile.symbol }}</param>
-            </parameters>
-
-            <on-response>
-                <write-to device="OutputFile"/>
-            </on-response>
-        </invoke>
-    </flow>
-</etl-config>
-```
-
-**NOTE:** XML-based narrative definition support will be available in the next release.
