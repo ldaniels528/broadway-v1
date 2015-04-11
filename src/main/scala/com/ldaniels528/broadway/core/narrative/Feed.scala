@@ -4,9 +4,9 @@ package com.ldaniels528.broadway.core.narrative
  * Represents an actual file feed
  * @param name the name of the feed
  * @param dependencies the given feed dependencies
- * @param narrative the topology to execute
+ * @param descriptor the topology to execute
  */
-case class Feed(uuid: String, name: String, dependencies: Seq[Feed], narrative: Option[NarrativeDescriptor]) {
+case class Feed(uuid: String, name: String, dependencies: Seq[Feed], descriptor: Option[NarrativeDescriptor]) {
   var processed: Boolean = false
 
   /**

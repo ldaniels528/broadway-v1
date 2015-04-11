@@ -87,8 +87,9 @@ class FileMonitor(system: ActorSystem) {
    * @param directory the given directory
    */
   private def processDirectory(directory: File, callback: File => Unit) {
-    Option(directory.listFiles) foreach {
-      _ foreach {
+    Option(directory.listFiles) foreach { files =>
+      logger.info(s"Processing ${files.length} pre-existing files...")
+      files foreach {
         case f if f.isFile => processFile(f, callback)
         case d if d.isDirectory => processDirectory(d, callback)
         case _ =>

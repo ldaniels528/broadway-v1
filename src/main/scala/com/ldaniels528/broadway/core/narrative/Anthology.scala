@@ -1,7 +1,7 @@
 package com.ldaniels528.broadway.core.narrative
 
-import com.ldaniels528.broadway.core.location.Location
-import com.ldaniels528.broadway.core.schedules.Scheduling
+import com.ldaniels528.broadway.core.triggers.location.Location
+import com.ldaniels528.broadway.core.triggers.schedules.Scheduling
 import com.ldaniels528.broadway.core.triggers.Trigger
 
 import scala.beans.BeanProperty

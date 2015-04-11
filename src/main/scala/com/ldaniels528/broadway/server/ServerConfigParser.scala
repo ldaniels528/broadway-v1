@@ -1,7 +1,7 @@
 package com.ldaniels528.broadway.server
 
 import com.ldaniels528.broadway.core.resources._
-import com.ldaniels528.broadway.core.schedules.Scheduling
+import com.ldaniels528.broadway.core.triggers.schedules.Scheduling
 import com.ldaniels528.broadway.core.util.XMLHelper._
 import com.ldaniels528.broadway.server.ServerConfig.HttpInfo
 import com.ldaniels528.trifecta.util.PropertiesHelper._

@@ -1,4 +1,4 @@
-package com.ldaniels528.broadway.core.schedules
+package com.ldaniels528.broadway.core.triggers.schedules
 
 import scala.concurrent.duration.Duration
 

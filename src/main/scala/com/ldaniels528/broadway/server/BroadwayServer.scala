@@ -1,15 +1,20 @@
 package com.ldaniels528.broadway.server
 
-import java.io.{File, FilenameFilter}
+import java.io.File
 import java.net.URL
+import java.util.concurrent.atomic.AtomicLong
 
+import akka.actor.Props
+import akka.routing.RoundRobinPool
+import com.ldaniels528.broadway.core.actors.NarrativeProcessingActor
 import com.ldaniels528.broadway.core.actors.NarrativeProcessingActor.RunJob
-import com.ldaniels528.broadway.core.location.{FileLocation, HttpLocation, Location}
+import com.ldaniels528.broadway.core.triggers.location.{FileLocation, HttpLocation, Location}
 import com.ldaniels528.broadway.core.narrative._
 import com.ldaniels528.broadway.core.resources._
 import com.ldaniels528.broadway.core.util.FileHelper._
 import com.ldaniels528.broadway.core.util.{FileMonitor, HttpMonitor}
 import com.ldaniels528.broadway.server.BroadwayServer._
+import com.ldaniels528.broadway.server.http.BroadwayHttpServer
 import com.ldaniels528.trifecta.util.OptionHelper._
 import org.slf4j.LoggerFactory
 
@@ -30,11 +35,12 @@ class BroadwayServer(config: ServerConfig) {
   private val fileMonitor = new FileMonitor(system)
   private val httpMonitor = new HttpMonitor(system)
   private val reported = TrieMap[String, Throwable]()
+  private val counter = new AtomicLong(System.currentTimeMillis())
 
-  import config.{archivingActor, processingActor}
+  import config.archivingActor
 
-  // setup the HTTP server
-  private val httpServer = config.httpInfo.map(hi => new BroadwayHttpServer(host = hi.host, port = hi.port))
+  // create the narrative processing actor
+  private val processingActor = system.actorOf(Props(new NarrativeProcessingActor(config)).withRouter(RoundRobinPool(nrOfInstances = 10)))
 
   /**
    * Start the server
@@ -43,7 +49,10 @@ class BroadwayServer(config: ServerConfig) {
     logger.info(s"Broadway Server v$Version")
 
     // initialize the configuration
-    config.init()
+    val bsc = config.init()
+
+    // setup the HTTP server
+    val httpServer = config.httpInfo.map(hi => new BroadwayHttpServer(bsc, host = hi.host, port = hi.port))
 
     // optionally start the HTTP server
     for {
@@ -55,8 +64,7 @@ class BroadwayServer(config: ServerConfig) {
     }
 
     // load the anthologies
-    val anthologies = loadAnthologies(config.getAnthologiesDirectory)
-    anthologies foreach { anthology =>
+    bsc.anthologies foreach { anthology =>
       logger.info(s"Configuring anthology '${anthology.id}'...")
 
       // setup scheduled jobs
@@ -119,44 +127,44 @@ class BroadwayServer(config: ServerConfig) {
   }
 
   /**
-   * Loads all anthologies from the given directory
-   * @param directory the given directory
-   * @return the collection of successfully parsed [[Anthology]] objects
-   */
-  private def loadAnthologies(directory: File): Seq[Anthology] = {
-    logger.info(s"Searching for narrative configuration files in '${directory.getAbsolutePath}'...")
-    val xmlFile = directory.listFiles(new FilenameFilter {
-      override def accept(dir: File, name: String): Boolean = name.toLowerCase.endsWith(".xml")
-    })
-    xmlFile.toSeq flatMap (f => AnthologyParser.parse(FileResource(f.getAbsolutePath)))
-  }
-
-  /**
    * Processes the given feed via a narrative
    * @param feed the given [[Feed]]
    * @param file the given [[File]]
    */
   private def processFeed(feed: Feed, file: File) = {
     // TODO what about feeds that have no narrative?
-    feed.narrative foreach { td =>
+    feed.descriptor foreach { descriptor =>
       // lookup the narrative
-      rt.getNarrative(config, td) match {
+      rt.getNarrative(config, descriptor) match {
         case Success(narrative) =>
           val fileName = file.getName
-          logger.info(s"${narrative.name}: Moving file '$fileName' to '${config.getWorkDirectory}' for processing...")
-          val wipFile = new File(config.getWorkDirectory, fileName)
-          move(file, wipFile)
+          val workDir = createWorkDirectory()
 
-          // start the topology using the file as its input source
-          processingActor ! RunJob(narrative, Option(FileResource(wipFile.getAbsolutePath)))
+          logger.info(s"${narrative.name}: Moving file '$fileName' to '${workDir.getAbsolutePath}' for processing...")
+          val wipFile = new File(workDir, fileName)
+          if (move(file, wipFile)) {
+            // start the narrative using the file as its input source
+            processingActor ! RunJob(narrative, Some(FileResource(wipFile.getAbsolutePath)))
+          }
+          else {
+            logger.error(s"Failed to move the work file ${wipFile.getName} into ${workDir.getAbsolutePath}")
+          }
 
         case Failure(e) =>
-          if (!reported.contains(td.id)) {
-            logger.error(s"${td.id}: Narrative could not be instantiated", e)
-            reported += td.id -> e
+          if (!reported.contains(descriptor.id)) {
+            logger.error(s"${descriptor.id}: Narrative could not be instantiated", e)
+            reported += descriptor.id -> e
           }
       }
     }
+  }
+
+  private def createWorkDirectory(): File = {
+    val workDir = new File(config.getWorkDirectory, String.valueOf(counter.incrementAndGet()))
+    if (!workDir.exists() && !workDir.mkdirs()) {
+      logger.warn(s"Failed to create the work directory: ${workDir.getAbsolutePath}")
+    }
+    workDir
   }
 
   /**

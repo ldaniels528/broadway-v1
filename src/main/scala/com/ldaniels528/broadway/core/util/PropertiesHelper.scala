@@ -1,6 +1,8 @@
 package com.ldaniels528.broadway.core.util
 
 import java.util.Properties
+
+import scala.collection.JavaConversions._
 import scala.collection.JavaConverters._
 
 /**
@@ -19,7 +21,6 @@ object PropertiesHelper {
       p.putAll(m.asJava)
       p
     }
-
   }
 
   /**
@@ -39,6 +40,7 @@ object PropertiesHelper {
       Option(props.getProperty(key)).map(_.trim).getOrElse(default)
     }
 
+    def toMap: Map[String, String] = Map(props.toSeq: _*)
   }
 
 }

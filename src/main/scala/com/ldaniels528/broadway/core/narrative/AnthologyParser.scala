@@ -2,9 +2,9 @@ package com.ldaniels528.broadway.core.narrative
 
 import java.util.Properties
 
-import com.ldaniels528.broadway.core.location.{FileLocation, HttpLocation, Location}
+import com.ldaniels528.broadway.core.triggers.location.{FileLocation, HttpLocation, Location}
 import com.ldaniels528.broadway.core.resources._
-import com.ldaniels528.broadway.core.schedules.Scheduling
+import com.ldaniels528.broadway.core.triggers.schedules.Scheduling
 import com.ldaniels528.broadway.core.triggers.Trigger
 import com.ldaniels528.broadway.core.util.PropertiesHelper._
 import com.ldaniels528.broadway.core.util.XMLHelper._
@@ -218,11 +218,12 @@ object AnthologyParser {
       val scheduleId = node.getAttr(tagName, "schedule-ref")
       val narrativeId = node.getAttr(tagName, "narrative-ref")
       val resourceId = node.getAttrOpt("resource-ref")
+      val enabled = node.getAttrOpt("enabled") map(_.toLowerCase == "true") getOrElse true
 
       val schedule = schedules.get(scheduleId).orDie(s"Schedule '$scheduleId' was not found")
       val narrative = narratives.get(narrativeId).orDie(s"Narrative '$narrativeId' was not found")
       val resource = resourceId.flatMap(resources.get) // TODO check to see if resource is populated
-      Trigger(narrative, schedule, resource)
+      Trigger(narrative, schedule, enabled, resource)
     }
   }
 

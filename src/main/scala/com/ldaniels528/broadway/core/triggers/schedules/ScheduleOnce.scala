@@ -1,4 +1,4 @@
-package com.ldaniels528.broadway.core.schedules
+package com.ldaniels528.broadway.core.triggers.schedules
 
 /**
  * Represents a Schedule for an event that should only occur once

@@ -1,4 +1,4 @@
-package com.ldaniels528.broadway.core.location
+package com.ldaniels528.broadway.core.triggers.location
 
 import com.ldaniels528.broadway.core.narrative.{Feed, FeedDescriptor, NarrativeRuntime}
 
