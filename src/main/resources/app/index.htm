@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html ng-app="broadway">
+<head>
+    <title>Broadway - Dashboard</title>
+    <meta http-equiv="Content-type" content="text/html; charset=utf-8">
+    <link href="/app/lib/css/bootstrap.min.css" type="text/css" rel="stylesheet" media=screen>
+    <link href="/app/lib/css/tomorrow.min.css" type="text/css" rel="stylesheet" media=screen>
+    <script src="/app/lib/js/jquery-2.1.1.min.js" type="text/javascript"></script>
+    <script src="/app/lib/js/angular.min.js" type="text/javascript"></script>
+    <script src="/app/lib/js/angular-resource.min.js" type="text/javascript"></script>
+    <script src="/app/lib/js/highlight.min.js" type="text/javascript"></script>
+    <script src="/app/lib/js/angular-highlightjs.min.js" type="text/javascript"></script>
+    <script src="/app/lib/js/bootstrap.min.js" type="text/javascript"></script>
+    <script src="/app/lib/js/ui-bootstrap-tpls.min.js" type="text/javascript"></script>
+
+    <link href="/app/css/index.css" type="text/css" rel="stylesheet" media=screen>
+
+    <script src="/app/js/BroadwayApp.js" type="text/javascript"></script>
+    <script src="/app/js/controllers/NarrativeCtrl.js" type="text/javascript"></script>
+</head>
+
+<body ng-controller="NarrativeCtrl">
+    <h2><span class="title1">Bro</span><span class="title2">ad</span><span class="title3">way</span> <span class="version">v{{ version }}</span></h2>
+
+    <!-- application tabs -->
+    <div class="title_border">
+        <tabset>
+            <tab ng-repeat="tab in tabs" active="tab.active" select="changeTab($index, $event)">
+                <tab-heading><img ng-class="tab.active ? 'tab_active' : 'tab_inactive'" ng-src="{{ tab.imageURL }}"> {{ tab.name }}</tab-heading>
+            </tab>
+        </tabset>
+    </div>
+
+    <!-- Dynamically display the active tab -->
+    <div ng-show="tab.name == 'Narratives'" ng-include="'/app/views/narratives.htm'"></div>
+    <div ng-show="tab.name == 'Processes'" ng-include="'/app/views/processes.htm'"></div>
+</body>
+</html>

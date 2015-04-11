@@ -1,0 +1,12 @@
+body {
+    margin-left: 25px;
+    margin-right: 25px;
+}
+
+.title1 { color: #f00000 }
+
+.title2 { color: #337ab7 }
+
+.title3 { color: #00a000 }
+
+.version { font-size: 12pt }
