@@ -51,7 +51,7 @@ ready for action by the end of May 2015.
 
 #### GitHub/ldaniels528 Dependencies
 
-* [Trifecta 0.18.5] (https://github.com/ldaniels528/trifecta)
+* [Trifecta 0.18.14+] (https://github.com/ldaniels528/trifecta)
 * [Tabular 0.1.0] (https://github.com/ldaniels528/tabular)
 
 ## How it works
@@ -68,19 +68,24 @@ the process; in this case, how file feeds are mapped to their respective process
 
 ```xml
 <anthology id="EodData" version="1.0">
+
     <!-- Narratives -->
 
     <narrative id="EodDataImportNarrative"
-               class="com.shocktrade.datacenter.narratives.EodDataImportNarrative">
+               class="com.shocktrade.datacenter.narratives.stock.eoddata.EodDataImportNarrative">
         <properties>
             <property key="kafka.topic">eoddata.tradinghistory.avro</property>
+            <property key="kafka.topic.parallelism">5</property>
+            <property key="mongo.database">shocktrade</property>
+            <property key="mongo.replicas">dev801:27017,dev802:27017,dev803:27017</property>
+            <property key="mongo.collection">Stocks</property>
             <property key="zookeeper.connect">dev801:2181</property>
         </properties>
     </narrative>
 
     <!-- Location Triggers -->
 
-    <location id="EodData" path="/Users/ldaniels/broadway/incoming/tradingHistory">
+    <location id="tradingHistory" path="/Users/ldaniels/broadway/incoming/tradingHistory">
         <feed name="AMEX_(.*)[.]txt" match="regex" narrative-ref="EodDataImportNarrative"/>
         <feed name="NASDAQ_(.*)[.]txt" match="regex" narrative-ref="EodDataImportNarrative"/>
         <feed name="NYSE_(.*)[.]txt" match="regex" narrative-ref="EodDataImportNarrative"/>
@@ -93,77 +98,51 @@ the process; in this case, how file feeds are mapped to their respective process
 The following is the Broadway narrative that implements the flow described above:
 
 ```scala
-    class EodDataImportNarrative(config: ServerConfig, id: String, props: Properties)
-      extends BroadwayNarrative(config, id, props) {
-    
-      // extract the properties we need
-      val kafkaTopic = props.getOrDie("kafka.topic")
-      val zkConnect = props.getOrDie("zookeeper.connect")
-    
-      // create a file reader actor to read lines from the incoming resource
-      lazy val fileReader = prepareActor(new FileReadingActor(config), parallelism = 10)
-    
-      // create a Kafka publishing actor
-      lazy val kafkaPublisher = prepareActor(new KafkaPublishingActor(zkConnect), parallelism = 10)
-    
-      // create a EOD data transformation actor
-      lazy val eodDataToAvroActor = prepareActor(new EodDataToAvroActor(kafkaTopic, kafkaPublisher), parallelism = 10)
-    
-      onStart {
-        case Some(resource: ReadableResource) =>
-          // start the processing by submitting a request to the file reader actor
-          fileReader ! CopyText(resource, eodDataToAvroActor, handler = Delimited("[,]"))
-        case _ =>
-      }
-    }
+class EodDataImportNarrative(config: ServerConfig, id: String, props: Properties)
+  extends BroadwayNarrative(config, id, props) {
+  private val df = DateTimeFormat.forPattern("yyyyMMdd")
+
+  // extract the properties we need
+  private val kafkaTopic = props.getOrDie("kafka.topic")
+  private val topicParallelism = props.getOrDie("kafka.topic.parallelism").toInt
+  private val zkConnect = props.getOrDie("zookeeper.connect")
+
+  // create a file reader actor to read lines from the incoming resource
+  lazy val fileReader = prepareActor(new FileReadingActor(config), parallelism = 1)
+
+  // create a Kafka publishing actor
+  lazy val kafkaPublisher = prepareActor(new KafkaPublishingActor(zkConnect), topicParallelism)
+
+  onStart {
+    case Some(resource: ReadableResource) =>
+      // start the processing by submitting a request to the file reader actor
+      fileReader ! TransformFile(resource, kafkaPublisher, (lineNo, line) =>
+        if (lineNo == 1) None else Some(PublishAvro(kafkaTopic, toAvro(resource, parseTokens(line, "[,]")))))
+    case _ =>
+  }
+
+  private def toAvro(resource: ReadableResource, tokens: Seq[String]) = {
+    val items = tokens map (_.trim) map (s => if (s.isEmpty) None else Some(s))
+    def item(index: Int) = if (index < items.length) items(index) else None
+
+    com.shocktrade.avro.EodDataRecord.newBuilder()
+      .setSymbol(item(0).orNull)
+      .setExchange(resource.getResourceName.flatMap(extractExchange).orNull)
+      .setTradeDate(item(1).flatMap(_.asEPOC(df)).map(n => n: JLong).orNull)
+      .setOpen(item(2).flatMap(_.asDouble).map(n => n: JDouble).orNull)
+      .setHigh(item(3).flatMap(_.asDouble).map(n => n: JDouble).orNull)
+      .setLow(item(4).flatMap(_.asDouble).map(n => n: JDouble).orNull)
+      .setClose(item(5).flatMap(_.asDouble).map(n => n: JDouble).orNull)
+      .setVolume(item(6).flatMap(_.asLong).map(n => n: JLong).orNull)
+      .build()
+  }
+
+  private def extractExchange(name: String) = name.indexOptionOf("_") map (name.substring(0, _))
+
+}
 ```
 
 **NOTE:** The `KafkaAvroPublishingActor` and `FileReadingActor` actors are builtin components of Broadway.
-
-The class below is an optional custom actor that will perform the Avro encoding and then pass an Avro-encoded
-record to the Kafka publishing actor (a built-in component).
-
-```scala
-    class EodDataToAvroActor(topic: String, kafkaActor: ActorRef) extends Actor {
-      private val sdf = new SimpleDateFormat("yyyyMMdd")
-    
-      override def receive = {
-        case OpeningFile(resource) =>
-          ResourceTracker.start(resource)
-    
-        case ClosingFile(resource) =>
-          ResourceTracker.stop(resource)
-    
-        case TextLine(resource, lineNo, line, tokens) =>
-          // skip the header line
-          if (lineNo != 1) {
-            kafkaActor ! PublishAvro(topic, toAvro(resource, tokens))
-          }
-    
-        case message =>
-          unhandled(message)
-      }
-    
-      private def toAvro(resource: ReadableResource, tokens: Seq[String]) = {
-        val items = tokens map (_.trim) map (s => if (s.isEmpty) None else Some(s))
-        def item(index: Int) = if (index < items.length) items(index) else None
-    
-        com.shocktrade.avro.EodDataRecord.newBuilder()
-          .setSymbol(item(0).orNull)
-          .setExchange(resource.getResourceName.flatMap(extractExchange).orNull)
-          .setTradeDate(item(1).flatMap(_.asEPOC(sdf)).map(n => n: JLong).orNull)
-          .setOpen(item(2).flatMap(_.asDouble).map(n => n: JDouble).orNull)
-          .setHigh(item(3).flatMap(_.asDouble).map(n => n: JDouble).orNull)
-          .setLow(item(4).flatMap(_.asDouble).map(n => n: JDouble).orNull)
-          .setClose(item(5).flatMap(_.asDouble).map(n => n: JDouble).orNull)
-          .setVolume(item(6).flatMap(_.asLong).map(n => n: JLong).orNull)
-          .build()
-      }
-
-      private def extractExchange(name: String) = name.indexOptionOf("_") map (name.substring(0, _))
-    
-    }
-```
 
 Broadway provides an actor-based, event-based I/O system. Notice above, your code may react to messages that indicate
 the opening (`OpeningFile`) or closing (`ClosingFile`) of a resource (e.g. file) or when a line of text has been
