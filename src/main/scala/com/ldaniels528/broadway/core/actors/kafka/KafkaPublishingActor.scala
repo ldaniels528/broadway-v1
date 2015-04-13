@@ -1,25 +1,22 @@
 package com.ldaniels528.broadway.core.actors.kafka
 
-import akka.actor.{Actor, ActorLogging}
 import com.datastax.driver.core.utils.UUIDs
+import com.ldaniels528.broadway.core.actors.BroadwayActor
 import com.ldaniels528.broadway.core.actors.kafka.KafkaPublishingActor.{Publish, PublishAvro}
 import com.ldaniels528.trifecta.io.ByteBufferUtils
 import com.ldaniels528.trifecta.io.avro.AvroConversion
 import com.ldaniels528.trifecta.io.kafka.KafkaPublisher
 import org.apache.avro.generic.GenericRecord
 
+import scala.collection.concurrent.TrieMap
 import scala.util.{Failure, Success}
 
 /**
  * Kafka-Avro Publishing Actor
  * @author Lawrence Daniels <lawrence.daniels@gmail.com>
  */
-class KafkaPublishingActor(zkConnectionString: String) extends Actor with ActorLogging {
-  private lazy val publisher = KafkaPublisher(KafkaHelper.getBrokerList(zkConnectionString))
-
-  override def preStart() = publisher.open()
-
-  override def postStop() = publisher.close()
+class KafkaPublishingActor(zookeeperConnect: String) extends BroadwayActor {
+  private lazy val publisher = KafkaPublishingActor.getPublisher(zookeeperConnect)
 
   override def receive = {
     case Publish(topic, message, key, attempts) => publish(topic, key, message, attempts)
@@ -68,6 +65,20 @@ class KafkaPublishingActor(zkConnectionString: String) extends Actor with ActorL
  * @author Lawrence Daniels <lawrence.daniels@gmail.com>
  */
 object KafkaPublishingActor {
+  private[this] val publishers = TrieMap[String, KafkaPublisher]()
+
+  /**
+   * Retrieves a Kafka Publisher based on the given Zookeeper connection string
+   * @param zookeeperConnect the given Zookeeper connection string
+   * @return a [[KafkaPublisher Kafka Publisher]]
+   */
+  def getPublisher(zookeeperConnect: String): KafkaPublisher = {
+    publishers.getOrElseUpdate(zookeeperConnect, {
+      val publisher = KafkaPublisher(KafkaHelper.getBrokerList(zookeeperConnect))
+      publisher.open()
+      publisher
+    })
+  }
 
   /**
    * Generates a time-based UUID as a byte array

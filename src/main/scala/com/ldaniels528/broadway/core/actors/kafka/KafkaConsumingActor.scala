@@ -1,6 +1,7 @@
 package com.ldaniels528.broadway.core.actors.kafka
 
-import akka.actor.{Actor, ActorLogging, ActorRef}
+import akka.actor.ActorRef
+import com.ldaniels528.broadway.core.actors.BroadwayActor
 import com.ldaniels528.broadway.core.actors.kafka.KafkaConsumingActor._
 import com.ldaniels528.broadway.core.actors.kafka.KafkaHelper._
 import com.ldaniels528.trifecta.io.avro.AvroConversion
@@ -16,7 +17,7 @@ import scala.concurrent.Future
  * Kafka Message Consuming Actor
  * @author Lawrence Daniels <lawrence.daniels@gmail.com>
  */
-class KafkaConsumingActor(zkConnect: String) extends Actor with ActorLogging {
+class KafkaConsumingActor(zkConnect: String) extends BroadwayActor {
   private implicit lazy val zk = getZKProxy(zkConnect)
   private val registrations = TrieMap[(String, ActorRef), Future[Seq[Unit]]]()
 

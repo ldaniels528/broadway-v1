@@ -3,6 +3,7 @@ package com.ldaniels528.broadway
 import java.util.Properties
 
 import akka.actor.Actor
+import com.datastax.driver.core.utils.UUIDs
 import com.ldaniels528.broadway.core.resources._
 import com.ldaniels528.broadway.server.ServerConfig
 import org.slf4j.LoggerFactory
@@ -23,12 +24,15 @@ case class BroadwayNarrative(config: ServerConfig, name: String, props: Properti
 
   /**
    * Prepares a new actor for execution within the narrative
+   * @param id the given unique identifier
    * @param actor the given [[Actor]]
    * @param parallelism the number of actors to create
    * @tparam T the actor type
    * @return an actor reference
    */
-  def prepareActor[T <: Actor : ClassTag](actor: => T, parallelism: Int = 1) = config.prepareActor(actor, parallelism)
+  def prepareActor[T <: Actor : ClassTag](actor: => T, parallelism: Int = 1, id: String = randomName) = {
+    config.prepareActor(id, actor, parallelism)
+  }
 
   /**
    * Setups the actions that will occur upon start of the narrative
@@ -55,5 +59,11 @@ case class BroadwayNarrative(config: ServerConfig, name: String, props: Properti
    * Stops the execution of the narrative
    */
   def stop(): Unit = tearDown.foreach(_())
+
+  /**
+   * Returns a random actor name
+   * @return a random actor name (e.g. "actor_a2111_345_23000")
+   */
+  private def randomName: String = s"actor_${UUIDs.timeBased}"
 
 }

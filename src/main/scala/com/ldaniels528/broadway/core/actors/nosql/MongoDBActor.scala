@@ -1,6 +1,7 @@
 package com.ldaniels528.broadway.core.actors.nosql
 
 import akka.actor.{Actor, ActorRef}
+import com.ldaniels528.broadway.core.actors.BroadwayActor
 import com.ldaniels528.broadway.core.actors.nosql.MongoDBActor._
 import com.mongodb.casbah.Imports.{DBObject => Q, _}
 import com.mongodb.casbah.commons.conversions.scala.RegisterJodaTimeConversionHelpers
@@ -13,7 +14,7 @@ import scala.collection.concurrent.TrieMap
  * MongoDB server instance. NOTE: `find` and `findOne` queries require an actor a a recipient for retrieved records.
  * @author Lawrence Daniels <lawrence.daniels@gmail.com>
  */
-class MongoDBActor(client: () => MongoClient, databaseName: String) extends Actor {
+class MongoDBActor(client: () => MongoClient, databaseName: String) extends BroadwayActor {
   private val collections = TrieMap[String, MongoCollection]()
   private var conn_? : Option[MongoClient] = None
 

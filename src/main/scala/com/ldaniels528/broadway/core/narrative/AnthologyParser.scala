@@ -158,9 +158,9 @@ object AnthologyParser {
       instantiate(id, className) match {
         case Success(resource: Resource) => UserResource(id, resource)
         case Success(unknown) =>
-          throw new IllegalStateException(s"Resource '$id' (class $className}) does not implement ${classOf[Resource].getName}")
+          throw new IllegalStateException(s"Resource '$id' (class $className) does not implement ${classOf[Resource].getName}")
         case Failure(e) =>
-          throw new IllegalStateException(s"Failed to load resource '$id' (class $className})")
+          throw new IllegalStateException(s"Failed to load resource '$id' (class $className): ${e.getMessage}")
       }
     }
   }

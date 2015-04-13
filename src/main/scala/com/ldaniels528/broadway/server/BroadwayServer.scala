@@ -184,7 +184,7 @@ class BroadwayServer(config: ServerConfig) {
  * @author Lawrence Daniels <lawrence.daniels@gmail.com>
  */
 object BroadwayServer {
-  private val Version = "0.8"
+  private val Version = "0.9.0"
 
   /**
    * Enables command line execution

@@ -1,11 +1,11 @@
 package com.ldaniels528.broadway.server
 
-import java.io.{FilenameFilter, File}
+import java.io.{File, FilenameFilter}
 
 import akka.actor.{Actor, ActorRef, ActorSystem, Props}
 import akka.routing.RoundRobinPool
 import com.ldaniels528.broadway.core.actors.file.ArchivingActor
-import com.ldaniels528.broadway.core.narrative.{AnthologyParser, Anthology}
+import com.ldaniels528.broadway.core.narrative.{Anthology, AnthologyParser}
 import com.ldaniels528.broadway.core.resources._
 import com.ldaniels528.broadway.core.util.FileHelper._
 import com.ldaniels528.broadway.server.ServerConfig._
@@ -24,10 +24,10 @@ import scala.reflect.ClassTag
 case class ServerConfig(props: java.util.Properties, httpInfo: Option[HttpInfo]) {
   private lazy val logger = LoggerFactory.getLogger(getClass)
   implicit val system = ActorSystem(props.getOrElse("broadway.actor.system", "BroadwaySystem"))
-  private val actorCache = TrieMap[Class[_ <: Actor], ActorRef]()
+  private val actorCache = TrieMap[String, ActorRef]()
 
   // create the system actors
-  lazy val archivingActor = prepareActor(new ArchivingActor(this))
+  lazy val archivingActor = prepareActor(id = "$archivingActor", new ArchivingActor(this))
 
   /**
    * Prepares a new actor for execution within the narrative
@@ -36,8 +36,11 @@ case class ServerConfig(props: java.util.Properties, httpInfo: Option[HttpInfo])
    * @tparam T the actor type
    * @return an [[akka.actor.ActorRef]]
    */
-  def prepareActor[T <: Actor : ClassTag](actor: => T, parallelism: Int = 1) = {
-    system.actorOf(Props(actor).withRouter(RoundRobinPool(nrOfInstances = parallelism)))
+  def prepareActor[T <: Actor : ClassTag](id: String, actor: => T, parallelism: Int = 1) = {
+    actorCache.getOrElseUpdate(id, {
+      logger.info(s"Creating actor '$id' ($parallelism instances)...")
+      system.actorOf(Props(actor).withRouter(RoundRobinPool(nrOfInstances = parallelism)))
+    })
   }
 
   def getRootDirectory = new File(props.asOpt[String](BaseDir).orDie(s"Required property '$BaseDir' is missing"))

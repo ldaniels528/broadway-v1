@@ -1,6 +1,7 @@
 package com.ldaniels528.broadway.core.actors.file
 
-import akka.actor.{Actor, ActorRef}
+import akka.actor.ActorRef
+import com.ldaniels528.broadway.core.actors.BroadwayActor
 import com.ldaniels528.broadway.core.actors.file.FileReadingActor._
 import com.ldaniels528.broadway.core.resources._
 import com.ldaniels528.broadway.core.util.TextFileHelper
@@ -13,7 +14,7 @@ import scala.language.implicitConversions
  * This actor is capable of reading/parsing binary/text files
  * @author Lawrence Daniels <lawrence.daniels@gmail.com>
  */
-class FileReadingActor(config: ServerConfig) extends Actor {
+class FileReadingActor(config: ServerConfig) extends BroadwayActor {
   override def receive = {
     case CopyBinary(resource, target) => copyBinary(target, resource)
     case CopyText(resource, target, handler) => copyText(target, resource, handler)

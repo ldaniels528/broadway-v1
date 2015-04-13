@@ -10,7 +10,7 @@
     }]);
 
     app.run(function ($rootScope) {
-        $rootScope.version = "0.8.0";
+        $rootScope.version = "0.9.0";
 
         /******************************************************************
          *  Tab-related Methods

@@ -1,6 +1,5 @@
 package com.ldaniels528.broadway.core.actors
 
-import akka.actor.Actor
 import com.ldaniels528.broadway.BroadwayNarrative
 import com.ldaniels528.broadway.core.actors.NarrativeProcessingActor.RunJob
 import com.ldaniels528.broadway.core.resources.Resource
@@ -10,7 +9,7 @@ import com.ldaniels528.broadway.server.ServerConfig
  * This is an internal use actor that is responsible for processing narratives
  * @author Lawrence Daniels <lawrence.daniels@gmail.com>
  */
-class NarrativeProcessingActor(config: ServerConfig) extends Actor {
+class NarrativeProcessingActor(config: ServerConfig) extends BroadwayActor {
   override def receive = {
     case RunJob(narrative, resource) => narrative.start(resource)
     case message => unhandled(message)
