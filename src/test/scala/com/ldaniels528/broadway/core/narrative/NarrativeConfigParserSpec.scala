@@ -19,7 +19,7 @@ class NarrativeConfigParserSpec() extends FeatureSpec with GivenWhenThen with Mo
       val resource = ClasspathResource("/shocktrade-nasdaq.xml")
 
       When("the narrative configuration is parsed")
-      val config = NarrativeConfigParser.parse(resource)
+      val config = AnthologyParser.parse(resource)
 
       Then("the Topology configuration should match the exact result")
       info(s"config = $config")

@@ -9,7 +9,7 @@ import scala.concurrent.duration.Duration
  * @author Lawrence Daniels <lawrence.daniels@gmail.com>
  */
 class Counter(frequency: Duration)(observer: (Long, Double) => Unit) {
-  private var lastCheckMillis = 0L
+  private val lastUpdate = new AtomicLong(0)
   private var lastCount = 0L
   private val count = new AtomicLong(0)
   private var rps = 0.0d
@@ -19,15 +19,15 @@ class Counter(frequency: Duration)(observer: (Long, Double) => Unit) {
   def recordsPerSecond: Double = rps
 
   private def produceStats(total: Long): Unit = {
-    if (lastCheckMillis == 0) lastCheckMillis = System.currentTimeMillis()
-    else {
-      val dtime = System.currentTimeMillis() - lastCheckMillis
-      if (dtime >= frequency.toMillis) {
+    val currentTimeMillis = System.currentTimeMillis()
+    if (!lastUpdate.compareAndSet(0L, currentTimeMillis)) {
+      val lastCheckMillis = lastUpdate.get
+      val dtime = currentTimeMillis - lastCheckMillis
+      if (dtime >= frequency.toMillis && lastUpdate.compareAndSet(lastCheckMillis, currentTimeMillis)) {
         val timeSecs = dtime.toDouble / 1000d
         val delta = total - lastCount
         rps = if (timeSecs == 0.0d) 0.0d else delta.toDouble / timeSecs
         lastCount = total
-        lastCheckMillis = System.currentTimeMillis()
         observer(delta, rps)
       }
     }

@@ -8,6 +8,7 @@ import com.ldaniels528.broadway.core.triggers.schedules.Scheduling
 import com.ldaniels528.broadway.core.triggers.Trigger
 import com.ldaniels528.broadway.core.util.PropertiesHelper._
 import com.ldaniels528.broadway.core.util.XMLHelper._
+import com.ldaniels528.broadway.server.ServerConfig.HttpInfo
 import com.ldaniels528.trifecta.util.OptionHelper._
 
 import scala.util.{Failure, Success, Try}
@@ -56,6 +57,19 @@ object AnthologyParser {
   }
 
   /**
+   * Parses the <code>directories</code> tag
+   * @param doc the given XML node
+   * @return a [[java.util.Properties]] object containing the specified properties
+   */
+  private def parseDirectories(doc: Node) = {
+    val fields = Seq("archive", "base", "completed", "failed", "incoming", "topologies", "work")
+    val mapping = (doc \ "directories") flatMap { node =>
+      fields flatMap (field => node.getText(field) map (value => (s"broadway.directories.$field", value)))
+    }
+    Map(mapping: _*).toProps
+  }
+
+  /**
    * Parses the <code>feed</code> tags
    * @param doc the given XML node
    * @return a [[Seq]] of [[FeedDescriptor]]
@@ -69,6 +83,19 @@ object AnthologyParser {
       val topology_? = refId_?.map(refId => topologies.find(_.id == refId).orDie(s"Topology '$refId' not found"))
       FeedDescriptor(name, matching, narrative = topology_?)
     }
+  }
+
+  /**
+   * Parses the <code>http</code> tag
+   * @param doc the given XML node
+   * @return an [[Option]] of a [[HttpInfo]]
+   */
+  private def parseHttpInfo(doc: Node) = {
+    ((doc \ "http") map { node =>
+      val host = (node \ "host").text
+      val port = (node \ "port").text
+      HttpInfo(host, port.toInt)
+    }).headOption
   }
 
   /**
