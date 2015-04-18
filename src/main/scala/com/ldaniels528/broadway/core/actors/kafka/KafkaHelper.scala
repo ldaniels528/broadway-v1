@@ -2,7 +2,7 @@ package com.ldaniels528.broadway.core.actors.kafka
 
 import com.ldaniels528.trifecta.io.kafka.{Broker, KafkaMicroConsumer}
 import com.ldaniels528.trifecta.io.zookeeper.ZKProxy
-import com.ldaniels528.trifecta.util.ResourceHelper._
+import com.ldaniels528.commons.helpers.ResourceHelper._
 
 /**
  * Kafka Helper

@@ -9,6 +9,7 @@ import com.ldaniels528.broadway.server.ServerConfig
 import org.slf4j.LoggerFactory
 
 import scala.concurrent.ExecutionContext
+import scala.concurrent.duration.Duration
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
 
@@ -23,15 +24,12 @@ case class BroadwayNarrative(config: ServerConfig, name: String, props: Properti
   val log = LoggerFactory.getLogger(getClass)
 
   /**
-   * Prepares a new actor for execution within the narrative
-   * @param id the given unique identifier
-   * @param actor the given [[Actor]]
-   * @param parallelism the number of actors to create
-   * @tparam T the actor type
-   * @return an actor reference
+   * Facilitates the execution of the block on a specific interval
+   * @param duration the given [[Duration]]
+   * @param block the given code block
    */
-  def prepareActor[T <: Actor : ClassTag](actor: => T, parallelism: Int = 1, id: String = randomName) = {
-    config.prepareActor(id, actor, parallelism)
+  def every(duration: Duration)(block: => Unit) {
+    block
   }
 
   /**
@@ -48,6 +46,18 @@ case class BroadwayNarrative(config: ServerConfig, name: String, props: Properti
    */
   def onStop(block: () => Unit)(implicit ec: ExecutionContext) = {
     tearDown = Option(block)
+  }
+
+  /**
+   * Prepares a new actor for execution within the narrative
+   * @param id the given unique identifier
+   * @param actor the given [[Actor]]
+   * @param parallelism the number of actors to create
+   * @tparam T the actor type
+   * @return an actor reference
+   */
+  def prepareActor[T <: Actor : ClassTag](actor: => T, parallelism: Int = 1, id: String = randomName) = {
+    config.prepareActor(id, actor, parallelism)
   }
 
   /**

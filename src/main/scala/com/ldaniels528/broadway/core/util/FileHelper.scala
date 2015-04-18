@@ -5,7 +5,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.zip.GZIPOutputStream
 
-import com.ldaniels528.trifecta.util.ResourceHelper._
+import com.ldaniels528.commons.helpers.ResourceHelper._
 import org.apache.commons.io.IOUtils
 import org.slf4j.LoggerFactory
 

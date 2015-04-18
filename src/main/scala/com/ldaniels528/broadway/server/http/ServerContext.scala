@@ -1,9 +1,9 @@
 package com.ldaniels528.broadway.server.http
 
 import com.ldaniels528.broadway.core.narrative.Anthology
-import com.ldaniels528.broadway.core.util.PropertiesHelper._
 import com.ldaniels528.broadway.server.ServerConfig
 import com.ldaniels528.broadway.server.http.ServerContext.NarrativeJs
+import com.ldaniels528.commons.helpers.PropertiesHelper._
 
 /**
  * Broadway Server Context

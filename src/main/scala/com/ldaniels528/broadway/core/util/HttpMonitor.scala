@@ -30,6 +30,7 @@ class HttpMonitor(system: ActorSystem) {
       logger.info(s"$watcherName is watching for updates to resource '$path'...")
       new URL(path) -> callback
     }
+    ()
   }
 
   private def checkSitesForFiles(): Unit = {

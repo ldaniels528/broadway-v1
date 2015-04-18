@@ -10,8 +10,8 @@ import com.ldaniels528.broadway.core.resources._
 import com.ldaniels528.broadway.core.util.FileHelper._
 import com.ldaniels528.broadway.server.ServerConfig._
 import com.ldaniels528.broadway.server.http.ServerContext
-import com.ldaniels528.trifecta.util.OptionHelper._
-import com.ldaniels528.trifecta.util.PropertiesHelper._
+import com.ldaniels528.commons.helpers.OptionHelper._
+import com.ldaniels528.commons.helpers.PropertiesHelper._
 import org.slf4j.LoggerFactory
 
 import scala.collection.concurrent.TrieMap

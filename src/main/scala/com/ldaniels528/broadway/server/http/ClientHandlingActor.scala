@@ -6,7 +6,7 @@ import java.net.URL
 import akka.actor.{Actor, ActorLogging, Props, _}
 import akka.util.Timeout
 import com.ldaniels528.broadway.util.JsonHelper
-import com.ldaniels528.trifecta.util.ResourceHelper._
+import com.ldaniels528.commons.helpers.ResourceHelper._
 import org.apache.commons.io.IOUtils
 import spray.can.Http
 import spray.can.Http.RegisterChunkHandler

@@ -7,7 +7,7 @@ import com.ldaniels528.broadway.core.actors.kafka.KafkaHelper._
 import com.ldaniels528.trifecta.io.avro.AvroConversion
 import com.ldaniels528.trifecta.io.kafka.{KafkaMacroConsumer, KafkaMicroConsumer}
 import com.ldaniels528.trifecta.io.zookeeper.ZKProxy
-import com.ldaniels528.trifecta.util.ResourceHelper._
+import com.ldaniels528.commons.helpers.ResourceHelper._
 import kafka.common.TopicAndPartition
 import org.apache.avro.Schema
 import org.apache.avro.generic.GenericRecord
@@ -28,6 +28,7 @@ class KafkaConsumingActor(zkConnect: String) extends BroadwayActor {
     case StartConsuming(topic, groupId, target, avroSchema) =>
       log.info(s"Registering topic '$topic' and group ID '$groupId' to $target...")
       consumerGroups.putIfAbsent((topic, groupId, target), startConsumer(topic, groupId, avroSchema, target))
+      ()
 
     case StopConsuming(topic, groupId, target) =>
       log.info(s"Canceling registration of topic '$topic' and group ID '$groupId' to $target...")

@@ -4,7 +4,7 @@ import com.ldaniels528.broadway.core.resources._
 import com.ldaniels528.broadway.core.triggers.schedules.Scheduling
 import com.ldaniels528.broadway.core.util.XMLHelper._
 import com.ldaniels528.broadway.server.ServerConfig.HttpInfo
-import com.ldaniels528.trifecta.util.PropertiesHelper._
+import com.ldaniels528.commons.helpers.PropertiesHelper._
 
 import scala.util.{Failure, Success, Try}
 import scala.xml._

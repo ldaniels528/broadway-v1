@@ -15,7 +15,7 @@ import com.ldaniels528.broadway.core.util.FileHelper._
 import com.ldaniels528.broadway.core.util.{FileMonitor, HttpMonitor}
 import com.ldaniels528.broadway.server.BroadwayServer._
 import com.ldaniels528.broadway.server.http.BroadwayHttpServer
-import com.ldaniels528.trifecta.util.OptionHelper._
+import com.ldaniels528.commons.helpers.OptionHelper._
 import org.slf4j.LoggerFactory
 
 import scala.collection.concurrent.TrieMap

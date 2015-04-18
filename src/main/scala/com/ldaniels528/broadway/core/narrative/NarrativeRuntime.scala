@@ -4,7 +4,7 @@ import java.util.Properties
 
 import com.ldaniels528.broadway.BroadwayNarrative
 import com.ldaniels528.broadway.server.ServerConfig
-import com.ldaniels528.trifecta.util.OptionHelper._
+import com.ldaniels528.commons.helpers.OptionHelper._
 
 import scala.collection.concurrent.TrieMap
 import scala.util.Try

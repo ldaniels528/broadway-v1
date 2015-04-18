@@ -1,6 +1,6 @@
 package com.ldaniels528.broadway.core.util
 
-import com.ldaniels528.trifecta.util.OptionHelper._
+import com.ldaniels528.commons.helpers.OptionHelper._
 
 import scala.xml.Node
 

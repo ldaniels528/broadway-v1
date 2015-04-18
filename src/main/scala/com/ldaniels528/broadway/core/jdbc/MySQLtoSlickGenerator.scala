@@ -3,8 +3,8 @@ package com.ldaniels528.broadway.core.jdbc
 import java.io._
 import java.sql.{Connection, ResultSet}
 
-import com.ldaniels528.trifecta.util.OptionHelper._
-import com.ldaniels528.trifecta.util.ResourceHelper._
+import com.ldaniels528.commons.helpers.OptionHelper._
+import com.ldaniels528.commons.helpers.ResourceHelper._
 import org.slf4j.LoggerFactory
 
 import scala.collection.mutable
@@ -477,7 +477,7 @@ object MySQLtoSlickGenerator {
      */
     def toSmallCamel: String = {
       noun match {
-        case s if s.length > 1 && s.contains('_') =>
+        case s if s.nonEmpty && s.contains('_') =>
           val items = s.split("[_]") map (_.toLowerCase) filter(_.nonEmpty)
           (items.head ++ items.tail.map(s => s.head.toUpper + s.tail)) mkString
         case s if s.forall(_.isUpper) => s.toLowerCase

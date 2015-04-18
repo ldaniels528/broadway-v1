@@ -2,7 +2,7 @@ package com.ldaniels528.broadway.core.util
 
 import java.io.{File, FileInputStream, IOException}
 
-import com.ldaniels528.trifecta.util.ResourceHelper._
+import com.ldaniels528.commons.helpers.ResourceHelper._
 import org.apache.http._
 import org.apache.http.client._
 import org.apache.http.client.methods.HttpPost

@@ -35,6 +35,7 @@ class StreamingActor(client: ActorRef, count: Int) extends Actor with ActorLoggi
       context.system.scheduler.scheduleOnce(100 millis span) {
         client ! MessageChunk(DateTime.now.toIsoDateTimeString + ", ").withAck(Ok(remaining - 1))
       }
+      ()
 
     case x: Http.ConnectionClosed =>
       log.info("Canceling response stream due to {} ...", x)

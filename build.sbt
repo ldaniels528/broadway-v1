@@ -53,9 +53,10 @@ mergeStrategy in assembly <<= (mergeStrategy in assembly) { (old) =>
 
 // Shocktrade Dependencies
 libraryDependencies ++= Seq(
+  "com.ldaniels528" %% "commons-helpers" % "0.1.0",
   "com.ldaniels528" %% "shocktrade-services" % "0.2.9",
   "com.ldaniels528" %% "tabular" % "0.1.0",
-  "com.ldaniels528" %% "trifecta" % "0.18.15"
+  "com.ldaniels528" %% "trifecta" % "0.19.0"
 )
 
 // Avro Dependencies

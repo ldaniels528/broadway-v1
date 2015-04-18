@@ -1,6 +1,6 @@
 package com.ldaniels528.broadway.core.actors.nosql
 
-import akka.actor.{Actor, ActorRef}
+import akka.actor.ActorRef
 import com.ldaniels528.broadway.core.actors.BroadwayActor
 import com.ldaniels528.broadway.core.actors.nosql.MongoDBActor._
 import com.mongodb.casbah.Imports.{DBObject => Q, _}
@@ -30,11 +30,7 @@ class MongoDBActor(client: () => MongoClient, databaseName: String) extends Broa
 
   override def receive = {
     case Find(recipient, name, query, fields, maxBatchSize) =>
-      getCollection(name).foreach { mc =>
-        mc.find(query, fields)
-          .sliding(maxBatchSize, maxBatchSize)
-          .foreach(recipient ! MongoFindResults(name, _))
-      }
+      getCollection(name).foreach(_.find(query, fields).sliding(maxBatchSize, maxBatchSize).foreach(recipient ! MongoFindResults(name, _)))
 
     case FindAndModify(recipient, name, query, fields, sort, update, remove, returnNew, upsert) =>
       getCollection(name)
@@ -51,17 +47,28 @@ class MongoDBActor(client: () => MongoClient, databaseName: String) extends Broa
       getCollection(name).foreach(mc => recipient ! MongoFindOneResult(name, mc.findOneByID(id, fields)))
 
     case Insert(recipient, name, doc, concern, refObj) =>
-      getCollection(name).foreach(mc => recipient ! MongoWriteResult(name, doc, mc.insert(doc, concern), refObj))
+      getCollection(name).foreach { mc =>
+        val result = mc.insert(doc, concern)
+        recipient.foreach(_ ! MongoWriteResult(name, doc, result, refObj))
+      }
 
     case Save(recipient, name, doc, concern, refObj) =>
-      getCollection(name).foreach(mc => recipient ! MongoWriteResult(name, doc, mc.save(doc, concern), refObj))
+      getCollection(name).foreach { mc =>
+        val result = mc.save(doc, concern)
+        recipient.foreach(_ ! MongoWriteResult(name, doc, result, refObj))
+      }
 
     case Update(recipient, name, query, doc, multi, concern, refObj) =>
-      val recipient = sender()
-      getCollection(name).foreach(mc => recipient ! MongoWriteResult(name, doc, mc.update(query, doc, upsert = false, multi, concern), refObj))
+      getCollection(name).foreach { mc =>
+        val result = mc.update(query, doc, upsert = false, multi, concern)
+        recipient.foreach(_ ! MongoWriteResult(name, doc, result, refObj))
+      }
 
     case Upsert(recipient, name, query, doc, multi, concern, refObj) =>
-      getCollection(name).foreach(mc => recipient ! MongoWriteResult(name, doc, mc.update(query, doc, upsert = true, multi, concern), refObj))
+      getCollection(name).foreach { mc =>
+        val result = mc.update(query, doc, upsert = true, multi, concern)
+        recipient.foreach(_ ! MongoWriteResult(name, doc, result, refObj))
+      }
 
     case message =>
       unhandled(message)
@@ -124,19 +131,19 @@ object MongoDBActor {
 
   case class FindAndRemove(recipient: ActorRef, name: String, query: DBObject)
 
-  case class Insert(recipient: ActorRef,
+  case class Insert(recipient: Option[ActorRef],
                     name: String,
                     doc: DBObject,
                     concern: WriteConcern = WriteConcern.JournalSafe,
                     refObj: Option[Any] = None)
 
-  case class Save(recipient: ActorRef,
+  case class Save(recipient: Option[ActorRef],
                   name: String,
                   doc: DBObject,
                   concern: WriteConcern = WriteConcern.JournalSafe,
                   refObj: Option[Any] = None)
 
-  case class Update(recipient: ActorRef,
+  case class Update(recipient: Option[ActorRef],
                     name: String,
                     query: DBObject,
                     doc: DBObject,
@@ -144,7 +151,7 @@ object MongoDBActor {
                     concern: WriteConcern = WriteConcern.JournalSafe,
                     refObj: Option[Any] = None)
 
-  case class Upsert(recipient: ActorRef,
+  case class Upsert(recipient: Option[ActorRef],
                     name: String,
                     query: DBObject,
                     doc: DBObject,
