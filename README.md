@@ -97,74 +97,76 @@ the process; in this case, how file feeds are mapped to their respective process
 
 The following is the Broadway narrative that implements the flow described above:
 
-```scala
-class EodDataImportNarrative(config: ServerConfig, id: String, props: Properties)
-  extends BroadwayNarrative(config, id, props) {
-  private val df = DateTimeFormat.forPattern("yyyyMMdd")
+```xml
+<?xml version="1.0" encoding="UTF-8" ?>
+<EtlConfig id="eod-history">
+    <flows>
+        <SimpleFlow id="EOD->CSV" input="input_file" output="output_file"/>
+    </flows>
 
-  // extract the properties we need
-  private val kafkaTopic = props.getOrDie("kafka.topic")
-  private val topicParallelism = props.getOrDie("kafka.topic.parallelism").toInt
-  private val zkConnect = props.getOrDie("zookeeper.connect")
+    <devices>
+        <TextInputDevice id="input_file" path="./app-cli/src/test/resources/files/OTCBB_20121217.txt" layout="input_layout"/>
+        <TextOutputDevice id="output_file" path="/tmp/otcbb_output.txt" layout="output_layout"/>
+    </devices>
 
-  // create a file reader actor to read lines from the incoming resource
-  lazy val fileReader = prepareActor(new FileReadingActor(config), parallelism = 1)
+    <layouts>
+        <Text id="input_layout">
+            <header>
+                <fields type="csv">
+                    <field auto-trim="yes">&lt;ticker&gt;</field>
+                    <field auto-trim="yes">&lt;date&gt;</field>
+                    <field auto-trim="yes">&lt;open&gt;</field>
+                    <field auto-trim="yes">&gt;high&gt;</field>
+                    <field auto-trim="yes">&gt;low&gt;</field>
+                    <field auto-trim="yes">&gt;close&gt;</field>
+                    <field auto-trim="yes">&gt;vol&gt;</field>
+                </fields>
+            </header>
+            <body>
+                <fields type="csv">
+                    <field auto-trim="yes">ticker</field>
+                    <field auto-trim="yes">date</field>
+                    <field auto-trim="yes">open</field>
+                    <field auto-trim="yes">high</field>
+                    <field auto-trim="yes">low</field>
+                    <field auto-trim="yes">close</field>
+                    <field auto-trim="yes">vol</field>
+                </fields>
+            </body>
+        </Text>
 
-  // create a Kafka publishing actor
-  lazy val kafkaPublisher = prepareActor(new KafkaPublishingActor(zkConnect), topicParallelism)
-
-  onStart {
-    case Some(resource: ReadableResource) =>
-      // start the processing by submitting a request to the file reader actor
-      fileReader ! TransformFile(resource, kafkaPublisher, (lineNo, line) =>
-        if (lineNo == 1) None else Some(PublishAvro(kafkaTopic, toAvro(resource, parseTokens(line, "[,]")))))
-    case _ =>
-  }
-
-  private def toAvro(resource: ReadableResource, tokens: Seq[String]) = {
-    val items = tokens map (_.trim) map (s => if (s.isEmpty) None else Some(s))
-    def item(index: Int) = if (index < items.length) items(index) else None
-
-    com.shocktrade.avro.EodDataRecord.newBuilder()
-      .setSymbol(item(0).orNull)
-      .setExchange(resource.getResourceName.flatMap(extractExchange).orNull)
-      .setTradeDate(item(1).flatMap(_.asEPOC(df)).map(n => n: JLong).orNull)
-      .setOpen(item(2).flatMap(_.asDouble).map(n => n: JDouble).orNull)
-      .setHigh(item(3).flatMap(_.asDouble).map(n => n: JDouble).orNull)
-      .setLow(item(4).flatMap(_.asDouble).map(n => n: JDouble).orNull)
-      .setClose(item(5).flatMap(_.asDouble).map(n => n: JDouble).orNull)
-      .setVolume(item(6).flatMap(_.asLong).map(n => n: JLong).orNull)
-      .build()
-  }
-
-  private def extractExchange(name: String) = name.indexOptionOf("_") map (name.substring(0, _))
-
-}
-```
-
-**NOTE:** The `KafkaAvroPublishingActor` and `FileReadingActor` actors are builtin components of Broadway.
-
-Broadway provides an actor-based, event-based I/O system. Notice above, your code may react to messages that indicate
-the opening (`OpeningFile`) or closing (`ClosingFile`) of a resource (e.g. file) or when a line of text has been
-passed (`TextLine`).
-
-Finally, here is the Avro definition that we're using to encode the records:
-
-```json
-{
-    "type": "record",
-    "name": "EodDataRecord",
-    "namespace": "com.shocktrade.avro",
-    "fields":[
-        { "name": "symbol", "type":"string", "doc":"stock symbol" },
-        { "name": "exchange", "type":["null", "string"], "doc":"stock exchange", "default":null },
-        { "name": "tradeDate", "type":["null", "long"], "doc":"last sale date", "default":null },
-        { "name": "open", "type":["null", "double"], "doc":"open price", "default":null },
-        { "name": "close", "type":["null", "double"], "doc":"close price", "default":null },
-        { "name": "high", "type":["null", "double"], "doc":"day's high price", "default":null },
-        { "name": "low", "type":["null", "double"], "doc":"day's low price", "default":null },
-        { "name": "volume", "type":["null", "long"], "doc":"day's volume", "default":null }
-    ],
-    "doc": "A schema for EodData quotes"
-}
+        <Text id="output_layout">
+            <header>
+                <fields type="fixed-length">
+                    <field length="10">ticker</field>
+                    <field length="9">date</field>
+                    <field length="12">open</field>
+                    <field length="12">high</field>
+                    <field length="12">low</field>
+                    <field length="12">close</field>
+                    <field length="12">vol</field>
+                </fields>
+            </header>
+            <body>
+                <fields type="fixed-length">
+                    <field length="10">ticker</field>
+                    <field length="9">date</field>
+                    <field length="12">open</field>
+                    <field length="12">high</field>
+                    <field length="12">low</field>
+                    <field length="12">close</field>
+                    <field length="12">vol</field>
+                </fields>
+            </body>
+            <footer>
+                <fields type="fixed-length">
+                    <field length="15">input</field>
+                    <field length="10">{{ input_file.__OFFSET }}</field>
+                    <field length="15">output</field>
+                    <field length="10">{{ output_file.__OFFSET }}</field>
+                </fields>
+            </footer>
+        </Text>
+    </layouts>
+</EtlConfig>
 ```
