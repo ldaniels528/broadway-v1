@@ -1,0 +1,54 @@
+@()
+
+<!DOCTYPE html>
+<html ng-app="broadway">
+    <head>
+        <title>Broadway: Dashboard</title>
+        <meta http-equiv="Content-type" content="text/html; charset=utf-8">
+
+            <!-- WebJar Stylesheets -->
+        <link href='@routes.WebJarAssets.at(WebJarAssets.locate("bootstrap.min.css"))' type="text/css" rel="stylesheet" media="screen">
+        <link href='@routes.WebJarAssets.at(WebJarAssets.locate("tomorrow.min.css"))' type="text/css" rel="stylesheet" media="screen">
+
+            <!-- Application-specific Stylesheets -->
+        <link href='@routes.Assets.versioned("stylesheets/index.css")' type="text/css" rel="stylesheet" media=screen>
+
+            <!-- WebJar JS Libraries -->
+        <script src='@routes.WebJarAssets.at(WebJarAssets.locate("jquery.min.js"))' type="text/javascript"></script>
+        <script src='@routes.WebJarAssets.at(WebJarAssets.locate("angular.min.js"))' type="text/javascript"></script>
+        <script src='@routes.WebJarAssets.at(WebJarAssets.locate("angular-animate.min.js"))' type="text/javascript"></script>
+        <script src='@routes.WebJarAssets.at(WebJarAssets.locate("angular-cookies.min.js"))' type="text/javascript"></script>
+        <script src='@routes.WebJarAssets.at(WebJarAssets.locate("angular-file-upload.min.js"))' type="text/javascript"></script>
+        <script src='@routes.WebJarAssets.at(WebJarAssets.locate("highlight.min.js"))' type="text/javascript"></script>
+        <script src='@routes.WebJarAssets.at(WebJarAssets.locate("angular-highlightjs.min.js"))' type="text/javascript"></script>
+        <script src='@routes.WebJarAssets.at(WebJarAssets.locate("angular-resource.min.js"))' type="text/javascript"></script>
+        <script src='@routes.WebJarAssets.at(WebJarAssets.locate("angular-route.min.js"))' type="text/javascript"></script>
+        <script src='@routes.WebJarAssets.at(WebJarAssets.locate("angular-sanitize.min.js"))' type="text/javascript"></script>
+        <script src='@routes.WebJarAssets.at(WebJarAssets.locate("d3.min.js"))' type="text/javascript"></script>
+        <script src='@routes.WebJarAssets.at(WebJarAssets.locate("nv.d3.min.js"))' type="text/javascript"></script>
+        <script src='@routes.WebJarAssets.at(WebJarAssets.locate("toaster.js"))' type="text/javascript"></script>
+        <script src='@routes.WebJarAssets.at(WebJarAssets.locate("ui-bootstrap-tpls.min.js"))' type="text/javascript"></script>
+
+            <!-- Scala.js Resources -->
+        <script src="@routes.Assets.versioned(s"javascripts/broadway_js-fastopt.js?ts=${System.currentTimeMillis()}")"></script>
+        <script src="@routes.Assets.versioned("javascripts/broadway_js-launcher.js")"></script>
+    </head>
+
+    <body id="TrifectaMain" ng-controller="MainController">
+        <h2><span class="title1">Bro</span><span class="title2">ad</span><span class="title3">way</span> <span class="version">v{{ version }}</span></h2>
+
+        <!-- application tabs -->
+        <div class="title_border">
+            <tabset>
+                <tab ng-repeat="tab in tabs" active="tab.active" select="changeTab(tab, $event)">
+                    <tab-heading>
+                        <i ng-class="tab.icon"> {{ tab.name }}</i>
+                    </tab-heading>
+                </tab>
+            </tabset>
+        </div>
+
+        <!-- the active tab view -->
+        <div ng-view ng-cloak></div>
+    </body>
+</html>

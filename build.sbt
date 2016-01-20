@@ -61,13 +61,13 @@ lazy val coreDeps = Seq(
   "org.mongodb" %% "casbah-core" % "2.8.0" exclude("org.slf4j", "slf4j-log4j12"),
   //
   // General Java Dependencies
+  "commons-io" % "commons-io" % "2.4",
   "joda-time" % "joda-time" % "2.9.1",
   "org.joda" % "joda-convert" % "1.8.1",
   "org.slf4j" % "slf4j-api" % "1.7.12",
   "net.liftweb" %% "lift-json" % "3.0-M7",
   //
   // Testing dependencies
-  "junit" % "junit" % "4.12" % "test",
   "org.mockito" % "mockito-all" % "1.10.19" % "test",
   "org.scalatest" %% "scalatest" % "2.2.3" % "test"
 )
@@ -78,9 +78,9 @@ lazy val broadway_cli = (project in file("app-cli"))
     organization := "com.github.ldaniels528",
     version := "0.19.0",
     scalaVersion := myScalaVersion,
-    scalacOptions ++= Seq("-deprecation", "-encoding", "UTF-8", "-feature", "-target:jvm-1.7", "-unchecked",
+    scalacOptions ++= Seq("-deprecation", "-encoding", "UTF-8", "-feature", "-target:jvm-1.8", "-unchecked",
       "-Ywarn-adapted-args", "-Ywarn-value-discard", "-Xlint"),
-    javacOptions ++= Seq("-Xlint:deprecation", "-Xlint:unchecked", "-source", "1.7", "-target", "1.7", "-g:vars"),
+    javacOptions ++= Seq("-Xlint:deprecation", "-Xlint:unchecked", "-source", "1.8", "-target", "1.8", "-g:vars"),
     assemblySettings,
     mainClass in assembly := Some("com.github.ldaniels528.broadway.Broadway"),
     test in assembly := {},
@@ -96,17 +96,6 @@ lazy val broadway_cli = (project in file("app-cli"))
     resolvers += "clojars" at "https://clojars.org/repo",
     resolvers += "conjars" at "http://conjars.org/repo",
     libraryDependencies ++= coreDeps ++ Seq(
-      //
-      // General Scala Dependencies
-      "org.mashupbots.socko" %% "socko-webserver" % "0.6.0",
-      "net.databinder.dispatch" %% "dispatch-core" % "0.11.2",
-      //
-      // Storm Dependencies
-      "org.apache.storm" % "storm-core" % "0.9.3"
-        exclude("org.apache.zookeeper", "zookeeper")
-        exclude("org.slf4j", "log4j-over-slf4j")
-        exclude("commons-logging", "commons-logging"),
-      //
       // General Java Dependencies
       "jline" % "jline" % "2.12",
       "org.fusesource.jansi" % "jansi" % "1.11"
