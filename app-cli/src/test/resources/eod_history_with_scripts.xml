@@ -9,6 +9,14 @@
         <TextOutputDevice id="output_file" path="/tmp/otcbb_output.txt" layout="output_layout"/>
     </devices>
 
+    <functions>
+        <function id="dateReformat">
+            def execute(layout: input_layout) = {
+
+            }
+        </function>
+    </functions>
+
     <layouts>
         <TextLayout id="input_layout">
             <header>
@@ -62,8 +70,6 @@
                 <fields type="fixed-length">
                     <field length="15">input</field>
                     <field length="10">{{ input_file.__OFFSET }}</field>
-                </fields>
-                <fields type="fixed-length">
                     <field length="15">output</field>
                     <field length="10">{{ output_file.__OFFSET }}</field>
                 </fields>

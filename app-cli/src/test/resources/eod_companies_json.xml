@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<EtlConfig id="eod-companies">
+<etl-config id="eod-companies">
     <flows>
         <SimpleFlow id="AMEX" input="AMEX.txt" output="output.txt"/>
         <SimpleFlow id="NASDAQ" input="NASDAQ.txt" output="output.txt"/>
@@ -16,7 +16,7 @@
     </devices>
 
     <layouts>
-        <Text id="tabbed-delimited">
+        <TextLayout id="tabbed-delimited">
             <header>
                 <fields type="delimited" delimiter="\t">
                     <field auto-trim="yes">label1</field>
@@ -29,15 +29,15 @@
                     <field auto-trim="yes">description</field>
                 </fields>
             </body>
-        </Text>
+        </TextLayout>
 
-        <Text id="json-output">
+        <TextLayout id="json-output">
             <body>
                 <fields type="json">
                     <field>symbol</field>
                     <field>description</field>
                 </fields>
             </body>
-        </Text>
+        </TextLayout>
     </layouts>
-</EtlConfig>
+</etl-config>

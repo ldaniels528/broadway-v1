@@ -6,7 +6,7 @@ import akka.actor.ActorSystem
   * Created by ldaniels on 1/18/16.
   */
 object TaskActorSystem {
-  val system = ActorSystem("metis_tasks")
+  val system = ActorSystem("broadway_tasks")
 
   def shutdown() = system.shutdown()
 

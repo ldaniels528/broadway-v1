@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<EtlConfig id="eod-companies">
+<etl-config id="eod-companies">
     <flows>
         <SimpleFlow id="AMEX" input="AMEX.txt" output="output.kafka"/>
         <SimpleFlow id="NASDAQ" input="NASDAQ.txt" output="output.kafka"/>
@@ -16,7 +16,7 @@
     </devices>
 
     <layouts>
-        <Text id="tabbed-delimited">
+        <TextLayout id="tabbed-delimited">
             <header>
                 <fields type="delimited" delimiter="\t">
                     <field auto-trim="yes">label1</field>
@@ -29,9 +29,9 @@
                     <field auto-trim="yes">description</field>
                 </fields>
             </body>
-        </Text>
+        </TextLayout>
 
-        <Avro id="avro-schema">
+        <AvroLayout id="avro-schema">
             <fields type="json">
                 <field auto-trim="yes">symbol</field>
                 <field auto-trim="yes">description</field>
@@ -48,6 +48,6 @@
                 "doc": "A schema for EodData quotes"
             }
             </schema>
-        </Avro>
+        </AvroLayout>
     </layouts>
-</EtlConfig>
+</etl-config>
