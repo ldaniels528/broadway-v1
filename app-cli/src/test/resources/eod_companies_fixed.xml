@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<EtlConfig id="eod-companies">
+    <flows>
+        <SimpleFlow id="AMEX" input="AMEX.txt" output="output.txt"/>
+        <SimpleFlow id="NASDAQ" input="NASDAQ.txt" output="output.txt"/>
+        <SimpleFlow id="NYSE" input="NYSE.txt" output="output.txt"/>
+        <SimpleFlow id="OTCBB" input="OTCBB.txt" output="output.txt"/>
+    </flows>
+
+    <devices>
+        <TextInputDevice id="AMEX.txt" path="./app-cli/src/test/resources/files/AMEX.txt" layout="tabbed-delimited"/>
+        <TextInputDevice id="NASDAQ.txt" path="./app-cli/src/test/resources/files/NASDAQ.txt" layout="tabbed-delimited"/>
+        <TextInputDevice id="NYSE.txt" path="./app-cli/src/test/resources/files/NYSE.txt" layout="tabbed-delimited"/>
+        <TextInputDevice id="OTCBB.txt" path="./app-cli/src/test/resources/files/OTCBB.txt" layout="tabbed-delimited"/>
+        <TextOutputDevice id="output.txt" path="/tmp/output.txt" layout="fixed-length-output"/>
+    </devices>
+
+    <layouts>
+        <Text id="tabbed-delimited">
+            <header>
+                <fields type="delimited" delimiter="\t">
+                    <field auto-trim="yes">Symbol</field>
+                    <field auto-trim="yes">Description</field>
+                </fields>
+            </header>
+            <body>
+                <fields type="delimited" delimiter="\t">
+                    <field auto-trim="yes">symbol</field>
+                    <field auto-trim="yes">description</field>
+                </fields>
+            </body>
+        </Text>
+
+        <Text id="fixed-length-output">
+            <header>
+                <fields type="delimited" delimiter="\t">
+                    <field auto-trim="yes">Ticker</field>
+                    <field auto-trim="yes">Description</field>
+                </fields>
+            </header>
+            <body>
+                <fields type="fixed-length">
+                    <field length="10">Symbol</field>
+                    <field length="40">Description</field>
+                </fields>
+            </body>
+        </Text>
+    </layouts>
+</EtlConfig>

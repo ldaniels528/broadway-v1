@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<EtlConfig id="eod-companies">
+    <flows>
+        <SimpleFlow id="AMEX" input="AMEX.txt" output="output_src"/>
+        <SimpleFlow id="NASDAQ" input="NASDAQ.txt" output="output_src"/>
+        <SimpleFlow id="NYSE" input="NYSE.txt" output="output_src"/>
+        <SimpleFlow id="OTCBB" input="OTCBB.txt" output="output_src"/>
+    </flows>
+
+    <devices>
+        <TextInputDevice id="AMEX.txt" path="./app-cli/src/test/resources/files/AMEX.txt" layout="tabbed-delimited"/>
+        <TextInputDevice id="NASDAQ.txt" path="./app-cli/src/test/resources/files/NASDAQ.txt" layout="tabbed-delimited"/>
+        <TextInputDevice id="NYSE.txt" path="./app-cli/src/test/resources/files/NYSE.txt" layout="tabbed-delimited"/>
+        <TextInputDevice id="OTCBB.txt" path="./app-cli/src/test/resources/files/OTCBB.txt" layout="tabbed-delimited"/>
+
+        <RoundRobinOutputDevice id="output_src" concurrency="10">
+            <devices>
+                <MongoOutputDevice id="mongo1" servers="localhost" database="shocktrade" collection="test_companies" layout="json-output"/>
+                <MongoOutputDevice id="mongo2" servers="localhost" database="shocktrade" collection="test_companies" layout="json-output"/>
+            </devices>
+        </RoundRobinOutputDevice>
+    </devices>
+
+    <layouts>
+        <Text id="tabbed-delimited">
+            <header>
+                <fields type="delimited" delimiter="\t">
+                    <field auto-trim="yes">Symbol</field>
+                    <field auto-trim="yes">Description</field>
+                </fields>
+            </header>
+            <body>
+                <fields type="delimited" delimiter="\t">
+                    <field auto-trim="yes">symbol</field>
+                    <field auto-trim="yes">description</field>
+                </fields>
+            </body>
+        </Text>
+
+        <Text id="json-output">
+            <body>
+                <fields type="json">
+                    <field>symbol</field>
+                    <field>description</field>
+                </fields>
+            </body>
+        </Text>
+    </layouts>
+</EtlConfig>

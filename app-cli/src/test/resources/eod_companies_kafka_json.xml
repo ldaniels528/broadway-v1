@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<EtlConfig id="eod-companies">
+    <flows>
+        <SimpleFlow id="AMEX" input="AMEX.txt" output="output.kafka"/>
+        <SimpleFlow id="NASDAQ" input="NASDAQ.txt" output="output.kafka"/>
+        <SimpleFlow id="NYSE" input="NYSE.txt" output="output.kafka"/>
+        <SimpleFlow id="OTCBB" input="OTCBB.txt" output="output.kafka"/>
+    </flows>
+
+    <devices>
+        <TextInputDevice id="AMEX.txt" path="./app-cli/src/test/resources/files/AMEX.txt" layout="tabbed-delimited"/>
+        <TextInputDevice id="NASDAQ.txt" path="./app-cli/src/test/resources/files/NASDAQ.txt" layout="tabbed-delimited"/>
+        <TextInputDevice id="NYSE.txt" path="./app-cli/src/test/resources/files/NYSE.txt" layout="tabbed-delimited"/>
+        <TextInputDevice id="OTCBB.txt" path="./app-cli/src/test/resources/files/OTCBB.txt" layout="tabbed-delimited"/>
+        <KafkaOutputDevice id="output.kafka" topic="shocktrade.companies.json" connectionString="vault114:2181" layout="json-output"/>
+    </devices>
+
+    <layouts>
+        <Text id="tabbed-delimited">
+            <header>
+                <fields type="delimited" delimiter="\t">
+                    <field auto-trim="yes">label1</field>
+                    <field auto-trim="yes">label2</field>
+                </fields>
+            </header>
+            <body>
+                <fields type="delimited" delimiter="\t">
+                    <field auto-trim="yes">symbol</field>
+                    <field auto-trim="yes">description</field>
+                </fields>
+            </body>
+        </Text>
+
+        <Text id="json-output">
+            <body>
+                <fields type="json">
+                    <field>symbol</field>
+                    <field>description</field>
+                </fields>
+            </body>
+        </Text>
+    </layouts>
+</EtlConfig>

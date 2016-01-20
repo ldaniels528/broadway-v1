@@ -1,117 +1,161 @@
+import sbt.Keys._
 import sbt._
-import Keys._
+import sbtassembly.Plugin.AssemblyKeys._
 import sbtassembly.Plugin._
-import AssemblyKeys._
 
-assemblySettings
+val myScalaVersion = "2.11.7"
+val myAkkaVersion = "2.3.14"
+val myPlayVersion = "2.4.6"
 
-name := "broadway"
+lazy val scalajsOutputDir = Def.settingKey[File]("Directory for Javascript files output by ScalaJS")
 
-organization := "com.ldaniels528"
+lazy val broadway_js = (project in file("app-js"))
+  .settings(
+    name := "broadway_js",
+    organization := "com.github.ldaniels528",
+    version := "0.19.0",
+    scalaVersion := myScalaVersion,
+    relativeSourceMaps := true,
+    persistLauncher := true,
+    persistLauncher in Test := false,
+    resolvers += "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots",
+    addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full),
+    libraryDependencies ++= Seq(
+      "com.github.ldaniels528" %%% "scalascript" % "0.2.19",
+      "com.vmunier" %% "play-scalajs-sourcemaps" % "0.1.0",
+      "org.scala-js" %%% "scalajs-dom" % "0.8.2",
+      "be.doeraene" %%% "scalajs-jquery" % "0.8.1"
+    ))
+  .enablePlugins(ScalaJSPlugin)
 
-version := "0.9.0"
-
-scalaVersion := "2.11.6"
-
-val akakVersion = "2.3.9"
-val avroVersion = "1.7.7"
-val bijectionVersion = "0.7.2"
-val sprayVersion = "1.3.2"
-val slf4jVersion = "1.7.10"
-
-ivyScala := ivyScala.value map {
-  _.copy(overrideScalaVersion = true)
-}
-
-Seq(sbtavro.SbtAvro.avroSettings: _*)
-
-(version in avroConfig) := avroVersion
-
-(stringType in avroConfig) := "String"
-
-(sourceDirectory in avroConfig) := file("src/main/resources/avro")
-
-scalacOptions ++= Seq("-deprecation", "-encoding", "UTF-8", "-feature", "-target:jvm-1.7", "-unchecked",
-  "-Ywarn-adapted-args", "-Ywarn-value-discard", "-Xlint")
-
-javacOptions ++= Seq("-Xlint:deprecation", "-Xlint:unchecked", "-source", "1.7", "-target", "1.7", "-g:vars")
-
-mainClass in assembly := Some("com.ldaniels528.broadway.server.BroadwayServer")
-
-test in assembly := {}
-
-jarName in assembly := "broadway-" + version.value + ".bin.jar"
-
-mergeStrategy in assembly <<= (mergeStrategy in assembly) { (old) =>
-  {
-    case PathList("stax", "stax-api", xs @ _*) => MergeStrategy.first
-    case PathList("log4j-over-slf4j", xs @ _*) => MergeStrategy.discard
-    case PathList("META-INF", "MANIFEST.MF", xs @ _*) => MergeStrategy.discard
-    case x => MergeStrategy.first
-  }
-}
-
-// Shocktrade Dependencies
-libraryDependencies ++= Seq(
-  "com.ldaniels528" %% "commons-helpers" % "0.1.0",
-  "com.ldaniels528" %% "shocktrade-services" % "0.2.9",
-  "com.ldaniels528" %% "tabular" % "0.1.0",
-  "com.ldaniels528" %% "trifecta" % "0.19.0"
-)
-
-// Avro Dependencies
-libraryDependencies ++= Seq(
-  "com.twitter" %% "bijection-core" % bijectionVersion,
-  "com.twitter" %% "bijection-avro" % bijectionVersion,
-  "org.apache.avro" % "avro" % avroVersion
-)
-
-// Kafka/Zookeeper Dependencies
-libraryDependencies ++= Seq(
+lazy val coreDeps = Seq(
+  //
+  // ldaniels528 Dependencies
+  "com.github.ldaniels528" %% "commons-helpers" % "0.1.1",
+  "com.github.ldaniels528" %% "tabular" % "0.1.3" exclude("org.slf4j", "slf4j-log4j12"),
+  //
+  // Akka dependencies
+  "com.typesafe.akka" %% "akka-actor" % myAkkaVersion,
+  "com.typesafe.akka" %% "akka-slf4j" % myAkkaVersion,
+  "com.typesafe.akka" %% "akka-testkit" % myAkkaVersion % "test",
+  //
+  // Avro Dependencies
+  "com.twitter" %% "bijection-core" % "0.7.2",
+  "com.twitter" %% "bijection-avro" % "0.7.2",
+  "org.apache.avro" % "avro" % "1.7.7",
+  //
+  // JSON dependencies
+  "com.typesafe.play" %% "play-json" % myPlayVersion,
+  //
+  // Kafka and Zookeeper Dependencies
+  "com.101tec" % "zkclient" % "0.7" exclude("org.slf4j", "slf4j-log4j12"),
   "org.apache.curator" % "curator-framework" % "2.7.1",
-  "org.apache.kafka" %% "kafka" % "0.8.2.0"
-    exclude("org.apache.zookeeper", "zookeeper")
-    exclude("org.slf4j", "log4j-over-slf4j"),
-  "org.apache.zookeeper" % "zookeeper" % "3.4.6"
-)
-
-// Spray Dependencies
-libraryDependencies ++= Seq(
-  "com.wandoulabs.akka" %% "spray-websocket" % "0.1.4",
-  "io.spray" %% "spray-can" % sprayVersion,
-  "io.spray" %% "spray-client" % sprayVersion,
-  "io.spray" %% "spray-io" % sprayVersion,
-  "io.spray" %% "spray-json" % "1.3.1",
-  "io.spray" %% "spray-routing" % sprayVersion,
-  "io.spray" %% "spray-testkit" % sprayVersion % "test"
-)
-
-// SQL/NOSQL Dependencies
-libraryDependencies ++= Seq(
-  "com.datastax.cassandra" % "cassandra-driver-core" % "2.1.5",
-  "com.typesafe.slick" %% "slick" % "2.1.0",
-  "mysql" % "mysql-connector-java" % "5.1.34",
-  "org.mongodb" %% "casbah-commons" % "2.8.0",
-  "org.mongodb" %% "casbah-core" % "2.8.0",
-  "joda-time" % "joda-time" % "2.7",
-  "org.joda" % "joda-convert" % "1.7"
-)
-
-// General Dependencies
-libraryDependencies ++= Seq(
-  "com.typesafe.akka" %% "akka-actor" % "2.3.9",
-  "com.typesafe.akka" %% "akka-persistence-experimental" % "2.3.9",
-  "net.liftweb" %% "lift-json" % "3.0-M3",
-  "org.apache.httpcomponents" % "httpcore" % "4.3.2",
-  "org.apache.httpcomponents" % "httpmime" % "4.3.2",
-  "org.slf4j" % "slf4j-api" % "1.7.10",
-  "org.slf4j" % "log4j-over-slf4j" % "1.7.10",
-  "net.databinder.dispatch" %% "dispatch-core" % "0.11.2"
-)
-
-// Testing Dependencies
-libraryDependencies ++= Seq(
+  "org.apache.curator" % "curator-test" % "2.7.1",
+  "org.apache.kafka" %% "kafka" % "0.9.0.0" exclude("org.slf4j", "slf4j-log4j12"),
+  "org.apache.kafka" % "kafka-clients" % "0.9.0.0",
+  "org.apache.zookeeper" % "zookeeper" % "3.4.7" exclude("org.slf4j", "slf4j-log4j12"),
+  //
+  // SQL/NOSQL Dependencies
+  "com.datastax.cassandra" % "cassandra-driver-core" % "2.1.9",
+  "org.mongodb" %% "casbah-commons" % "2.8.0" exclude("org.slf4j", "slf4j-log4j12"),
+  "org.mongodb" %% "casbah-core" % "2.8.0" exclude("org.slf4j", "slf4j-log4j12"),
+  //
+  // General Java Dependencies
+  "joda-time" % "joda-time" % "2.9.1",
+  "org.joda" % "joda-convert" % "1.8.1",
+  "org.slf4j" % "slf4j-api" % "1.7.12",
+  "net.liftweb" %% "lift-json" % "3.0-M7",
+  //
+  // Testing dependencies
+  "junit" % "junit" % "4.12" % "test",
   "org.mockito" % "mockito-all" % "1.10.19" % "test",
   "org.scalatest" %% "scalatest" % "2.2.3" % "test"
 )
+
+lazy val broadway_cli = (project in file("app-cli"))
+  .settings(
+    name := "broadway_cli",
+    organization := "com.github.ldaniels528",
+    version := "0.19.0",
+    scalaVersion := myScalaVersion,
+    scalacOptions ++= Seq("-deprecation", "-encoding", "UTF-8", "-feature", "-target:jvm-1.7", "-unchecked",
+      "-Ywarn-adapted-args", "-Ywarn-value-discard", "-Xlint"),
+    javacOptions ++= Seq("-Xlint:deprecation", "-Xlint:unchecked", "-source", "1.7", "-target", "1.7", "-g:vars"),
+    assemblySettings,
+    mainClass in assembly := Some("com.github.ldaniels528.broadway.Broadway"),
+    test in assembly := {},
+    jarName in assembly := "broadway_" + version.value + ".bin.jar",
+    mergeStrategy in assembly <<= (mergeStrategy in assembly) { (old) => {
+      case PathList("stax", "stax-api", xs@_*) => MergeStrategy.first
+      case PathList("log4j-over-slf4j", xs@_*) => MergeStrategy.discard
+      case PathList("META-INF", "MANIFEST.MF", xs@_*) => MergeStrategy.discard
+      case x => MergeStrategy.first
+    }
+    },
+    resolvers += "google-sedis-fix" at "http://pk11-scratch.googlecode.com/svn/trunk",
+    resolvers += "clojars" at "https://clojars.org/repo",
+    resolvers += "conjars" at "http://conjars.org/repo",
+    libraryDependencies ++= coreDeps ++ Seq(
+      //
+      // General Scala Dependencies
+      "org.mashupbots.socko" %% "socko-webserver" % "0.6.0",
+      "net.databinder.dispatch" %% "dispatch-core" % "0.11.2",
+      //
+      // Storm Dependencies
+      "org.apache.storm" % "storm-core" % "0.9.3"
+        exclude("org.apache.zookeeper", "zookeeper")
+        exclude("org.slf4j", "log4j-over-slf4j")
+        exclude("commons-logging", "commons-logging"),
+      //
+      // General Java Dependencies
+      "jline" % "jline" % "2.12",
+      "org.fusesource.jansi" % "jansi" % "1.11"
+    )
+  )
+
+lazy val broadway_ui = (project in file("app-play"))
+  .dependsOn(broadway_cli)
+  .settings(
+    name := "broadway_ui",
+    organization := "com.github.ldaniels528",
+    version := "0.19.0",
+    scalaVersion := myScalaVersion,
+    scalacOptions ++= Seq("-deprecation", "-encoding", "UTF-8", "-feature", "-target:jvm-1.7", "-unchecked",
+      "-Ywarn-adapted-args", "-Ywarn-value-discard", "-Xlint"),
+    javacOptions ++= Seq("-Xlint:deprecation", "-Xlint:unchecked", "-source", "1.7", "-target", "1.7", "-g:vars"),
+    relativeSourceMaps := true,
+    scalajsOutputDir := (crossTarget in Compile).value / "classes" / "public" / "javascripts",
+    pipelineStages := Seq(gzip, /*htmlMinifier,*/ uglify),
+    Seq(packageScalaJSLauncher, fastOptJS, fullOptJS) map { packageJSKey =>
+      crossTarget in(broadway_js, Compile, packageJSKey) := scalajsOutputDir.value
+    },
+    compile in Compile <<=
+      (compile in Compile) dependsOn (fastOptJS in(broadway_js, Compile)),
+    ivyScala := ivyScala.value map (_.copy(overrideScalaVersion = true)),
+    //sassOptions in Assets ++= Seq("-r", "sass-globbing"),
+    sassOptions in Assets ++= Seq("--compass", "-r", "compass"),
+    resolvers += "google-sedis-fix" at "http://pk11-scratch.googlecode.com/svn/trunk",
+    libraryDependencies ++= coreDeps ++ Seq(cache, filters, json, ws,
+      //
+      // Web Jar dependencies
+      //
+      "org.webjars" % "angularjs" % "1.4.8",
+      "org.webjars" % "angularjs-nvd3-directives" % "0.0.7-1",
+      "org.webjars" % "angularjs-toaster" % "0.4.8",
+      "org.webjars" % "angular-highlightjs" % "0.4.3",
+      "org.webjars" % "angular-ui-bootstrap" % "0.14.3",
+      "org.webjars" % "angular-ui-router" % "0.2.13",
+      "org.webjars" % "bootstrap" % "3.3.6",
+      //"org.webjars" % "d3js" % "3.5.3",
+      "org.webjars" % "font-awesome" % "4.5.0",
+      "org.webjars" % "highlightjs" % "8.7",
+      "org.webjars" % "jquery" % "2.1.3",
+      "org.webjars" % "nervgh-angular-file-upload" % "2.1.1",
+      "org.webjars" %% "webjars-play" % "2.4.0-1"
+    ))
+  .enablePlugins(PlayScala, play.twirl.sbt.SbtTwirl, SbtWeb)
+  .aggregate(broadway_js)
+
+// loads the jvm project at sbt startup
+onLoad in Global := (Command.process("project broadway_ui", _: State)) compose (onLoad in Global).value
 
