@@ -10,12 +10,12 @@ import scala.language.postfixOps
   */
 case class FixedLengthFieldSet(fields: Seq[Field]) extends FieldSet {
 
-  override def decode(text: String) = Data(fromFixed(text))
+  override def decode(text: String) = Data(this, fromFixed(text))
 
   override def encode(data: Data) = {
     data match {
-      case ArrayData(values) => toFixed(values)
-      case TextData(value) => toFixed(Seq(value))
+      case ArrayData(_, values) => toFixed(values)
+      case TextData(_, value) => toFixed(Seq(value))
       case _ =>
         throw new UnsupportedDataTypeException(data)
     }

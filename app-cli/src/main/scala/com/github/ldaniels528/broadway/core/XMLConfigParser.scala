@@ -104,7 +104,10 @@ class XMLConfigParser(xml: Node) {
       `type` match {
         case "csv" => CSVFieldSet(fields)
         case "delimited" =>
-          DelimitedFieldSet(fields, delimiter = requiredText(fieldsNode \@ "delimiter"), isQuoted = optionalText("quoted").exists(isYes))
+          DelimitedFieldSet(
+            fields = fields,
+            delimiter = updateSpecials(requiredText(fieldsNode \@ "delimiter")),
+            isQuoted = optionalText("quoted").exists(isYes))
         case "fixed-length" => FixedLengthFieldSet(fields)
         case "json" => JsonFieldSet(fields)
         case "inline" => FixedLengthFieldSet(fields)
@@ -112,6 +115,12 @@ class XMLConfigParser(xml: Node) {
           throw new IllegalArgumentException(s"Unrecognized fields type '$unknown'")
       }
     }
+  }
+
+  private def updateSpecials(s: String) = {
+    s.replaceAllLiterally("\\n", "\n")
+      .replaceAllLiterally("\\r", "\r")
+      .replaceAllLiterally("\\t", "\t")
   }
 
   private def parseFields_Field(node: Node) = {

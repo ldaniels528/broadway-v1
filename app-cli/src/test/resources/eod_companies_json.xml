@@ -1,18 +1,18 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <etl-config id="eod-companies">
     <flows>
-        <BasicFlow id="AMEX" input="AMEX.txt" output="output.txt"/>
-        <BasicFlow id="NASDAQ" input="NASDAQ.txt" output="output.txt"/>
-        <BasicFlow id="NYSE" input="NYSE.txt" output="output.txt"/>
-        <BasicFlow id="OTCBB" input="OTCBB.txt" output="output.txt"/>
+        <BasicFlow id="AMEX" input="AMEX.txt" output="output.txt" input-layout="tabbed-delimited" output-layout="json-output"/>
+        <BasicFlow id="NASDAQ" input="NASDAQ.txt" output="output.txt" input-layout="tabbed-delimited" output-layout="json-output"/>
+        <BasicFlow id="NYSE" input="NYSE.txt" output="output.txt" input-layout="tabbed-delimited" output-layout="json-output"/>
+        <BasicFlow id="OTCBB" input="OTCBB.txt" output="output.txt" input-layout="tabbed-delimited" output-layout="json-output"/>
     </flows>
 
     <devices>
-        <TextInputDevice id="AMEX.txt" path="./app-cli/src/test/resources/files/AMEX.txt" layout="tabbed-delimited"/>
-        <TextInputDevice id="NASDAQ.txt" path="./app-cli/src/test/resources/files/NASDAQ.txt" layout="tabbed-delimited"/>
-        <TextInputDevice id="NYSE.txt" path="./app-cli/src/test/resources/files/NYSE.txt" layout="tabbed-delimited"/>
-        <TextInputDevice id="OTCBB.txt" path="./app-cli/src/test/resources/files/OTCBB.txt" layout="tabbed-delimited"/>
-        <TextOutputDevice id="output.txt" path="/tmp/output_json.txt" layout="json-output"/>
+        <TextInputDevice id="AMEX.txt" path="./app-cli/src/test/resources/files/AMEX.txt"/>
+        <TextInputDevice id="NASDAQ.txt" path="./app-cli/src/test/resources/files/NASDAQ.txt"/>
+        <TextInputDevice id="NYSE.txt" path="./app-cli/src/test/resources/files/NYSE.txt"/>
+        <TextInputDevice id="OTCBB.txt" path="./app-cli/src/test/resources/files/OTCBB.txt"/>
+        <TextOutputDevice id="output.txt" path="/tmp/output_json.txt"/>
     </devices>
 
     <layouts>

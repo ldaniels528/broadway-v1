@@ -1,22 +1,21 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <etl-config id="eod-companies">
     <flows>
-        <BasicFlow id="AMEX" input="AMEX.txt" output="output_src"/>
-        <BasicFlow id="NASDAQ" input="NASDAQ.txt" output="output_src"/>
-        <BasicFlow id="NYSE" input="NYSE.txt" output="output_src"/>
-        <BasicFlow id="OTCBB" input="OTCBB.txt" output="output_src"/>
+        <BasicFlow id="AMEX" input="AMEX.txt" output="mongodb" input-layout="tabbed-delimited" output-layout="mongo-output"/>
+        <BasicFlow id="NASDAQ" input="NASDAQ.txt" output="mongodb" input-layout="tabbed-delimited" output-layout="mongo-output"/>
+        <BasicFlow id="NYSE" input="NYSE.txt" output="mongodb" input-layout="tabbed-delimited" output-layout="mongo-output"/>
+        <BasicFlow id="OTCBB" input="OTCBB.txt" output="mongodb" input-layout="tabbed-delimited" output-layout="mongo-output"/>
     </flows>
 
     <devices>
-        <TextInputDevice id="AMEX.txt" path="./app-cli/src/test/resources/files/AMEX.txt" layout="tabbed-delimited"/>
-        <TextInputDevice id="NASDAQ.txt" path="./app-cli/src/test/resources/files/NASDAQ.txt" layout="tabbed-delimited"/>
-        <TextInputDevice id="NYSE.txt" path="./app-cli/src/test/resources/files/NYSE.txt" layout="tabbed-delimited"/>
-        <TextInputDevice id="OTCBB.txt" path="./app-cli/src/test/resources/files/OTCBB.txt" layout="tabbed-delimited"/>
+        <TextInputDevice id="AMEX.txt" path="./app-cli/src/test/resources/files/AMEX.txt"/>
+        <TextInputDevice id="NASDAQ.txt" path="./app-cli/src/test/resources/files/NASDAQ.txt"/>
+        <TextInputDevice id="NYSE.txt" path="./app-cli/src/test/resources/files/NYSE.txt"/>
+        <TextInputDevice id="OTCBB.txt" path="./app-cli/src/test/resources/files/OTCBB.txt"/>
 
-        <RoundRobinOutputDevice id="output_src" concurrency="10">
+        <RoundRobinOutputDevice id="mongodb" concurrency="10">
             <devices>
                 <MongoOutputDevice id="mongo1" servers="localhost" database="shocktrade" collection="test_companies" layout="mongo-output"/>
-                <MongoOutputDevice id="mongo2" servers="localhost" database="shocktrade" collection="test_companies" layout="mongo-output"/>
             </devices>
         </RoundRobinOutputDevice>
     </devices>

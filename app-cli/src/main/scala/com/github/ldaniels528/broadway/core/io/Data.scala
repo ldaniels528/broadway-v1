@@ -1,39 +1,49 @@
 package com.github.ldaniels528.broadway.core.io
 
-import play.api.libs.json.JsValue
+import com.github.ldaniels528.broadway.core.io.layout.FieldSet
+import com.github.ldaniels528.broadway.core.io.layout.json.AvroConversion._
+import org.apache.avro.Schema
+import play.api.libs.json.{JsValue, Json}
+
+import scala.io.Source
+import scala.language.postfixOps
 
 /**
   * Represents a unit of data
   */
-trait Data
+trait Data {
+
+  def fieldSet: FieldSet
+
+}
 
 /**
   * Represents a binary data array
   *
   * @param bytes the given byte array
   */
-case class ByteData(bytes: Array[Byte]) extends Data
+case class ByteData(fieldSet: FieldSet, bytes: Array[Byte]) extends Data
 
 /**
   * Represents collection of data
   *
   * @param values the given array of string
   */
-case class ArrayData(values: Seq[String]) extends Data
+case class ArrayData(fieldSet: FieldSet, values: Seq[String]) extends Data
 
 /**
   * Represents JSON data
   *
   * @param js the given [[JsValue JSON object]]
   */
-case class JsonData(js: JsValue) extends Data
+case class JsonData(fieldSet: FieldSet, js: JsValue) extends Data
 
 /**
   * Represents text data
   *
   * @param value the given string value
   */
-case class TextData(value: String) extends Data
+case class TextData(fieldSet: FieldSet, value: String) extends Data
 
 /**
   * Data Companion Object
@@ -42,13 +52,13 @@ case class TextData(value: String) extends Data
   */
 object Data {
 
-  def apply(bytes: Array[Byte]): Data = ByteData(bytes)
+  def apply(fieldSet: FieldSet, bytes: Array[Byte]): Data = ByteData(fieldSet, bytes)
 
-  def apply(js: JsValue): Data = JsonData(js)
+  def apply(fieldSet: FieldSet, js: JsValue): Data = JsonData(fieldSet, js)
 
-  def apply(value: String): Data = TextData(value)
+  def apply(fieldSet: FieldSet, value: String): Data = TextData(fieldSet, value)
 
-  def apply(values: Seq[String]): Data = ArrayData(values)
+  def apply(fieldSet: FieldSet, values: Seq[String]): Data = ArrayData(fieldSet, values)
 
   /**
     * Data Enrichment
@@ -57,27 +67,49 @@ object Data {
     */
   implicit class DataEnrichment(val data: Data) extends AnyVal {
 
+    def asAvroBytes(schema: Schema) = data match {
+      case ad@ArrayData(fields, values) => transcodeJsonToAvroBytes(ad.asJson.toString(), schema)
+      case ByteData(_, bytes) => transcodeJsonToAvroBytes(new String(bytes), schema)
+      case JsonData(_, js) => transcodeJsonToAvroBytes(js.toString(), schema)
+      case TextData(_, s) => transcodeJsonToAvroBytes(s, schema)
+      case _ =>
+        throw new IllegalStateException(s"Unrecognized data type '$data' for encoding (${Option(data).map(_.getClass.getName).orNull})")
+    }
+
     def asBytes: Array[Byte] = data match {
-      case ArrayData(values) => values.mkString.getBytes
-      case ByteData(bytes) => bytes
-      case JsonData(js) => js.toString().getBytes
-      case TextData(value) => value.getBytes
+      case ArrayData(_, values) => values.mkString.getBytes
+      case ByteData(_, bytes) => bytes
+      case JsonData(_, js) => js.toString().getBytes
+      case TextData(_, value) => value.getBytes
       case _ =>
         throw new IllegalArgumentException(s"Unsupported data type '$data' (${Option(data).map(_.getClass.getName).orNull})")
+    }
+
+    def asJson = data match {
+      case ByteData(_, bytes) => Json.parse(new String(bytes))
+      case JsonData(_, js) => js
+      case TextData(_, value) => Json.parse(value)
+      case _ =>
+        val values = data.asTuples
+        values.foldLeft(Json.obj()) { case (js, (k, v)) => js ++ Json.obj(k -> v) }
     }
 
     def asText: String = data match {
-      case ArrayData(values) => values.mkString
-      case ByteData(bytes) => new String(bytes)
-      case JsonData(js) => js.toString()
-      case TextData(value) => value
+      case ArrayData(_, values) => values.mkString
+      case ByteData(_, bytes) => new String(bytes)
+      case JsonData(_, js) => js.toString()
+      case TextData(_, value) => value
       case _ =>
         throw new IllegalArgumentException(s"Unsupported data type '$data' (${Option(data).map(_.getClass.getName).orNull})")
     }
 
+    def asTuples: Seq[(String, String)] = data.fieldSet.fields.map(_.name) zip data.asValues
+
     def asValues: Seq[String] = data match {
-      case ArrayData(values) => values
-      case TextData(value) => Seq(value)
+      case ArrayData(_, values) => values
+      case ByteData(_, bytes) => Source.fromBytes(bytes).getLines().toSeq
+      case JsonData(_, js) => Source.fromString(js.toString()).getLines().toSeq
+      case TextData(_, value) => Source.fromString(value).getLines().toSeq
       case _ =>
         throw new IllegalArgumentException(s"Unsupported data type '$data' (${Option(data).map(_.getClass.getName).orNull})")
     }

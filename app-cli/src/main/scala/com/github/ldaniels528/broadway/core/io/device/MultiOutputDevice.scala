@@ -9,7 +9,7 @@ import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
 /**
-  * Multiple Output Device
+  * Multiple Device Output Source
   */
 case class MultiOutputDevice(id: String, devices: Seq[OutputDevice], concurrency: Int)
   extends OutputDevice with StatisticsGeneration {
@@ -35,8 +35,7 @@ case class MultiOutputDevice(id: String, devices: Seq[OutputDevice], concurrency
     taskActorPool ! new Runnable {
       override def run() {
         updateCount(devices.foldLeft[Int](0) { (total, device) =>
-          //total + device.write(data)\
-          0
+          total + device.write(data)
         })
       }
     }

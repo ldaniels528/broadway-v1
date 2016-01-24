@@ -1,6 +1,6 @@
 package com.github.ldaniels528.broadway.core.io.layout.text.fields
 
-import com.github.ldaniels528.broadway.core.io.layout.{FieldSet, Field}
+import com.github.ldaniels528.broadway.core.io.layout.{Field, FieldSet}
 import com.github.ldaniels528.broadway.core.io.{ArrayData, Data, TextData}
 
 /**
@@ -8,12 +8,12 @@ import com.github.ldaniels528.broadway.core.io.{ArrayData, Data, TextData}
   */
 case class CSVFieldSet(fields: Seq[Field]) extends FieldSet {
 
-  override def decode(text: String) = Data(fromCSV(text))
+  override def decode(text: String) = Data(this, fromCSV(text))
 
   override def encode(data: Data) = {
     data match {
-      case ArrayData(values) => toCSV(values)
-      case TextData(value) => toCSV(fromCSV(value))
+      case ArrayData(_, values) => toCSV(values)
+      case TextData(_, value) => toCSV(fromCSV(value))
       case _ =>
         throw new IllegalArgumentException(s"Unsupported data type '$data' (${Option(data).map(_.getClass.getName).orNull})")
     }

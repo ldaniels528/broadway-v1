@@ -7,7 +7,6 @@ import com.github.ldaniels528.broadway.core.io._
 import com.github.ldaniels528.broadway.core.io.device.{InputDevice, OutputDevice}
 import com.github.ldaniels528.broadway.core.io.layout._
 import com.github.ldaniels528.broadway.core.io.layout.json.AvroConversion._
-import com.github.ldaniels528.broadway.core.io.layout.text.fields.JsonFieldSet
 import org.apache.avro.Schema
 
 import scala.io.Source
@@ -21,21 +20,13 @@ case class AvroLayout(id: String, fieldSet: FieldSet, schemaString: String) exte
 
   override def in(rt: RuntimeContext, device: InputDevice, data: Option[Data]) = {
     data match {
-      case Some(value) => Seq(Data(transcodeAvroBytesToAvroJson(schema, value.asBytes)))
+      case Some(theData) => Seq(Data(fieldSet, transcodeAvroBytesToAvroJson(schema, theData.asBytes)))
       case None => Nil
     }
   }
 
   override def out(rt: RuntimeContext, device: OutputDevice, dataSet: Seq[Data], isEOF: Boolean) = {
-    val binaries = dataSet map {
-      case ArrayData(values) => transcodeJsonToAvroBytes(JsonFieldSet.toJsonText(fieldSet.fields.map(_.name) zip values), schema)
-      case ByteData(bytes) => bytes //transcodeAvroBytesToAvroJson(schema, bytes)
-      case JsonData(js) => transcodeJsonToAvroBytes(js.toString(), schema)
-      case TextData(s) => transcodeJsonToAvroBytes(s, schema)
-      case data =>
-        throw new IllegalStateException(s"Unrecognized data type '$data' for encoding (${Option(data).map(_.getClass.getName).orNull})")
-    }
-    binaries.map(Data(_))
+    dataSet map (_.asAvroBytes(schema)) map (Data(fieldSet, _))
   }
 
 }

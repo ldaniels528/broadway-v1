@@ -24,20 +24,20 @@ case class TextLayout(id: String, header: Option[Division], body: Division, foot
 
   override def out(rt: RuntimeContext, device: OutputDevice, dataSet: Seq[Data], isEOF: Boolean): Seq[Data] = {
     val line_? =
-      if (isEOF) footer.map(_.fieldSets.map(fs => fs.encode(Data(fs.fields.map(f => rt.evaluate(f.name))))))
+      if (isEOF) footer.map(_.fieldSets.map(fs => Data(fs, fs.encode(Data(fs, fs.fields.map(f => rt.evaluate(f.name)))))))
       else {
         // if nothing has been written yet, generate the header if defined
         val headerData =
           if (device.offset == 0 && header.nonEmpty)
-            header.map(_.fieldSets.map(fs => fs.encode(Data(fs.fields.map(f => rt.evaluate(f.name))))))
+            header.map(_.fieldSets.map(fs => Data(fs, fs.encode(Data(fs, fs.fields.map(f => rt.evaluate(f.name)))))))
           else
             None
 
-        val bodyData = dataSet.flatMap(data => body.fieldSets.map(_.encode(data)))
+        val bodyData = dataSet.flatMap(data => body.fieldSets.map(fs => Data(fs, fs.encode(data))))
         headerData.map(_ ++ bodyData) ?? Option(bodyData)
       }
 
-    line_?.map(_ map (Data(_))) getOrElse Nil
+    line_? getOrElse Nil
   }
 
 }

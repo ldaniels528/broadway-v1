@@ -5,7 +5,6 @@ import com.github.ldaniels528.broadway.core.io.Data
 import com.github.ldaniels528.broadway.core.io.device.nosql.MongoDbOutputDevice._
 import com.github.ldaniels528.broadway.core.io.device.{OutputDevice, StatisticsGeneration}
 import com.github.ldaniels528.broadway.core.io.layout.json.MongoDbLayout
-import com.github.ldaniels528.broadway.core.io.layout.text.fields.JsonFieldSet
 import com.ldaniels528.commons.helpers.OptionHelper.Risky._
 import com.mongodb.ServerAddress
 import com.mongodb.casbah.Imports._
@@ -52,9 +51,8 @@ case class MongoDbOutputDevice(id: String,
   override def write(data: Data) = {
     (for {
       mc <- mongoColl
-      jsString = JsonFieldSet.toJsonText(layout.fieldSet.fields.map(_.name) zip data.asValues)
     } yield {
-      val js = Json.parse(jsString)
+      val js = data.asJson
       val doc = toDocument(js.asInstanceOf[JsObject])
       val result = mc.insert(doc, writeConcern)
       updateCount(1 /*result.get.getN*/) // TODO why aren't the number of records updated returned?
