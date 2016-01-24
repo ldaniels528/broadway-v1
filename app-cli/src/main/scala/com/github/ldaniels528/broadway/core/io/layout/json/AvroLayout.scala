@@ -4,7 +4,7 @@ import java.io.File
 
 import com.github.ldaniels528.broadway.core.RuntimeContext
 import com.github.ldaniels528.broadway.core.io._
-import com.github.ldaniels528.broadway.core.io.device.{BinaryReading, BinaryWriting}
+import com.github.ldaniels528.broadway.core.io.device.{InputDevice, OutputDevice}
 import com.github.ldaniels528.broadway.core.io.layout._
 import com.github.ldaniels528.broadway.core.io.layout.json.AvroConversion._
 import com.github.ldaniels528.broadway.core.io.layout.text.fields.JsonFieldSet
@@ -16,17 +16,19 @@ import scala.language.postfixOps
 /**
   * Represents an Avro Layout
   */
-case class AvroLayout(id: String, fieldSet: FieldSet, schemaString: String) extends Layout with BinaryLayout {
+case class AvroLayout(id: String, fieldSet: FieldSet, schemaString: String) extends Layout {
   private val schema = new Schema.Parser().parse(schemaString)
 
-  override def in(rt: RuntimeContext, device: BinaryReading, binary: Option[Array[Byte]]) = {
-    binary match {
-      case Some(bytes) => Seq(Data(transcodeAvroBytesToAvroJson(schema, bytes)))
+  override def in(rt: RuntimeContext, device: InputDevice, data: Option[Data]) = {
+    data match {
+      case Some(ByteData(bytes)) => Seq(Data(transcodeAvroBytesToAvroJson(schema, bytes)))
+      case Some(other) =>
+        throw new IllegalStateException(s"Unrecognized data type '$data' for encoding (${other.getClass.getName})")
       case None => Nil
     }
   }
 
-  override def out(rt: RuntimeContext, device: BinaryWriting, dataSet: Seq[Data], isEOF: Boolean) = {
+  override def out(rt: RuntimeContext, device: OutputDevice, dataSet: Seq[Data], isEOF: Boolean) = {
     val binaries = dataSet map {
       case ArrayData(values) => transcodeJsonToAvroBytes(JsonFieldSet.toJsonText(fieldSet.fields.map(_.name) zip values), schema)
       case ByteData(bytes) => bytes //transcodeAvroBytesToAvroJson(schema, bytes)
@@ -35,10 +37,7 @@ case class AvroLayout(id: String, fieldSet: FieldSet, schemaString: String) exte
       case data =>
         throw new IllegalStateException(s"Unrecognized data type '$data' for encoding (${Option(data).map(_.getClass.getName).orNull})")
     }
-
-    Option(binaries map { bytes =>
-      device.writeBytes(bytes)
-    } sum)
+    binaries.map(Data(_))
   }
 
 }

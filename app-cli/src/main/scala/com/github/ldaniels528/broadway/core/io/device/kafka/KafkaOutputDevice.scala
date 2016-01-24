@@ -9,8 +9,7 @@ import com.github.ldaniels528.broadway.cli.actors.TaskActorSystem
 import com.github.ldaniels528.broadway.core.RuntimeContext
 import com.github.ldaniels528.broadway.core.io.Data
 import com.github.ldaniels528.broadway.core.io.device.kafka.KafkaOutputDevice.{Die, asyncActor}
-import com.github.ldaniels528.broadway.core.io.device.{DataWriting, BinaryWriting, OutputDevice, StatisticsGeneration}
-import com.github.ldaniels528.broadway.core.io.layout.json.AvroLayout
+import com.github.ldaniels528.broadway.core.io.device.{OutputDevice, StatisticsGeneration}
 import org.slf4j.LoggerFactory
 
 import scala.collection.concurrent.TrieMap
@@ -23,8 +22,8 @@ import scala.concurrent.duration._
   *
   * @author lawrence.daniels@gmail.com
   */
-case class KafkaOutputDevice(id: String, topic: String, zk: ZkProxy, layout: AvroLayout)
-  extends OutputDevice with BinaryWriting with DataWriting with StatisticsGeneration {
+case class KafkaOutputDevice(id: String, topic: String, zk: ZkProxy)
+  extends OutputDevice with StatisticsGeneration {
 
   private val logger = LoggerFactory.getLogger(getClass)
   private val publisher = KafkaPublisher(zk)
@@ -40,15 +39,6 @@ case class KafkaOutputDevice(id: String, topic: String, zk: ZkProxy, layout: Avr
   }
 
   override def open(rt: RuntimeContext): Unit = publisher.open()
-
-  override def writeBytes(message: Array[Byte]) = {
-    val key = ByteBufferUtils.uuidToBytes(UUID.randomUUID())
-    implicit val timeout: Timeout = 15.seconds
-    (asyncActor ? publisher.publish(topic, key, message)) foreach { _ =>
-      updateCount(1)
-    }
-    updateCount(0)
-  }
 
   override def write(data: Data) = {
     val key = ByteBufferUtils.uuidToBytes(UUID.randomUUID())

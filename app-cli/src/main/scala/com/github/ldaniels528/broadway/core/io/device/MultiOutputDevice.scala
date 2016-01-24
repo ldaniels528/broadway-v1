@@ -12,12 +12,10 @@ import scala.concurrent.{ExecutionContext, Future}
   * Multiple Output Device
   */
 case class MultiOutputDevice(id: String, devices: Seq[OutputDevice], concurrency: Int)
-  extends OutputDevice with DataWriting with StatisticsGeneration {
+  extends OutputDevice with StatisticsGeneration {
 
   private val logger = LoggerFactory.getLogger(getClass)
   private val taskActorPool = new TaskActorPool(concurrency)
-
-  //override def layout: OutputLayout = devices.headOption.map(_.layout).orDie("No layout found")
 
   override def close(rt: RuntimeContext)(implicit ec: ExecutionContext) = {
     for {

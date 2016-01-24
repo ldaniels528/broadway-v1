@@ -4,8 +4,7 @@ import java.io.{BufferedWriter, FileWriter}
 
 import com.github.ldaniels528.broadway.core.RuntimeContext
 import com.github.ldaniels528.broadway.core.io.Data
-import com.github.ldaniels528.broadway.core.io.device.{DataWriting, OutputDevice, StatisticsGeneration}
-import com.github.ldaniels528.broadway.core.io.layout.text.TextLayout
+import com.github.ldaniels528.broadway.core.io.device.{OutputDevice, StatisticsGeneration}
 import com.ldaniels528.commons.helpers.OptionHelper.Risky._
 import org.slf4j.LoggerFactory
 
@@ -16,8 +15,8 @@ import scala.concurrent.{ExecutionContext, Future}
   *
   * @author lawrence.daniels@gmail.com
   */
-case class TextOutputDevice(id: String, path: String, layout: TextLayout)
-  extends OutputDevice with DataWriting with StatisticsGeneration with TextWriting {
+case class TextOutputDevice(id: String, path: String)
+  extends OutputDevice with StatisticsGeneration {
 
   private val logger = LoggerFactory.getLogger(getClass)
   private var writer: Option[BufferedWriter] = None
@@ -35,15 +34,6 @@ case class TextOutputDevice(id: String, path: String, layout: TextLayout)
 
   override def close(rt: RuntimeContext)(implicit ec: ExecutionContext) = {
     Future.successful(writer.foreach(_.close()))
-  }
-
-  override def writeLine(line: String) = {
-    writer.foreach { w =>
-      w.write(line)
-      w.newLine()
-      offset += updateCount(1)
-    }
-    1
   }
 
   override def write(data: Data) = {

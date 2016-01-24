@@ -3,7 +3,7 @@ package com.github.ldaniels528.broadway.core
 import java.io.File
 
 import com.github.ldaniels528.broadway.core.XMLConfigParser._
-import com.github.ldaniels528.broadway.core.flow.{Flow, BasicFlow}
+import com.github.ldaniels528.broadway.core.flow.{BasicFlow, Flow}
 import com.github.ldaniels528.broadway.core.io.device._
 import com.github.ldaniels528.broadway.core.io.device.kafka.{KafkaOutputDevice, ZkProxy}
 import com.github.ldaniels528.broadway.core.io.device.nosql.MongoDbOutputDevice
@@ -24,11 +24,13 @@ class XMLConfigParser(xml: Node) {
 
   def parse: Option[ETLConfig] = {
     ((xml \\ "etl-config") map { node =>
+      val layouts = parseLayouts(node)
       ETLConfig(
         id = node \@ "id",
         flows = parseFlows(
           rootNode = node,
-          devices = parseDevices(node, layouts = parseLayouts(node))))
+          devices = parseDevices(node, layouts),
+          layouts = layouts))
     }).headOption
   }
 
@@ -53,8 +55,7 @@ class XMLConfigParser(xml: Node) {
     KafkaOutputDevice(
       id = deviceNode \@ "id",
       topic = deviceNode \@ "topic",
-      zk = ZkProxy(connectionString = deviceNode \@ "connectionString"),
-      layout = lookupLayout(layouts, requiredText(deviceNode \@ "layout")).need[AvroLayout]("Incompatible layout"))
+      zk = ZkProxy(connectionString = deviceNode \@ "connectionString"))
   }
 
   private def parseDevices_MongoOutputDevice(deviceNode: Node, layouts: Seq[Layout]) = {
@@ -81,17 +82,11 @@ class XMLConfigParser(xml: Node) {
   }
 
   private def parseDevices_TextInputDevice(deviceNode: Node, layouts: Seq[Layout]) = {
-    TextInputDevice(
-      id = deviceNode \@ "id",
-      path = deviceNode \@ "path",
-      layout = lookupLayout(layouts, id = deviceNode \@ "layout").need[TextLayout]("Incompatible layout"))
+    TextInputDevice(id = deviceNode \@ "id", path = deviceNode \@ "path")
   }
 
   private def parseDevices_TextOutputDevice(deviceNode: Node, layouts: Seq[Layout]) = {
-    TextOutputDevice(
-      id = deviceNode \@ "id",
-      path = deviceNode \@ "path",
-      layout = lookupLayout(layouts, id = deviceNode \@ "layout").need[TextLayout]("Incompatible layout"))
+    TextOutputDevice(id = deviceNode \@ "id", path = deviceNode \@ "path")
   }
 
   private def parseFields(rootNode: Node) = {
@@ -125,23 +120,25 @@ class XMLConfigParser(xml: Node) {
       length = optionalText(node \@ "length") map (_.toInt))
   }
 
-  private def parseFlows(rootNode: Node, devices: Seq[Device]): Seq[Flow] = {
+  private def parseFlows(rootNode: Node, devices: Seq[Device], layouts: Seq[Layout]): Seq[Flow] = {
     (rootNode \ "flows") flatMap { flowsNode =>
       flowsNode.child.filter(_.label != "#PCDATA") map { node =>
         node.label match {
-          case "BasicFlow" => parseFlows_BasicFlow(node, devices)
+          case "BasicFlow" => parseFlows_BasicFlow(node, devices, layouts)
           case label =>
-            throw new IllegalArgumentException(s"Invalid flow type '$label'")
+            throw new IllegalArgumentException(s"Invalid flow reference '$label'")
         }
       }
     }
   }
 
-  private def parseFlows_BasicFlow(rootNode: Node, devices: Seq[Device]) = {
+  private def parseFlows_BasicFlow(rootNode: Node, devices: Seq[Device], layouts: Seq[Layout]) = {
     BasicFlow(
       id = rootNode \@ "id",
       input = lookupInputDevice(devices, id = rootNode \@ "input"),
-      output = lookupOutputDevice(devices, id = rootNode \@ "output"))
+      output = lookupOutputDevice(devices, id = rootNode \@ "output"),
+      inputLayout = lookupLayout(layouts, id = rootNode \@ "input-layout"),
+      outputLayout = lookupLayout(layouts, id = rootNode \@ "output-layout"))
   }
 
   private def parseLayouts(rootNode: Node): Seq[Layout] = {

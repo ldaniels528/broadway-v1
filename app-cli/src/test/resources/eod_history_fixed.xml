@@ -1,7 +1,11 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <etl-config id="eod-history">
     <flows>
-        <BasicFlow id="EOD->CSV" input="input_file" output="output_file"/>
+        <BasicFlow id="EOD->CSV"
+                   input="input_file"
+                   input-layout="input_layout"
+                   output="output_file"
+                   output-layout="output_layout"/>
     </flows>
 
     <devices>

@@ -3,8 +3,8 @@ package com.github.ldaniels528.broadway.core.io.device.text
 import java.io.{BufferedReader, FileReader}
 
 import com.github.ldaniels528.broadway.core.RuntimeContext
+import com.github.ldaniels528.broadway.core.io.Data
 import com.github.ldaniels528.broadway.core.io.device.{InputDevice, StatisticsGeneration}
-import com.github.ldaniels528.broadway.core.io.layout.text.TextLayout
 import com.ldaniels528.commons.helpers.OptionHelper.Risky._
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -14,8 +14,8 @@ import scala.concurrent.{ExecutionContext, Future}
   *
   * @author lawrence.daniels@gmail.com
   */
-case class TextInputDevice(val id: String, path: String, layout: TextLayout)
-  extends InputDevice with StatisticsGeneration with TextReading {
+case class TextInputDevice(val id: String, path: String)
+  extends InputDevice with StatisticsGeneration {
 
   private var reader: Option[BufferedReader] = None
 
@@ -29,10 +29,10 @@ case class TextInputDevice(val id: String, path: String, layout: TextLayout)
     Future.successful(reader.foreach(_.close()))
   }
 
-  override def readLine = {
-    val line = reader.flatMap(r => Option(r.readLine))
+  override def read(): Option[Data] = {
+    val data = reader.flatMap(r => Option(r.readLine)).map(Data(_))
     offset += updateCount(1)
-    line
+    data
   }
 
 }

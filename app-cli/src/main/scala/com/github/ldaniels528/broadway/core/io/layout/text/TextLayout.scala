@@ -2,7 +2,7 @@ package com.github.ldaniels528.broadway.core.io.layout.text
 
 import com.github.ldaniels528.broadway.core.RuntimeContext
 import com.github.ldaniels528.broadway.core.io.Data
-import com.github.ldaniels528.broadway.core.io.device.text.{TextReading, TextWriting}
+import com.github.ldaniels528.broadway.core.io.device.{InputDevice, OutputDevice}
 import com.github.ldaniels528.broadway.core.io.layout._
 import com.ldaniels528.commons.helpers.OptionHelper._
 
@@ -13,16 +13,16 @@ import scala.language.postfixOps
   */
 case class TextLayout(id: String, header: Option[Division], body: Division, footer: Option[Division]) extends Layout {
 
-  def in(rt: RuntimeContext, device: TextReading, line: Option[String]): Seq[Data] = {
-    val data =
+  override def in(rt: RuntimeContext, device: InputDevice, data: Option[Data]): Seq[Data] = {
+    val result =
       if (header.exists(_.fieldSets.length >= device.offset)) None //header.map(_.fieldSets.map(fs => Data(fs.fields.map(f => rt.evaluate(f.name)))))
-      else line.map(text => body.fieldSets.map(_.decode(text)))
+      else data.map(_.asText).map(text => body.fieldSets.map(_.decode(text)))
     // TODO need to handle footer case
 
-    data getOrElse Nil
+    result getOrElse Nil
   }
 
-  def out(rt: RuntimeContext, device: TextWriting, dataSet: Seq[Data], isEOF: Boolean): Option[Int] = {
+  override def out(rt: RuntimeContext, device: OutputDevice, dataSet: Seq[Data], isEOF: Boolean): Seq[Data] = {
     val line_? =
       if (isEOF) footer.map(_.fieldSets.map(fs => fs.encode(Data(fs.fields.map(f => rt.evaluate(f.name))))))
       else {
@@ -37,8 +37,7 @@ case class TextLayout(id: String, header: Option[Division], body: Division, foot
         headerData.map(_ ++ bodyData) ?? Option(bodyData)
       }
 
-    val results = line_? map (_ map (line => device.writeLine(line)))
-    results.map(_.sum)
+    line_?.map(_ map (Data(_))) getOrElse Nil
   }
 
 }
