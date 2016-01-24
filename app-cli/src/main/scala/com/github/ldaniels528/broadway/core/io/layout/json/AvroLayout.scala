@@ -21,9 +21,7 @@ case class AvroLayout(id: String, fieldSet: FieldSet, schemaString: String) exte
 
   override def in(rt: RuntimeContext, device: InputDevice, data: Option[Data]) = {
     data match {
-      case Some(ByteData(bytes)) => Seq(Data(transcodeAvroBytesToAvroJson(schema, bytes)))
-      case Some(other) =>
-        throw new IllegalStateException(s"Unrecognized data type '$data' for encoding (${other.getClass.getName})")
+      case Some(value) => Seq(Data(transcodeAvroBytesToAvroJson(schema, value.asBytes)))
       case None => Nil
     }
   }
