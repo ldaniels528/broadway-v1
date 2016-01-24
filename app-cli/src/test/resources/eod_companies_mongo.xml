@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <etl-config id="eod-companies">
     <flows>
-        <SimpleFlow id="AMEX" input="AMEX.txt" output="output_src"/>
-        <SimpleFlow id="NASDAQ" input="NASDAQ.txt" output="output_src"/>
-        <SimpleFlow id="NYSE" input="NYSE.txt" output="output_src"/>
-        <SimpleFlow id="OTCBB" input="OTCBB.txt" output="output_src"/>
+        <BasicFlow id="AMEX" input="AMEX.txt" output="output_src"/>
+        <BasicFlow id="NASDAQ" input="NASDAQ.txt" output="output_src"/>
+        <BasicFlow id="NYSE" input="NYSE.txt" output="output_src"/>
+        <BasicFlow id="OTCBB" input="OTCBB.txt" output="output_src"/>
     </flows>
 
     <devices>
@@ -15,8 +15,8 @@
 
         <RoundRobinOutputDevice id="output_src" concurrency="10">
             <devices>
-                <MongoOutputDevice id="mongo1" servers="localhost" database="shocktrade" collection="test_companies" layout="json-output"/>
-                <MongoOutputDevice id="mongo2" servers="localhost" database="shocktrade" collection="test_companies" layout="json-output"/>
+                <MongoOutputDevice id="mongo1" servers="localhost" database="shocktrade" collection="test_companies" layout="mongo-output"/>
+                <MongoOutputDevice id="mongo2" servers="localhost" database="shocktrade" collection="test_companies" layout="mongo-output"/>
             </devices>
         </RoundRobinOutputDevice>
     </devices>
@@ -37,13 +37,11 @@
             </body>
         </TextLayout>
 
-        <TextLayout id="json-output">
-            <body>
-                <fields type="json">
-                    <field>symbol</field>
-                    <field>description</field>
-                </fields>
-            </body>
-        </TextLayout>
+        <MongoLayout id="mongo-output">
+            <fields type="json">
+                <field>symbol</field>
+                <field>description</field>
+            </fields>
+        </MongoLayout>
     </layouts>
 </etl-config>

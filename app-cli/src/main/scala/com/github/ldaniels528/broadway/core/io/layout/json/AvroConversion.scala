@@ -1,4 +1,4 @@
-package com.github.ldaniels528.broadway.core.io.layout.avro
+package com.github.ldaniels528.broadway.core.io.layout.json
 
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
 import java.lang.reflect.Method

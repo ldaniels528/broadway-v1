@@ -7,8 +7,4 @@ trait Layout {
 
   def id: String
 
-  def header: Seq[Division]
-
-  def footer: Seq[Division]
-
 }

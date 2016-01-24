@@ -57,11 +57,27 @@ object Data {
     */
   implicit class DataEnrichment(val data: Data) extends AnyVal {
 
-    def asBytes = data match {
+    def asBytes: Array[Byte] = data match {
       case ArrayData(values) => values.mkString.getBytes
       case ByteData(bytes) => bytes
       case JsonData(js) => js.toString().getBytes
       case TextData(value) => value.getBytes
+      case _ =>
+        throw new IllegalArgumentException(s"Unsupported data type '$data' (${Option(data).map(_.getClass.getName).orNull})")
+    }
+
+    def asText: String = data match {
+      case ArrayData(values) => values.mkString
+      case ByteData(bytes) => new String(bytes)
+      case JsonData(js) => js.toString()
+      case TextData(value) => value
+      case _ =>
+        throw new IllegalArgumentException(s"Unsupported data type '$data' (${Option(data).map(_.getClass.getName).orNull})")
+    }
+
+    def asValues: Seq[String] = data match {
+      case ArrayData(values) => values
+      case TextData(value) => Seq(value)
       case _ =>
         throw new IllegalArgumentException(s"Unsupported data type '$data' (${Option(data).map(_.getClass.getName).orNull})")
     }

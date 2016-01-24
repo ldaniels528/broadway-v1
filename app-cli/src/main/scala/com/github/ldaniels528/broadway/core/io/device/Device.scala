@@ -11,6 +11,8 @@ trait Device {
 
   def id: String
 
+  def offset: Long
+
   def count: Long
 
   def open(rt: RuntimeContext): Unit

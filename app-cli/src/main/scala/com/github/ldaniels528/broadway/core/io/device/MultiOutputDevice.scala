@@ -1,10 +1,8 @@
 package com.github.ldaniels528.broadway.core.io.device
 
-import com.github.ldaniels528.broadway.core.RuntimeContext
-import com.ldaniels528.commons.helpers.OptionHelper._
 import com.github.ldaniels528.broadway.cli.actors.TaskActorPool
+import com.github.ldaniels528.broadway.core.RuntimeContext
 import com.github.ldaniels528.broadway.core.io.Data
-import com.github.ldaniels528.broadway.core.io.layout.OutputLayout
 import org.slf4j.LoggerFactory
 
 import scala.concurrent.duration._
@@ -13,11 +11,13 @@ import scala.concurrent.{ExecutionContext, Future}
 /**
   * Multiple Output Device
   */
-case class MultiOutputDevice(id: String, devices: Seq[OutputDevice], concurrency: Int) extends OutputDevice with StatisticsGeneration {
+case class MultiOutputDevice(id: String, devices: Seq[OutputDevice], concurrency: Int)
+  extends OutputDevice with DataWriting with StatisticsGeneration {
+
   private val logger = LoggerFactory.getLogger(getClass)
   private val taskActorPool = new TaskActorPool(concurrency)
 
-  override def layout: OutputLayout = devices.headOption.map(_.layout).orDie("No layout found")
+  //override def layout: OutputLayout = devices.headOption.map(_.layout).orDie("No layout found")
 
   override def close(rt: RuntimeContext)(implicit ec: ExecutionContext) = {
     for {
@@ -31,11 +31,14 @@ case class MultiOutputDevice(id: String, devices: Seq[OutputDevice], concurrency
 
   override def open(rt: RuntimeContext) = devices.foreach(_.open(rt))
 
+  override def offset = devices.map(_.offset).max
+
   override def write(data: Data) = {
     taskActorPool ! new Runnable {
       override def run() {
         updateCount(devices.foldLeft[Int](0) { (total, device) =>
-          total + device.write(data)
+          //total + device.write(data)\
+          0
         })
       }
     }

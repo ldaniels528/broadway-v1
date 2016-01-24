@@ -1,10 +1,11 @@
 package com.github.ldaniels528.broadway.core.io.device.text
 
 import java.io.{BufferedWriter, FileWriter}
-import com.github.ldaniels528.broadway.core.io.Data
-import com.github.ldaniels528.broadway.core.io.device.{OutputDevice, StatisticsGeneration}
-import com.github.ldaniels528.broadway.core.io.layout.OutputLayout
+
 import com.github.ldaniels528.broadway.core.RuntimeContext
+import com.github.ldaniels528.broadway.core.io.Data
+import com.github.ldaniels528.broadway.core.io.device.{DataWriting, OutputDevice, StatisticsGeneration}
+import com.github.ldaniels528.broadway.core.io.layout.text.TextLayout
 import com.ldaniels528.commons.helpers.OptionHelper.Risky._
 import org.slf4j.LoggerFactory
 
@@ -15,10 +16,13 @@ import scala.concurrent.{ExecutionContext, Future}
   *
   * @author lawrence.daniels@gmail.com
   */
-case class TextOutputDevice(id: String, path: String, layout: OutputLayout) extends OutputDevice with StatisticsGeneration {
+case class TextOutputDevice(id: String, path: String, layout: TextLayout)
+  extends OutputDevice with DataWriting with StatisticsGeneration with TextWriting {
+
   private val logger = LoggerFactory.getLogger(getClass)
   private var writer: Option[BufferedWriter] = None
-  private var offset = 0L
+
+  var offset = 0L
 
   override def open(rt: RuntimeContext) = {
     writer match {
@@ -33,16 +37,22 @@ case class TextOutputDevice(id: String, path: String, layout: OutputLayout) exte
     Future.successful(writer.foreach(_.close()))
   }
 
+  override def writeLine(line: String) = {
+    writer.foreach { w =>
+      w.write(line)
+      w.newLine()
+      offset += updateCount(1)
+    }
+    1
+  }
+
   override def write(data: Data) = {
-    (for {
-      device <- writer
-      _ = offset += 1
-      formattedData <- layout.encode(offset, data)
-    } yield {
-      device.write(formattedData)
-      device.newLine()
-      updateCount(1)
-    }) getOrElse 0
+    writer.foreach { w =>
+      w.write(data.asText)
+      w.newLine()
+      offset += updateCount(1)
+    }
+    1
   }
 
 }

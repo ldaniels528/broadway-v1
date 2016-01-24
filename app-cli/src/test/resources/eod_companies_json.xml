@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <etl-config id="eod-companies">
     <flows>
-        <SimpleFlow id="AMEX" input="AMEX.txt" output="output.txt"/>
-        <SimpleFlow id="NASDAQ" input="NASDAQ.txt" output="output.txt"/>
-        <SimpleFlow id="NYSE" input="NYSE.txt" output="output.txt"/>
-        <SimpleFlow id="OTCBB" input="OTCBB.txt" output="output.txt"/>
+        <BasicFlow id="AMEX" input="AMEX.txt" output="output.txt"/>
+        <BasicFlow id="NASDAQ" input="NASDAQ.txt" output="output.txt"/>
+        <BasicFlow id="NYSE" input="NYSE.txt" output="output.txt"/>
+        <BasicFlow id="OTCBB" input="OTCBB.txt" output="output.txt"/>
     </flows>
 
     <devices>
@@ -12,7 +12,7 @@
         <TextInputDevice id="NASDAQ.txt" path="./app-cli/src/test/resources/files/NASDAQ.txt" layout="tabbed-delimited"/>
         <TextInputDevice id="NYSE.txt" path="./app-cli/src/test/resources/files/NYSE.txt" layout="tabbed-delimited"/>
         <TextInputDevice id="OTCBB.txt" path="./app-cli/src/test/resources/files/OTCBB.txt" layout="tabbed-delimited"/>
-        <TextOutputDevice id="output.txt" path="/tmp/output.txt" layout="json-output"/>
+        <TextOutputDevice id="output.txt" path="/tmp/output_json.txt" layout="json-output"/>
     </devices>
 
     <layouts>

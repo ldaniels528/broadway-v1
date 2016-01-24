@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <etl-config id="eod-companies">
     <flows>
-        <SimpleFlow id="AMEX" input="AMEX.txt" output="output.kafka"/>
-        <SimpleFlow id="NASDAQ" input="NASDAQ.txt" output="output.kafka"/>
-        <SimpleFlow id="NYSE" input="NYSE.txt" output="output.kafka"/>
-        <SimpleFlow id="OTCBB" input="OTCBB.txt" output="output.kafka"/>
+        <BasicFlow id="AMEX" input="AMEX.txt" output="output.kafka"/>
+        <BasicFlow id="NASDAQ" input="NASDAQ.txt" output="output.kafka"/>
+        <BasicFlow id="NYSE" input="NYSE.txt" output="output.kafka"/>
+        <BasicFlow id="OTCBB" input="OTCBB.txt" output="output.kafka"/>
     </flows>
 
     <devices>

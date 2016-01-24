@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <etl-config id="eod-companies">
     <flows>
-        <SimpleFlow id="AMEX->CSV" input="AMEX.txt" output="output.txt"/>
-        <SimpleFlow id="NASDAQ->CSV" input="NASDAQ.txt" output="output.txt"/>
-        <SimpleFlow id="NYSE->CSV" input="NYSE.txt" output="output.txt"/>
-        <SimpleFlow id="OTCBB->CSV" input="OTCBB.txt" output="output.txt"/>
+        <BasicFlow id="AMEX->CSV" input="AMEX.txt" output="output.txt"/>
+        <BasicFlow id="NASDAQ->CSV" input="NASDAQ.txt" output="output.txt"/>
+        <BasicFlow id="NYSE->CSV" input="NYSE.txt" output="output.txt"/>
+        <BasicFlow id="OTCBB->CSV" input="OTCBB.txt" output="output.txt"/>
     </flows>
 
     <devices>

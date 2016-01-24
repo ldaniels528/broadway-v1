@@ -8,6 +8,6 @@ import com.github.ldaniels528.broadway.core.io.device.Device
   */
 class DeviceOffsetOpCode(device: Device) extends OpCode {
 
-  override def eval(rt: RuntimeContext) = Some(device.count)
+  override def eval(rt: RuntimeContext) = Some(device.offset)
 
 }

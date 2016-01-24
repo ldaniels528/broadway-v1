@@ -2,14 +2,14 @@ package com.github.ldaniels528.broadway.core
 
 import java.io.File
 
-import com.github.ldaniels528.broadway.core.XMLConfigParser.SequenceEnrichment
-import com.github.ldaniels528.broadway.core.flow.{Flow, SimpleFlow}
+import com.github.ldaniels528.broadway.core.XMLConfigParser._
+import com.github.ldaniels528.broadway.core.flow.{Flow, BasicFlow}
 import com.github.ldaniels528.broadway.core.io.device._
 import com.github.ldaniels528.broadway.core.io.device.kafka.{KafkaOutputDevice, ZkProxy}
 import com.github.ldaniels528.broadway.core.io.device.nosql.MongoDbOutputDevice
 import com.github.ldaniels528.broadway.core.io.device.text.{TextInputDevice, TextOutputDevice}
 import com.github.ldaniels528.broadway.core.io.layout._
-import com.github.ldaniels528.broadway.core.io.layout.avro.AvroLayout
+import com.github.ldaniels528.broadway.core.io.layout.json.{AvroLayout, MongoDbLayout}
 import com.github.ldaniels528.broadway.core.io.layout.text.TextLayout
 import com.github.ldaniels528.broadway.core.io.layout.text.fields._
 import com.ldaniels528.commons.helpers.OptionHelper._
@@ -54,7 +54,7 @@ class XMLConfigParser(xml: Node) {
       id = deviceNode \@ "id",
       topic = deviceNode \@ "topic",
       zk = ZkProxy(connectionString = deviceNode \@ "connectionString"),
-      layout = lookupOutputLayout(layouts, requiredText(deviceNode \@ "layout")))
+      layout = lookupLayout(layouts, requiredText(deviceNode \@ "layout")).need[AvroLayout]("Incompatible layout"))
   }
 
   private def parseDevices_MongoOutputDevice(deviceNode: Node, layouts: Seq[Layout]) = {
@@ -63,7 +63,7 @@ class XMLConfigParser(xml: Node) {
       serverList = deviceNode \@ "servers",
       database = deviceNode \@ "database",
       collection = deviceNode \@ "collection",
-      layout = lookupOutputLayout(layouts, id = deviceNode \@ "layout"))
+      layout = lookupLayout(layouts, id = deviceNode \@ "layout").need[MongoDbLayout]("Incompatible layout"))
   }
 
   private def parseDevices_MultiOutputDevice(deviceNode: Node, layouts: Seq[Layout]) = {
@@ -84,14 +84,14 @@ class XMLConfigParser(xml: Node) {
     TextInputDevice(
       id = deviceNode \@ "id",
       path = deviceNode \@ "path",
-      layout = lookupInputLayout(layouts, id = deviceNode \@ "layout"))
+      layout = lookupLayout(layouts, id = deviceNode \@ "layout").need[TextLayout]("Incompatible layout"))
   }
 
   private def parseDevices_TextOutputDevice(deviceNode: Node, layouts: Seq[Layout]) = {
     TextOutputDevice(
       id = deviceNode \@ "id",
       path = deviceNode \@ "path",
-      layout = lookupOutputLayout(layouts, id = deviceNode \@ "layout"))
+      layout = lookupLayout(layouts, id = deviceNode \@ "layout").need[TextLayout]("Incompatible layout"))
   }
 
   private def parseFields(rootNode: Node) = {
@@ -129,7 +129,7 @@ class XMLConfigParser(xml: Node) {
     (rootNode \ "flows") flatMap { flowsNode =>
       flowsNode.child.filter(_.label != "#PCDATA") map { node =>
         node.label match {
-          case "SimpleFlow" => parseFlows_SimpleFlow(node, devices)
+          case "BasicFlow" => parseFlows_BasicFlow(node, devices)
           case label =>
             throw new IllegalArgumentException(s"Invalid flow type '$label'")
         }
@@ -137,8 +137,8 @@ class XMLConfigParser(xml: Node) {
     }
   }
 
-  private def parseFlows_SimpleFlow(rootNode: Node, devices: Seq[Device]) = {
-    SimpleFlow(
+  private def parseFlows_BasicFlow(rootNode: Node, devices: Seq[Device]) = {
+    BasicFlow(
       id = rootNode \@ "id",
       input = lookupInputDevice(devices, id = rootNode \@ "input"),
       output = lookupOutputDevice(devices, id = rootNode \@ "output"))
@@ -149,6 +149,7 @@ class XMLConfigParser(xml: Node) {
       layoutsNode.child.filter(_.label != "#PCDATA") map { node =>
         node.label match {
           case "AvroLayout" => parseLayouts_Layout_Avro(node)
+          case "MongoLayout" => parseLayouts_Layout_Mongo(node)
           case "TextLayout" => parseLayouts_Layout_Text(node)
           case label =>
             throw new IllegalArgumentException(s"Invalid layout type '$label'")
@@ -173,16 +174,22 @@ class XMLConfigParser(xml: Node) {
     */
   private def parseLayouts_Layout_Division(rootNode: Node, label: String) = {
     (rootNode \ label).onlyOne(s"Only one $label element is allowed") match {
-      case Some(node) => parseFields(node) map (Division(_))
-      case None => Nil
+      case Some(node) => Some(Division(parseFields(node)))
+      case None => None
     }
+  }
+
+  private def parseLayouts_Layout_Mongo(node: Node) = {
+    MongoDbLayout(
+      id = node \@ "id",
+      fieldSet = parseFields(node).headOption orDie "Exactly one fields element was expected")
   }
 
   private def parseLayouts_Layout_Text(node: Node) = {
     TextLayout(
       id = node \@ "id",
       header = parseLayouts_Layout_Division(node, "header"),
-      body = parseLayouts_Layout_Division(node, "body"),
+      body = parseLayouts_Layout_Division(node, "body") orDie "body properties is required",
       footer = parseLayouts_Layout_Division(node, "footer"))
   }
 
@@ -196,14 +203,8 @@ class XMLConfigParser(xml: Node) {
     }
   }
 
-  private def lookupInputLayout(layouts: Seq[Layout], id: String) = {
-    layouts.find(_.id == id) match {
-      case Some(layout: InputLayout) => layout
-      case Some(layout) =>
-        throw new IllegalStateException(s"Layout '$id' is not an input layout")
-      case None =>
-        throw new IllegalStateException(s"Layout '$id' was not found")
-    }
+  private def lookupLayout(layouts: Seq[Layout], id: String) = {
+    layouts.find(_.id == id) orDie s"Layout '$id' was not found"
   }
 
   private def lookupOutputDevice(devices: Seq[Device], id: String) = {
@@ -213,16 +214,6 @@ class XMLConfigParser(xml: Node) {
         throw new IllegalStateException(s"Device '${device.id}' is not an output device")
       case None =>
         throw new IllegalStateException(s"Device '$id' was not found")
-    }
-  }
-
-  private def lookupOutputLayout(layouts: Seq[Layout], id: String) = {
-    layouts.find(_.id == id) match {
-      case Some(layout: OutputLayout) => layout
-      case Some(layout) =>
-        throw new IllegalStateException(s"Layout '$id' is not an output layout")
-      case None =>
-        throw new IllegalStateException(s"Layout '$id' was not found")
     }
   }
 
@@ -240,6 +231,22 @@ class XMLConfigParser(xml: Node) {
 object XMLConfigParser {
 
   def apply(file: File) = new XMLConfigParser(XML.loadFile(file))
+
+  /**
+    * Type Conversion
+    *
+    * @param entity the given entity
+    * @tparam T the entity type
+    */
+  implicit class TypeConversion[T](val entity: T) extends AnyVal {
+
+    def need[A](message: String): A = entity match {
+      case converted: A => converted
+      case _ =>
+        throw new IllegalArgumentException(message)
+    }
+
+  }
 
   implicit class SequenceEnrichment[T](val values: Seq[T]) extends AnyVal {
 

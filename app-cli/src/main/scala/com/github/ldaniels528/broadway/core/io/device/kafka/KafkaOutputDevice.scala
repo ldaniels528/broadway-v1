@@ -6,11 +6,11 @@ import akka.actor._
 import akka.pattern.ask
 import akka.util.Timeout
 import com.github.ldaniels528.broadway.cli.actors.TaskActorSystem
+import com.github.ldaniels528.broadway.core.RuntimeContext
 import com.github.ldaniels528.broadway.core.io.Data
 import com.github.ldaniels528.broadway.core.io.device.kafka.KafkaOutputDevice.{Die, asyncActor}
-import com.github.ldaniels528.broadway.core.io.device.{OutputDevice, StatisticsGeneration}
-import com.github.ldaniels528.broadway.core.io.layout.OutputLayout
-import com.github.ldaniels528.broadway.core.RuntimeContext
+import com.github.ldaniels528.broadway.core.io.device.{DataWriting, BinaryWriting, OutputDevice, StatisticsGeneration}
+import com.github.ldaniels528.broadway.core.io.layout.json.AvroLayout
 import org.slf4j.LoggerFactory
 
 import scala.collection.concurrent.TrieMap
@@ -23,9 +23,13 @@ import scala.concurrent.duration._
   *
   * @author lawrence.daniels@gmail.com
   */
-case class KafkaOutputDevice(id: String, topic: String, zk: ZkProxy, layout: OutputLayout) extends OutputDevice with StatisticsGeneration {
+case class KafkaOutputDevice(id: String, topic: String, zk: ZkProxy, layout: AvroLayout)
+  extends OutputDevice with BinaryWriting with DataWriting with StatisticsGeneration {
+
   private val logger = LoggerFactory.getLogger(getClass)
   private val publisher = KafkaPublisher(zk)
+
+  var offset = 0L
 
   override def close(rt: RuntimeContext)(implicit ec: ExecutionContext) = {
     implicit val timeout: Timeout = 1.hour
@@ -37,9 +41,18 @@ case class KafkaOutputDevice(id: String, topic: String, zk: ZkProxy, layout: Out
 
   override def open(rt: RuntimeContext): Unit = publisher.open()
 
-  override def write(data: Data): Int = {
+  override def writeBytes(message: Array[Byte]) = {
     val key = ByteBufferUtils.uuidToBytes(UUID.randomUUID())
-    val message = layout.encode(count, data).map(_.getBytes).getOrElse(Array.empty)
+    implicit val timeout: Timeout = 15.seconds
+    (asyncActor ? publisher.publish(topic, key, message)) foreach { _ =>
+      updateCount(1)
+    }
+    updateCount(0)
+  }
+
+  override def write(data: Data) = {
+    val key = ByteBufferUtils.uuidToBytes(UUID.randomUUID())
+    val message = data.asBytes
     implicit val timeout: Timeout = 15.seconds
     (asyncActor ? publisher.publish(topic, key, message)) foreach { _ =>
       updateCount(1)

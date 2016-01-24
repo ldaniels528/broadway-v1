@@ -1,10 +1,11 @@
 package com.github.ldaniels528.broadway.core.io.device.nosql
 
+import com.github.ldaniels528.broadway.core.RuntimeContext
 import com.github.ldaniels528.broadway.core.io.Data
 import com.github.ldaniels528.broadway.core.io.device.nosql.MongoDbOutputDevice._
-import com.github.ldaniels528.broadway.core.io.device.{OutputDevice, StatisticsGeneration}
-import com.github.ldaniels528.broadway.core.io.layout.OutputLayout
-import com.github.ldaniels528.broadway.core.RuntimeContext
+import com.github.ldaniels528.broadway.core.io.device.{DataWriting, OutputDevice, StatisticsGeneration}
+import com.github.ldaniels528.broadway.core.io.layout.json.MongoDbLayout
+import com.github.ldaniels528.broadway.core.io.layout.text.fields.JsonFieldSet
 import com.ldaniels528.commons.helpers.OptionHelper.Risky._
 import com.mongodb.ServerAddress
 import com.mongodb.casbah.Imports._
@@ -18,14 +19,16 @@ import scala.concurrent.{ExecutionContext, Future}
 /**
   * MongoDB Output Device
   */
-case class MongoDbOutputDevice(id: String, serverList: String, database: String, collection: String, layout: OutputLayout)
-  extends OutputDevice with StatisticsGeneration {
+case class MongoDbOutputDevice(id: String, serverList: String, database: String, collection: String, layout: MongoDbLayout)
+  extends OutputDevice with DataWriting with StatisticsGeneration {
 
   private var mongoConn: Option[MongoConnection] = None
   private var mongoDb: Option[MongoDB] = None
   private var mongoColl: Option[MongoCollection] = None
   private val writeConcern: WriteConcern = WriteConcern.JournalSafe
   private val logger = LoggerFactory.getLogger(getClass)
+
+  var offset = 0L
 
   override def open(rt: RuntimeContext) = {
     mongoConn match {
@@ -45,7 +48,7 @@ case class MongoDbOutputDevice(id: String, serverList: String, database: String,
   override def write(data: Data) = {
     (for {
       mc <- mongoColl
-      jsString <- layout.encode(count, data)
+      jsString = JsonFieldSet.toJsonText(layout.fieldSet.fields.map(_.name) zip data.asValues)
     } yield {
       val js = Json.parse(jsString)
       val doc = toDocument(js.asInstanceOf[JsObject])

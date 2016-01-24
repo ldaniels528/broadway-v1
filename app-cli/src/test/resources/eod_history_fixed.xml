@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <etl-config id="eod-history">
     <flows>
-        <SimpleFlow id="EOD->CSV" input="input_file" output="output_file"/>
+        <BasicFlow id="EOD->CSV" input="input_file" output="output_file"/>
     </flows>
 
     <devices>
@@ -16,10 +16,10 @@
                     <field auto-trim="yes">&lt;ticker&gt;</field>
                     <field auto-trim="yes">&lt;date&gt;</field>
                     <field auto-trim="yes">&lt;open&gt;</field>
-                    <field auto-trim="yes">&gt;high&gt;</field>
-                    <field auto-trim="yes">&gt;low&gt;</field>
-                    <field auto-trim="yes">&gt;close&gt;</field>
-                    <field auto-trim="yes">&gt;vol&gt;</field>
+                    <field auto-trim="yes">&lt;high&gt;</field>
+                    <field auto-trim="yes">&lt;low&gt;</field>
+                    <field auto-trim="yes">&lt;close&gt;</field>
+                    <field auto-trim="yes">&lt;vol&gt;</field>
                 </fields>
             </header>
             <body>
@@ -38,13 +38,13 @@
         <TextLayout id="output_layout">
             <header>
                 <fields type="fixed-length">
-                    <field length="10">ticker</field>
+                    <field length="10">symbol</field>
                     <field length="9">date</field>
                     <field length="12">open</field>
                     <field length="12">high</field>
                     <field length="12">low</field>
                     <field length="12">close</field>
-                    <field length="12">vol</field>
+                    <field length="12">volume</field>
                 </fields>
             </header>
             <body>

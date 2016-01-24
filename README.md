@@ -101,7 +101,7 @@ The following is the Broadway narrative that implements the flow described above
 <?xml version="1.0" encoding="UTF-8" ?>
 <EtlConfig id="eod-history">
     <flows>
-        <SimpleFlow id="EOD->CSV" input="input_file" output="output_file"/>
+        <BasicFlow id="EOD->CSV" input="input_file" output="output_file"/>
     </flows>
 
     <devices>
