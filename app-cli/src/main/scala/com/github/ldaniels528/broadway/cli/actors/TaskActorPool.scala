@@ -1,5 +1,7 @@
 package com.github.ldaniels528.broadway.cli.actors
 
+import java.util.concurrent.Callable
+
 import akka.actor.Props
 import akka.pattern.ask
 import akka.routing.RoundRobinPool
@@ -8,6 +10,7 @@ import com.github.ldaniels528.broadway.cli.actors.TaskActor.Die
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
+import scala.reflect.ClassTag
 
 /**
   * Task Actor Pool
@@ -15,7 +18,9 @@ import scala.concurrent.{ExecutionContext, Future}
 class TaskActorPool(concurrency: Int) {
   private val taskActor = TaskActorSystem.system.actorOf(Props[TaskActor].withRouter(RoundRobinPool(nrOfInstances = concurrency)))
 
-  def !(message: Any) = taskActor ! message
+  def !(message: Runnable) = taskActor ! message
+
+  def ?[T](message: Callable[T])(implicit ec: ExecutionContext, timeout: Timeout, tag: ClassTag[T]) = (taskActor ? message).mapTo[T]
 
   def die(maxWait: FiniteDuration)(implicit ec: ExecutionContext) = {
     implicit val timeout: Timeout = maxWait

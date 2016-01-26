@@ -3,15 +3,16 @@ package com.github.ldaniels528.broadway.core
 import java.io.File
 
 import com.github.ldaniels528.broadway.core.XMLConfigParser._
-import com.github.ldaniels528.broadway.core.flow.{BasicFlow, Flow}
 import com.github.ldaniels528.broadway.core.io.device._
 import com.github.ldaniels528.broadway.core.io.device.kafka.{KafkaOutputDevice, ZkProxy}
 import com.github.ldaniels528.broadway.core.io.device.nosql.MongoDbOutputDevice
-import com.github.ldaniels528.broadway.core.io.device.text.{TextInputDevice, TextOutputDevice}
+import com.github.ldaniels528.broadway.core.io.device.text.{TextFileInputDevice, TextFileOutputDevice}
 import com.github.ldaniels528.broadway.core.io.layout._
 import com.github.ldaniels528.broadway.core.io.layout.json.{AvroLayout, MongoDbLayout}
 import com.github.ldaniels528.broadway.core.io.layout.text.TextLayout
 import com.github.ldaniels528.broadway.core.io.layout.text.fields._
+import com.github.ldaniels528.broadway.core.opcode.flow.{BasicFlow, Flow}
+import com.github.ldaniels528.broadway.core.opcode.trigger.{FileFeed, FileTrigger, StartupTrigger}
 import com.ldaniels528.commons.helpers.OptionHelper._
 
 import scala.language.postfixOps
@@ -24,13 +25,7 @@ class XMLConfigParser(xml: Node) {
 
   def parse: Option[ETLConfig] = {
     ((xml \\ "etl-config") map { node =>
-      val layouts = parseLayouts(node)
-      ETLConfig(
-        id = node \@ "id",
-        flows = parseFlows(
-          rootNode = node,
-          devices = parseDevices(node, layouts),
-          layouts = layouts))
+      ETLConfig(id = node \@ "id", triggers = parseTriggers(node))
     }).headOption
   }
 
@@ -42,8 +37,8 @@ class XMLConfigParser(xml: Node) {
           case "MongoOutputDevice" => parseDevices_MongoOutputDevice(node, layouts)
           case "MultiOutputDevice" => parseDevices_MultiOutputDevice(node, layouts)
           case "RoundRobinOutputDevice" => parseDevices_RoundRobinOutputDevice(node, layouts)
-          case "TextInputDevice" => parseDevices_TextInputDevice(node, layouts)
-          case "TextOutputDevice" => parseDevices_TextOutputDevice(node, layouts)
+          case "TextFileInputDevice" => parseDevices_TextInputDevice(node, layouts)
+          case "TextFileOutputDevice" => parseDevices_TextOutputDevice(node, layouts)
           case label =>
             throw new IllegalArgumentException(s"Invalid device type '$label'")
         }
@@ -82,11 +77,11 @@ class XMLConfigParser(xml: Node) {
   }
 
   private def parseDevices_TextInputDevice(deviceNode: Node, layouts: Seq[Layout]) = {
-    TextInputDevice(id = deviceNode \@ "id", path = deviceNode \@ "path")
+    TextFileInputDevice(id = deviceNode \@ "id", path = deviceNode \@ "path")
   }
 
   private def parseDevices_TextOutputDevice(deviceNode: Node, layouts: Seq[Layout]) = {
-    TextOutputDevice(id = deviceNode \@ "id", path = deviceNode \@ "path")
+    TextFileOutputDevice(id = deviceNode \@ "id", path = deviceNode \@ "path")
   }
 
   private def parseFields(rootNode: Node) = {
@@ -146,8 +141,8 @@ class XMLConfigParser(xml: Node) {
       id = rootNode \@ "id",
       input = lookupInputDevice(devices, id = rootNode \@ "input"),
       output = lookupOutputDevice(devices, id = rootNode \@ "output"),
-      inputLayout = lookupLayout(layouts, id = rootNode \@ "input-layout"),
-      outputLayout = lookupLayout(layouts, id = rootNode \@ "output-layout"))
+      inLayout = lookupLayout(layouts, id = rootNode \@ "input-layout"),
+      outLayout = lookupLayout(layouts, id = rootNode \@ "output-layout"))
   }
 
   private def parseLayouts(rootNode: Node): Seq[Layout] = {
@@ -195,8 +190,40 @@ class XMLConfigParser(xml: Node) {
     TextLayout(
       id = node \@ "id",
       header = parseLayouts_Layout_Division(node, "header"),
-      body = parseLayouts_Layout_Division(node, "body") orDie "body properties is required",
+      body = parseLayouts_Layout_Division(node, "body") orDie "The <body> element is required",
       footer = parseLayouts_Layout_Division(node, "footer"))
+  }
+
+  private def parseTriggers(rootNode: Node) = {
+    val layouts = parseLayouts(rootNode)
+    val devices = parseDevices(rootNode, layouts)
+    (rootNode \ "triggers") flatMap { triggerNode =>
+      triggerNode.child.filter(_.label != "#PCDATA") map { node =>
+        node.label match {
+          case "FileTrigger" => parseTriggers_File(node, devices, layouts)
+          case "StartUpTrigger" => parseTriggers_Startup(node, parseFlows(node, devices, layouts))
+          case label =>
+            throw new IllegalArgumentException(s"Invalid trigger type '$label'")
+        }
+      }
+    }
+  }
+
+  private def parseTriggers_File(rootNode: Node, devices: Seq[Device], layouts: Seq[Layout]) = {
+    FileTrigger(
+      id = rootNode \@ "id",
+      path = rootNode \@ "path",
+      feeds = parseTriggers_File_Feed(rootNode, devices, layouts))
+  }
+
+  private def parseTriggers_File_Feed(rootNode: Node, devices: Seq[Device], layouts: Seq[Layout]) = {
+    (rootNode \ "feed") map { feedNode =>
+      FileFeed(name = feedNode \@ "name", matchType = feedNode \@ "match", flows = parseFlows(feedNode, devices, layouts))
+    }
+  }
+
+  private def parseTriggers_Startup(rootNode: Node, flows: Seq[Flow]) = {
+    StartupTrigger(id = rootNode \@ "id", flows)
   }
 
   private def lookupInputDevice(devices: Seq[Device], id: String) = {

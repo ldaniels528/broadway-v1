@@ -1,5 +1,7 @@
 package com.github.ldaniels528.broadway.cli.actors
 
+import java.util.concurrent.Callable
+
 import akka.actor.{Actor, ActorLogging}
 import com.github.ldaniels528.broadway.cli.actors.TaskActor.{Dead, Die}
 
@@ -9,10 +11,18 @@ import com.github.ldaniels528.broadway.cli.actors.TaskActor.{Dead, Die}
 class TaskActor() extends Actor with ActorLogging {
 
   override def receive = {
-    case task: Runnable => task.run()
+    case task: Runnable =>
+      task.run()
+
+    case task: Callable[_] =>
+      val mySender = sender
+      val value = task.call()
+      mySender ! value
+
     case Die =>
       sender ! Dead
       context.stop(self)
+
     case message =>
       log.warning(s"Unhandled message '$message' (${Option(message).map(_.getClass.getName).orNull})")
       unhandled(message)

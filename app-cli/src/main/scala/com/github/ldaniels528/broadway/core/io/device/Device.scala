@@ -1,6 +1,6 @@
 package com.github.ldaniels528.broadway.core.io.device
 
-import com.github.ldaniels528.broadway.core.RuntimeContext
+import com.github.ldaniels528.broadway.core.scope.Scope
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -15,8 +15,8 @@ trait Device {
 
   def count: Long
 
-  def open(rt: RuntimeContext): Unit
+  def open(scope: Scope): Unit
 
-  def close(rt: RuntimeContext)(implicit ec: ExecutionContext): Future[Unit]
+  def close(scope: Scope)(implicit ec: ExecutionContext): Future[Unit]
 
 }

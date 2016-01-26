@@ -1,12 +1,12 @@
 package com.github.ldaniels528.broadway.core.opcode
 
-import com.github.ldaniels528.broadway.core.RuntimeContext
+import com.github.ldaniels528.broadway.core.scope.Scope
 
 /**
   * Represents an executable opCode
   */
-trait OpCode {
+trait OpCode[T] {
 
-  def eval(rt: RuntimeContext): Option[Any]
+  def execute(scope: Scope): T
 
 }

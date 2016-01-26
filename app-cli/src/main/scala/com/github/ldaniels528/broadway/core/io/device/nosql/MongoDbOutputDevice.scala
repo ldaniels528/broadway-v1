@@ -1,10 +1,10 @@
 package com.github.ldaniels528.broadway.core.io.device.nosql
 
-import com.github.ldaniels528.broadway.core.RuntimeContext
 import com.github.ldaniels528.broadway.core.io.Data
 import com.github.ldaniels528.broadway.core.io.device.nosql.MongoDbOutputDevice._
 import com.github.ldaniels528.broadway.core.io.device.{OutputDevice, StatisticsGeneration}
 import com.github.ldaniels528.broadway.core.io.layout.json.MongoDbLayout
+import com.github.ldaniels528.broadway.core.scope.Scope
 import com.ldaniels528.commons.helpers.OptionHelper.Risky._
 import com.mongodb.ServerAddress
 import com.mongodb.casbah.Imports._
@@ -33,7 +33,7 @@ case class MongoDbOutputDevice(id: String,
 
   var offset = 0L
 
-  override def open(rt: RuntimeContext) = {
+  override def open(scope: Scope) = {
     mongoConn match {
       case Some(device) =>
         logger.warn(s"Connection '$id' is already open")
@@ -44,11 +44,11 @@ case class MongoDbOutputDevice(id: String,
     }
   }
 
-  override def close(rt: RuntimeContext)(implicit ec: ExecutionContext) = {
+  override def close(scope: Scope)(implicit ec: ExecutionContext) = {
     Future.successful(mongoConn.foreach(_.close()))
   }
 
-  override def write(data: Data) = {
+  override def write(scope: Scope, data: Data) = {
     (for {
       mc <- mongoColl
     } yield {

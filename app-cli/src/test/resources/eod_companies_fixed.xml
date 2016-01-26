@@ -1,18 +1,23 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <etl-config id="eod-companies">
-    <flows>
-        <BasicFlow id="AMEX" input="AMEX.txt" output="output.txt"/>
-        <BasicFlow id="NASDAQ" input="NASDAQ.txt" output="output.txt"/>
-        <BasicFlow id="NYSE" input="NYSE.txt" output="output.txt"/>
-        <BasicFlow id="OTCBB" input="OTCBB.txt" output="output.txt"/>
-    </flows>
+
+    <triggers>
+        <StartUpTrigger id="Files_Combiner">
+            <flows>
+                <BasicFlow id="AMEX" input="AMEX.txt" output="output.txt" input-layout="tabbed-delimited" output-layout="fixed-length-output"/>
+                <BasicFlow id="NASDAQ" input="NASDAQ.txt" output="output.txt" input-layout="tabbed-delimited" output-layout="fixed-length-output"/>
+                <BasicFlow id="NYSE" input="NYSE.txt" output="output.txt" input-layout="tabbed-delimited" output-layout="fixed-length-output"/>
+                <BasicFlow id="OTCBB" input="OTCBB.txt" output="output.txt" input-layout="tabbed-delimited" output-layout="fixed-length-output"/>
+            </flows>
+        </StartUpTrigger>
+    </triggers>
 
     <devices>
-        <TextInputDevice id="AMEX.txt" path="./app-cli/src/test/resources/files/AMEX.txt" layout="tabbed-delimited"/>
-        <TextInputDevice id="NASDAQ.txt" path="./app-cli/src/test/resources/files/NASDAQ.txt" layout="tabbed-delimited"/>
-        <TextInputDevice id="NYSE.txt" path="./app-cli/src/test/resources/files/NYSE.txt" layout="tabbed-delimited"/>
-        <TextInputDevice id="OTCBB.txt" path="./app-cli/src/test/resources/files/OTCBB.txt" layout="tabbed-delimited"/>
-        <TextOutputDevice id="output.txt" path="/tmp/output.txt" layout="fixed-length-output"/>
+        <TextFileInputDevice id="AMEX.txt" path="./app-cli/src/test/resources/files/AMEX.txt" />
+        <TextFileInputDevice id="NASDAQ.txt" path="./app-cli/src/test/resources/files/NASDAQ.txt" />
+        <TextFileInputDevice id="NYSE.txt" path="./app-cli/src/test/resources/files/NYSE.txt" />
+        <TextFileInputDevice id="OTCBB.txt" path="./app-cli/src/test/resources/files/OTCBB.txt" />
+        <TextFileOutputDevice id="output.txt" path="/tmp/output.txt" />
     </devices>
 
     <layouts>

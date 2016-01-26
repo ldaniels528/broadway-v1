@@ -2,14 +2,14 @@ package com.github.ldaniels528.broadway.core.io.device.kafka
 
 import java.util.UUID
 
-import akka.actor._
+import akka.actor.{Actor, ActorLogging, ActorRef, Props}
 import akka.pattern.ask
 import akka.util.Timeout
 import com.github.ldaniels528.broadway.cli.actors.TaskActorSystem
-import com.github.ldaniels528.broadway.core.RuntimeContext
 import com.github.ldaniels528.broadway.core.io.Data
 import com.github.ldaniels528.broadway.core.io.device.kafka.KafkaOutputDevice.{Die, asyncActor}
 import com.github.ldaniels528.broadway.core.io.device.{OutputDevice, StatisticsGeneration}
+import com.github.ldaniels528.broadway.core.scope.Scope
 import org.slf4j.LoggerFactory
 
 import scala.collection.concurrent.TrieMap
@@ -30,7 +30,7 @@ case class KafkaOutputDevice(id: String, topic: String, zk: ZkProxy)
 
   var offset = 0L
 
-  override def close(rt: RuntimeContext)(implicit ec: ExecutionContext) = {
+  override def close(scope: Scope)(implicit ec: ExecutionContext) = {
     implicit val timeout: Timeout = 1.hour
     (asyncActor ? Die) map { _ =>
       logger.info("Closing Kafka publisher...")
@@ -38,9 +38,9 @@ case class KafkaOutputDevice(id: String, topic: String, zk: ZkProxy)
     }
   }
 
-  override def open(rt: RuntimeContext): Unit = publisher.open()
+  override def open(scope: Scope): Unit = publisher.open()
 
-  override def write(data: Data) = {
+  override def write(scope: Scope, data: Data) = {
     val key = ByteBufferUtils.uuidToBytes(UUID.randomUUID())
     val message = data.asBytes
     implicit val timeout: Timeout = 15.seconds
@@ -82,6 +82,7 @@ object KafkaOutputDevice {
             tasks.remove(task)
           }
         }
+        ()
 
       case Die =>
         dying = true
@@ -94,6 +95,7 @@ object KafkaOutputDevice {
         else {
           context.system.scheduler.scheduleOnce(1.second, mySender, Die)
         }
+        ()
 
       case message =>
         log.warning(s"Unhandled message '$message'")

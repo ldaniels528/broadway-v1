@@ -1,0 +1,27 @@
+<?xml version="1.0" ?>
+<story id="EodData" version="1.0">
+
+    <!-- Narratives -->
+
+    <narrative id="EodDataImportNarrative"
+               class="com.shocktrade.datacenter.narratives.securities.eoddata.EodDataImportNarrative">
+        <properties>
+            <property key="kafka.topic">eoddata.tradinghistory1.avro</property>
+            <property key="kafka.topic.parallelism">5</property>
+            <property key="mongo.database">shocktrade</property>
+            <property key="mongo.replicas">localhost:27017</property>
+            <property key="mongo.collection">Stocks</property>
+            <property key="zookeeper.connect">vault114:2181</property>
+        </properties>
+    </narrative>
+
+    <!-- Location Triggers -->
+
+    <location id="tradingHistory" path="/Users/ldaniels/broadway/incoming/tradingHistory">
+        <feed name="AMEX_(.*)[.]txt" match="regex" narrative-ref="EodDataImportNarrative"/>
+        <feed name="NASDAQ_(.*)[.]txt" match="regex" narrative-ref="EodDataImportNarrative"/>
+        <feed name="NYSE_(.*)[.]txt" match="regex" narrative-ref="EodDataImportNarrative"/>
+        <feed name="OTCBB_(.*)[.]txt" match="regex" narrative-ref="EodDataImportNarrative"/>
+    </location>
+
+</story>

@@ -1,10 +1,14 @@
 package com.github.ldaniels528.broadway.core.io.device
 
+import java.util.concurrent.Callable
+
+import akka.util.Timeout
 import com.github.ldaniels528.broadway.cli.actors.TaskActorPool
-import com.github.ldaniels528.broadway.core.RuntimeContext
 import com.github.ldaniels528.broadway.core.io.Data
+import com.github.ldaniels528.broadway.core.scope.Scope
 import org.slf4j.LoggerFactory
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -18,29 +22,29 @@ case class RoundRobinOutputDevice(id: String, devices: Seq[OutputDevice], concur
   private val taskActorPool = new TaskActorPool(concurrency)
   private var ticker = 0
 
-  override def close(rt: RuntimeContext)(implicit ec: ExecutionContext) = {
+  implicit val timeout: Timeout = 30.seconds
+
+  override def close(scope: Scope)(implicit ec: ExecutionContext) = {
     for {
       _ <- taskActorPool.die(1.hour)
       _ <- {
         logger.info("Closing devices...")
-        Future.sequence(devices.map(_.close(rt)))
+        Future.sequence(devices.map(_.close(scope)))
       }
     } yield ()
   }
 
   override def offset = devices(ticker).offset
 
-  override def open(rt: RuntimeContext) = devices.foreach(_.open(rt))
+  override def open(scope: Scope) = devices.foreach(_.open(scope))
 
-  override def write(data: Data) = {
+  override def write(scope: Scope, data: Data) = {
     ticker += 1
-    taskActorPool ! new Runnable {
-      override def run() {
-        updateCount(devices(ticker % devices.length).write(data))
-        ()
-      }
+    val promise = taskActorPool ? new Callable[Int] {
+      override def call: Int = devices(ticker % devices.length).write(scope, data)
     }
-    1
+    promise foreach updateCount
+    0
   }
 
 }

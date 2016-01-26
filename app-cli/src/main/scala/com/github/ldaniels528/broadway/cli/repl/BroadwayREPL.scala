@@ -3,8 +3,7 @@ package com.github.ldaniels528.broadway.cli.repl
 import java.io.File
 
 import com.github.ldaniels528.broadway.cli.repl.command.{CommandParser, UnixLikeArgs}
-import com.github.ldaniels528.broadway.core.flow.StepThroughFlow
-import com.github.ldaniels528.broadway.core.{ETLConfig, ETLProcessor, RuntimeContext}
+import com.github.ldaniels528.broadway.core.{ETLConfig, ETLProcessor}
 import com.github.ldaniels528.tabular.Tabular
 import org.slf4j.LoggerFactory
 
@@ -23,7 +22,7 @@ object BroadwayREPL {
 
   // variables
   private var etlConfigs = TrieMap[String, ETLConfig]()
-  private var step: Option[StepThroughFlow] = None
+  //private var step: Option[StepThroughFlow] = None
   private var alive = true
 
   /**
@@ -41,7 +40,7 @@ object BroadwayREPL {
       val configs = loadEtlConfigs(args)
       etlConfigs ++= configs
       configs foreach { case (_, config) =>
-        etlProcessor.run(RuntimeContext(config))
+        etlProcessor.run(config)
       }
     } else {
 
@@ -83,7 +82,7 @@ object BroadwayREPL {
 
       // lscfg
       case UnixLikeArgs(Some("lscfg"), paths, _) =>
-        etlConfigs.values map (e => EtlConfigTx(name = e.id, flows = e.flows.size, devices = e.flows.flatMap(_.devices).distinct.size))
+        //etlConfigs.values map (e => EtlConfigTx(name = e.id, flows = e.flows.size, devices = e.flows.flatMap(_.devices).distinct.size))
 
       // run "./app-cli/src/test/resources/eod_history_fixed.xml"
       case UnixLikeArgs(Some("run"), paths, _) =>
@@ -93,10 +92,11 @@ object BroadwayREPL {
 
       // step
       case UnixLikeArgs(Some("step"), paths, _) =>
-        step match {
-          case Some(flow) =>
-          case None => etlConfigs.values.headOption
-        }
+      /*
+      step match {
+        case Some(flow) =>
+        case None => etlConfigs.values.headOption
+      }*/
 
       case _ =>
         throw new IllegalArgumentException(s"Syntax error: $line")
