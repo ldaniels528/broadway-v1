@@ -4,20 +4,20 @@
     <triggers>
         <StartUpTrigger id="Files_Combiner">
             <flows>
-                <BasicFlow id="AMEX" input="AMEX.txt" output="output.txt" input-layout="tabbed-delimited" output-layout="fixed-length-output"/>
-                <BasicFlow id="NASDAQ" input="NASDAQ.txt" output="output.txt" input-layout="tabbed-delimited" output-layout="fixed-length-output"/>
-                <BasicFlow id="NYSE" input="NYSE.txt" output="output.txt" input-layout="tabbed-delimited" output-layout="fixed-length-output"/>
-                <BasicFlow id="OTCBB" input="OTCBB.txt" output="output.txt" input-layout="tabbed-delimited" output-layout="fixed-length-output"/>
+                <BasicFlow id="AMEX" input="AMEX.txt" output="fixed_output" input-layout="tabbed-delimited" output-layout="fixed-length-output"/>
+                <BasicFlow id="NASDAQ" input="NASDAQ.txt" output="fixed_output" input-layout="tabbed-delimited" output-layout="fixed-length-output"/>
+                <BasicFlow id="NYSE" input="NYSE.txt" output="fixed_output" input-layout="tabbed-delimited" output-layout="fixed-length-output"/>
+                <BasicFlow id="OTCBB" input="OTCBB.txt" output="fixed_output" input-layout="tabbed-delimited" output-layout="fixed-length-output"/>
             </flows>
         </StartUpTrigger>
     </triggers>
 
     <devices>
-        <TextFileInputDevice id="AMEX.txt" path="./app-cli/src/test/resources/files/AMEX.txt" />
-        <TextFileInputDevice id="NASDAQ.txt" path="./app-cli/src/test/resources/files/NASDAQ.txt" />
-        <TextFileInputDevice id="NYSE.txt" path="./app-cli/src/test/resources/files/NYSE.txt" />
-        <TextFileInputDevice id="OTCBB.txt" path="./app-cli/src/test/resources/files/OTCBB.txt" />
-        <TextFileOutputDevice id="output.txt" path="/tmp/output.txt" />
+        <TextFileInputSource id="AMEX.txt" path="./app-cli/src/test/resources/files/AMEX.txt" />
+        <TextFileInputSource id="NASDAQ.txt" path="./app-cli/src/test/resources/files/NASDAQ.txt" />
+        <TextFileInputSource id="NYSE.txt" path="./app-cli/src/test/resources/files/NYSE.txt" />
+        <TextFileInputSource id="OTCBB.txt" path="./app-cli/src/test/resources/files/OTCBB.txt" />
+        <TextFileOutputSource id="fixed_output" path="/tmp/eod_companies_fixed.txt" />
     </devices>
 
     <layouts>

@@ -1,7 +1,7 @@
 package com.github.ldaniels528.broadway.core.io.layout
 
 import com.github.ldaniels528.broadway.core.io.Data
-import com.github.ldaniels528.broadway.core.io.device.{InputDevice, OutputDevice}
+import com.github.ldaniels528.broadway.core.io.device.{InputSource, OutputSource}
 import com.github.ldaniels528.broadway.core.scope.Scope
 
 /**
@@ -11,8 +11,8 @@ trait Layout {
 
   def id: String
 
-  def in(scope: Scope, device: InputDevice, data: Option[Data]): Seq[Data]
+  def in(scope: Scope, device: InputSource, data: Option[Data]): Seq[Data]
 
-  def out(scope: Scope, device: OutputDevice, dataSet: Seq[Data], isEOF: Boolean): Seq[Data]
+  def out(scope: Scope, device: OutputSource, dataSet: Seq[Data], isEOF: Boolean): Seq[Data]
 
 }

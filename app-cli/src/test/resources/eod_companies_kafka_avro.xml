@@ -2,25 +2,22 @@
 <etl-config id="eod-companies">
 
     <triggers>
-        <StartUpTrigger flow-ref="AMEX" />
-        <StartUpTrigger flow-ref="NASDAQ" />
-        <StartUpTrigger flow-ref="NYSE" />
-        <StartUpTrigger flow-ref="OTCBB" />
+        <StartUpTrigger id="Files_Combiner">
+            <flows>
+                <BasicFlow id="AMEX" input="AMEX.txt" output="kafka-topic" input-layout="tabbed-delimited" output-layout="avro-schema"/>
+                <BasicFlow id="NASDAQ" input="NASDAQ.txt" output="kafka-topic" input-layout="tabbed-delimited" output-layout="avro-schema"/>
+                <BasicFlow id="NYSE" input="NYSE.txt" output="kafka-topic" input-layout="tabbed-delimited" output-layout="avro-schema"/>
+                <BasicFlow id="OTCBB" input="OTCBB.txt" output="kafka-topic" input-layout="tabbed-delimited" output-layout="avro-schema"/>
+            </flows>
+        </StartUpTrigger>
     </triggers>
 
-    <flows>
-        <BasicFlow id="AMEX" input="AMEX.txt" output="kafka-topic" input-layout="tabbed-delimited" output-layout="avro-schema"/>
-        <BasicFlow id="NASDAQ" input="NASDAQ.txt" output="kafka-topic" input-layout="tabbed-delimited" output-layout="avro-schema"/>
-        <BasicFlow id="NYSE" input="NYSE.txt" output="kafka-topic" input-layout="tabbed-delimited" output-layout="avro-schema"/>
-        <BasicFlow id="OTCBB" input="OTCBB.txt" output="kafka-topic" input-layout="tabbed-delimited" output-layout="avro-schema"/>
-    </flows>
-
     <devices>
-        <TextFileInputDevice id="AMEX.txt" path="./app-cli/src/test/resources/files/AMEX.txt" />
-        <TextFileInputDevice id="NASDAQ.txt" path="./app-cli/src/test/resources/files/NASDAQ.txt" />
-        <TextFileInputDevice id="NYSE.txt" path="./app-cli/src/test/resources/files/NYSE.txt" />
-        <TextFileInputDevice id="OTCBB.txt" path="./app-cli/src/test/resources/files/OTCBB.txt" />
-        <KafkaOutputDevice id="kafka-topic" topic="shocktrade.companies.avro" connectionString="vault114:2181" />
+        <TextFileInputSource id="AMEX.txt" path="./app-cli/src/test/resources/files/AMEX.txt" />
+        <TextFileInputSource id="NASDAQ.txt" path="./app-cli/src/test/resources/files/NASDAQ.txt" />
+        <TextFileInputSource id="NYSE.txt" path="./app-cli/src/test/resources/files/NYSE.txt" />
+        <TextFileInputSource id="OTCBB.txt" path="./app-cli/src/test/resources/files/OTCBB.txt" />
+        <KafkaOutputSource id="kafka-topic" topic="shocktrade.companies.avro" connectionString="vault114:2181" />
     </devices>
 
     <layouts>

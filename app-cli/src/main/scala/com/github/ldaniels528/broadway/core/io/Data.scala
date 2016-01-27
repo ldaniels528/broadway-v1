@@ -22,7 +22,7 @@ trait Data {
   *
   * @param bytes the given byte array
   */
-case class ByteData(fieldSet: FieldSet, bytes: Array[Byte]) extends Data
+case class ByteArrayData(fieldSet: FieldSet, bytes: Array[Byte]) extends Data
 
 /**
   * Represents collection of data
@@ -39,6 +39,14 @@ case class ArrayData(fieldSet: FieldSet, values: Seq[String]) extends Data
 case class JsonData(fieldSet: FieldSet, js: JsValue) extends Data
 
 /**
+  * Represents Kafka message data
+  *
+  * @param key     the given binary key
+  * @param message the given binary message
+  */
+case class KafkaMessageData(fieldSet: FieldSet, key: Array[Byte], message: Array[Byte]) extends Data
+
+/**
   * Represents text data
   *
   * @param value the given string value
@@ -52,7 +60,9 @@ case class TextData(fieldSet: FieldSet, value: String) extends Data
   */
 object Data {
 
-  def apply(fieldSet: FieldSet, bytes: Array[Byte]): Data = ByteData(fieldSet, bytes)
+  def apply(fieldSet: FieldSet, bytes: Array[Byte]): Data = ByteArrayData(fieldSet, bytes)
+
+  def apply(fieldSet: FieldSet, key: Array[Byte], message: Array[Byte]): Data = KafkaMessageData(fieldSet, key, message)
 
   def apply(fieldSet: FieldSet, js: JsValue): Data = JsonData(fieldSet, js)
 
@@ -69,7 +79,7 @@ object Data {
 
     def asAvroBytes(schema: Schema) = data match {
       case ad@ArrayData(fields, values) => transcodeJsonToAvroBytes(ad.asJson.toString(), schema)
-      case ByteData(_, bytes) => transcodeJsonToAvroBytes(new String(bytes), schema)
+      case ByteArrayData(_, bytes) => transcodeJsonToAvroBytes(new String(bytes), schema)
       case JsonData(_, js) => transcodeJsonToAvroBytes(js.toString(), schema)
       case TextData(_, s) => transcodeJsonToAvroBytes(s, schema)
       case _ =>
@@ -78,7 +88,7 @@ object Data {
 
     def asBytes: Array[Byte] = data match {
       case ArrayData(_, values) => values.mkString.getBytes
-      case ByteData(_, bytes) => bytes
+      case ByteArrayData(_, bytes) => bytes
       case JsonData(_, js) => js.toString().getBytes
       case TextData(_, value) => value.getBytes
       case _ =>
@@ -86,7 +96,7 @@ object Data {
     }
 
     def asJson = data match {
-      case ByteData(_, bytes) => Json.parse(new String(bytes))
+      case ByteArrayData(_, bytes) => Json.parse(new String(bytes))
       case JsonData(_, js) => js
       case TextData(_, value) => Json.parse(value)
       case _ =>
@@ -96,7 +106,7 @@ object Data {
 
     def asText: String = data match {
       case ArrayData(_, values) => values.mkString
-      case ByteData(_, bytes) => new String(bytes)
+      case ByteArrayData(_, bytes) => new String(bytes)
       case JsonData(_, js) => js.toString()
       case TextData(_, value) => value
       case _ =>
@@ -107,7 +117,7 @@ object Data {
 
     def asValues: Seq[String] = data match {
       case ArrayData(_, values) => values
-      case ByteData(_, bytes) => Source.fromBytes(bytes).getLines().toSeq
+      case ByteArrayData(_, bytes) => Source.fromBytes(bytes).getLines().toSeq
       case JsonData(_, js) => Source.fromString(js.toString()).getLines().toSeq
       case TextData(_, value) => Source.fromString(value).getLines().toSeq
       case _ =>

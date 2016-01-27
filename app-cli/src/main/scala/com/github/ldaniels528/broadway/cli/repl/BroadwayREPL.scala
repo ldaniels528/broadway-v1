@@ -3,11 +3,12 @@ package com.github.ldaniels528.broadway.cli.repl
 import java.io.File
 
 import com.github.ldaniels528.broadway.cli.repl.command.{CommandParser, UnixLikeArgs}
-import com.github.ldaniels528.broadway.core.{ETLConfig, ETLProcessor}
+import com.github.ldaniels528.broadway.core.{StoryConfig, StoryProcessor}
 import com.github.ldaniels528.tabular.Tabular
 import org.slf4j.LoggerFactory
 
 import scala.collection.concurrent.TrieMap
+import scala.concurrent.ExecutionContext.Implicits.global
 
 /**
   * Broadway ETL REPL
@@ -18,10 +19,10 @@ object BroadwayREPL {
   private val out = System.out
   private val err = System.err
   private val tabular = new Tabular()
-  private val etlProcessor = new ETLProcessor()
+  private val etlProcessor = new StoryProcessor()
 
   // variables
-  private var etlConfigs = TrieMap[String, ETLConfig]()
+  private var etlConfigs = TrieMap[String, StoryConfig]()
   //private var step: Option[StepThroughFlow] = None
   private var alive = true
 
@@ -82,7 +83,7 @@ object BroadwayREPL {
 
       // lscfg
       case UnixLikeArgs(Some("lscfg"), paths, _) =>
-        //etlConfigs.values map (e => EtlConfigTx(name = e.id, flows = e.flows.size, devices = e.flows.flatMap(_.devices).distinct.size))
+      //etlConfigs.values map (e => EtlConfigTx(name = e.id, flows = e.flows.size, devices = e.flows.flatMap(_.devices).distinct.size))
 
       // run "./app-cli/src/test/resources/eod_history_fixed.xml"
       case UnixLikeArgs(Some("run"), paths, _) =>

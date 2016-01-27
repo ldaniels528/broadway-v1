@@ -1,39 +1,41 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<etl-config id="eod-history">
+<etl-config id="eod-history-fixed">
+
+    <archives>
+        <Archive id="DataStore" base="/Users/ldaniels/broadway/archive" compression="gzip" />
+    </archives>
 
     <triggers>
-        <FileTrigger id="TradingHistory" path="/Users/ldaniels/broadway/incoming/tradingHistory">
+        <FileTrigger id="TradingHistory" path="/Users/ldaniels/broadway/incoming/tradingHistory" archive="DataStore">
             <feed name="AMEX_(.*)[.]txt" match="regex">
                 <flows>
-                    <BasicFlow id="EOD->CSV" input="input_file" input-layout="input_layout" output="mongodb" output-layout="mongo_output"/>
+                    <BasicFlow id="EOD_to_Fixed" input="input_file" input-layout="input_layout" output="output_file" output-layout="output_layout"/>
                 </flows>
             </feed>
             <feed name="NASDAQ_(.*)[.]txt" match="regex">
                 <flows>
-                    <BasicFlow id="EOD->CSV" input="input_file" input-layout="input_layout" output="mongodb" output-layout="mongo_output"/>
+                    <BasicFlow id="EOD_to_Fixed" input="input_file" input-layout="input_layout" output="output_file" output-layout="output_layout"/>
                 </flows>
-             </feed>       
+             </feed>
             <feed name="NYSE_(.*)[.]txt" match="regex">
                 <flows>
-                    <BasicFlow id="EOD->CSV" input="input_file" input-layout="input_layout" output="mongodb" output-layout="mongo_output"/>
+                    <BasicFlow id="EOD_to_Fixed" input="input_file" input-layout="input_layout" output="output_file" output-layout="output_layout"/>
                 </flows>
-            </feed>        
+            </feed>
             <feed name="OTCBB_(.*)[.]txt" match="regex">
                 <flows>
-                    <BasicFlow id="EOD->CSV" input="input_file" input-layout="input_layout" output="mongodb" output-layout="mongo_output"/>
+                    <BasicFlow id="EOD_to_Fixed" input="input_file" input-layout="input_layout" output="output_file" output-layout="output_layout"/>
                 </flows>
-            </feed>        
+            </feed>
+            <!--
+            <ignore name=".DS_Store" match="exact" />
+            -->
         </FileTrigger>
     </triggers>
 
     <devices>
-        <TextFileInputDevice id="input_file" path="{{ TradingHistory.path }}" />
-
-        <RoundRobinOutputDevice id="mongodb" concurrency="10">
-            <devices>
-                <MongoOutputDevice id="mongo1" servers="localhost" database="shocktrade" collection="test_history" layout="mongo_output"/>
-            </devices>
-        </RoundRobinOutputDevice>
+        <TextFileInputSource id="input_file" path="{{ flow.input.path }}" />
+        <TextFileOutputSource id="output_file" path="/tmp/fixed_{{ flow.input.filename }}" />
     </devices>
 
     <layouts>
@@ -62,16 +64,39 @@
             </body>
         </TextLayout>
 
-        <MongoLayout id="mongo_output">
-            <fields type="json">
-                <field auto-trim="yes">ticker</field>
-                <field auto-trim="yes">date</field>
-                <field auto-trim="yes">open</field>
-                <field auto-trim="yes">high</field>
-                <field auto-trim="yes">low</field>
-                <field auto-trim="yes">close</field>
-                <field auto-trim="yes">vol</field>
-            </fields>
-        </MongoLayout>
+        <TextLayout id="output_layout">
+            <header>
+                <fields type="fixed-length">
+                    <field length="10">symbol</field>
+                    <field length="9">date</field>
+                    <field length="12">open</field>
+                    <field length="12">high</field>
+                    <field length="12">low</field>
+                    <field length="12">close</field>
+                    <field length="12">volume</field>
+                </fields>
+            </header>
+            <body>
+                <fields type="fixed-length">
+                    <field length="10">ticker</field>
+                    <field length="9">date</field>
+                    <field length="12">open</field>
+                    <field length="12">high</field>
+                    <field length="12">low</field>
+                    <field length="12">close</field>
+                    <field length="12">vol</field>
+                </fields>
+            </body>
+            <footer>
+                <fields type="fixed-length">
+                    <field length="30">{{ flow.input.filename }}</field>
+                    <field length="10">{{ flow.input.count }}</field>
+                </fields>
+                <fields type="fixed-length">
+                    <field length="30">{{ flow.output.filename }}</field>
+                    <field length="10">{{ flow.output.count }}</field>
+                </fields>
+            </footer>
+        </TextLayout>
     </layouts>
 </etl-config>

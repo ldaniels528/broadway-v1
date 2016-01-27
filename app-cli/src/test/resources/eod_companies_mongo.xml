@@ -2,28 +2,25 @@
 <etl-config id="eod-companies">
 
     <triggers>
-        <StartUpTrigger flow-ref="AMEX" />
-        <StartUpTrigger flow-ref="NASDAQ" />
-        <StartUpTrigger flow-ref="NYSE" />
-        <StartUpTrigger flow-ref="OTCBB" />
+        <StartUpTrigger id="Files_Combiner">
+            <flows>
+                <BasicFlow id="AMEX" input="AMEX.txt" output="output.txt" input-layout="tabbed-delimited" output-layout="mongo-output"/>
+                <BasicFlow id="NASDAQ" input="NASDAQ.txt" output="output.txt" input-layout="tabbed-delimited" output-layout="mongo-output"/>
+                <BasicFlow id="NYSE" input="NYSE.txt" output="output.txt" input-layout="tabbed-delimited" output-layout="mongo-output"/>
+                <BasicFlow id="OTCBB" input="OTCBB.txt" output="output.txt" input-layout="tabbed-delimited" output-layout="mongo-output"/>
+            </flows>
+        </StartUpTrigger>
     </triggers>
 
-    <flows>
-        <BasicFlow id="AMEX" input="AMEX.txt" output="mongodb" input-layout="tabbed-delimited" output-layout="mongo-output"/>
-        <BasicFlow id="NASDAQ" input="NASDAQ.txt" output="mongodb" input-layout="tabbed-delimited" output-layout="mongo-output"/>
-        <BasicFlow id="NYSE" input="NYSE.txt" output="mongodb" input-layout="tabbed-delimited" output-layout="mongo-output"/>
-        <BasicFlow id="OTCBB" input="OTCBB.txt" output="mongodb" input-layout="tabbed-delimited" output-layout="mongo-output"/>
-    </flows>
-
     <devices>
-        <TextFileInputDevice id="AMEX.txt" path="./app-cli/src/test/resources/files/AMEX.txt"/>
-        <TextFileInputDevice id="NASDAQ.txt" path="./app-cli/src/test/resources/files/NASDAQ.txt"/>
-        <TextFileInputDevice id="NYSE.txt" path="./app-cli/src/test/resources/files/NYSE.txt"/>
-        <TextFileInputDevice id="OTCBB.txt" path="./app-cli/src/test/resources/files/OTCBB.txt"/>
+        <TextFileInputSource id="AMEX.txt" path="./app-cli/src/test/resources/files/AMEX.txt"/>
+        <TextFileInputSource id="NASDAQ.txt" path="./app-cli/src/test/resources/files/NASDAQ.txt"/>
+        <TextFileInputSource id="NYSE.txt" path="./app-cli/src/test/resources/files/NYSE.txt"/>
+        <TextFileInputSource id="OTCBB.txt" path="./app-cli/src/test/resources/files/OTCBB.txt"/>
 
         <RoundRobinOutputDevice id="mongodb" concurrency="10">
             <devices>
-                <MongoOutputDevice id="mongo1" servers="localhost" database="shocktrade" collection="test_companies" layout="mongo-output"/>
+                <MongoOutputSource id="mongo1" servers="localhost" database="shocktrade" collection="test_companies" layout="mongo-output"/>
             </devices>
         </RoundRobinOutputDevice>
     </devices>

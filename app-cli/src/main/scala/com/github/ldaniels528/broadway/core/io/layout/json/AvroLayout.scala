@@ -3,7 +3,7 @@ package com.github.ldaniels528.broadway.core.io.layout.json
 import java.io.File
 
 import com.github.ldaniels528.broadway.core.io._
-import com.github.ldaniels528.broadway.core.io.device.{InputDevice, OutputDevice}
+import com.github.ldaniels528.broadway.core.io.device.{InputSource, OutputSource}
 import com.github.ldaniels528.broadway.core.io.layout._
 import com.github.ldaniels528.broadway.core.io.layout.json.AvroConversion._
 import com.github.ldaniels528.broadway.core.scope.Scope
@@ -18,14 +18,14 @@ import scala.language.postfixOps
 case class AvroLayout(id: String, fieldSet: FieldSet, schemaString: String) extends Layout {
   private val schema = new Schema.Parser().parse(schemaString)
 
-  override def in(scope: Scope, device: InputDevice, data: Option[Data]) = {
+  override def in(scope: Scope, device: InputSource, data: Option[Data]) = {
     data match {
       case Some(theData) => Seq(Data(fieldSet, transcodeAvroBytesToAvroJson(schema, theData.asBytes)))
       case None => Nil
     }
   }
 
-  override def out(scope: Scope, device: OutputDevice, dataSet: Seq[Data], isEOF: Boolean) = {
+  override def out(scope: Scope, device: OutputSource, dataSet: Seq[Data], isEOF: Boolean) = {
     dataSet map (_.asAvroBytes(schema)) map (Data(fieldSet, _))
   }
 

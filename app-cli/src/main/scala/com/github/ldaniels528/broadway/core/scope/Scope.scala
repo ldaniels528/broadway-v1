@@ -1,26 +1,33 @@
 package com.github.ldaniels528.broadway.core.scope
 
-import com.github.ldaniels528.broadway.core.ETLCompiler
-import com.github.ldaniels528.broadway.core.scope.Scope.ScopeFunction
+import com.github.ldaniels528.broadway.core.compiler.ExpressionCompiler
 
 /**
   * Represents a runtime scope
   */
 trait Scope {
 
-  def add(name: String, value: Any): Unit
+  def +=(tuple: (String, Any)): Unit
 
-  def find(name: String, property: String): Option[ScopeFunction]
+  def ++=(values: Seq[(String, Any)]): Unit
 
-  def evaluate(expression: String) = ETLCompiler.handlebars(this, expression)
+  def evaluate(expression: String) = ExpressionCompiler.handlebars(this, expression)
 
-  def getReader[T]: T
+  def find(name: String): Option[Any]
 
-  def getWriter[T]: T
+  def getOrElseUpdate[T](key: String, value: => T): T
 
-  def openReader[T](action: => T): T
+  def putIfAbsent(values: Seq[(String, Any)]): Unit
 
-  def openWriter[T](action: => T): T
+  ///////////////////////////////////////////////////////////////////////
+  //    Resource-specific Methods
+  ///////////////////////////////////////////////////////////////////////
+
+  def createResource[T](id: String, action: => T): T
+
+  def discardResource[T](id: String): Option[T]
+
+  def getResource[T](id: String): Option[T]
 
 }
 
@@ -29,6 +36,6 @@ trait Scope {
   */
 object Scope {
 
-  type ScopeFunction = Scope => Any
+  type DynamicValue = () => Any
 
 }
