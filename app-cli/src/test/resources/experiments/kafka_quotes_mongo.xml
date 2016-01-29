@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<story id="kafka-companies-to-mongo">
+
+    <triggers>
+        <MessageTrigger id="kafka-companies-to-mongo">
+            <ConsumerFlow id="test" input-source="companies_avro" output-source="mongo_db" />
+        </MessageTrigger>
+    </triggers>
+
+    <data-sources>
+        <KafkaInputSource id="companies_avro" topic="com.shocktrade.companies.avro" parallelism="10" connectionString="vault114:2181" layout="avro" />
+        <MongoOutputSource id="mongo_db" servers="localhost" database="shocktrade" collection="test_history" layout="mongo_doc" />
+    </data-sources>
+
+    <layouts>
+        <!--
+            {
+                "type": "record",
+                "name": "EodCompanyInfo",
+                "namespace": "com.shocktrade.avro",
+                "record":[
+                    { "name": "symbol", "type":"string", "doc":"stock symbol" },
+                    { "name": "description", "type":"string", "doc":"company description" }
+                ],
+                "doc": "A schema for EodData companies"
+            }
+        -->
+        <AvroLayout id="avro">
+            <record name="EodCompanyInfo" namespace="com.shocktrade.avro" doc="A schema for EodData companies">
+                <field name="symbol" type="string" doc="stock symbol" />
+                <field name="description" type="string" doc="company description" />
+            </record>
+        </AvroLayout>
+
+        <JsonLayout id="mongo_doc">
+            <field name="symbol" type="string"/>
+            <field name="description" type="string"/>
+        </JsonLayout>
+    </layouts>
+</story>

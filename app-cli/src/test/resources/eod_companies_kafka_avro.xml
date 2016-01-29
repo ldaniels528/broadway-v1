@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<etl-config id="eod-companies">
+<story id="eod-companies">
 
     <triggers>
         <StartUpTrigger id="Files_Combiner">
@@ -12,41 +12,41 @@
         </StartUpTrigger>
     </triggers>
 
-    <devices>
+    <data-sources>
         <TextFileInputSource id="AMEX.txt" path="./app-cli/src/test/resources/files/AMEX.txt" />
         <TextFileInputSource id="NASDAQ.txt" path="./app-cli/src/test/resources/files/NASDAQ.txt" />
         <TextFileInputSource id="NYSE.txt" path="./app-cli/src/test/resources/files/NYSE.txt" />
         <TextFileInputSource id="OTCBB.txt" path="./app-cli/src/test/resources/files/OTCBB.txt" />
         <KafkaOutputSource id="kafka-topic" topic="shocktrade.companies.avro" connectionString="vault114:2181" />
-    </devices>
+    </data-sources>
 
     <layouts>
         <TextLayout id="tabbed-delimited">
             <header>
-                <fields type="delimited" delimiter="\t">
+                <record type="delimited" delimiter="\t">
                     <field auto-trim="yes">label1</field>
                     <field auto-trim="yes">label2</field>
-                </fields>
+                </record>
             </header>
             <body>
-                <fields type="delimited" delimiter="\t">
+                <record type="delimited" delimiter="\t">
                     <field auto-trim="yes">symbol</field>
                     <field auto-trim="yes">description</field>
-                </fields>
+                </record>
             </body>
         </TextLayout>
 
         <AvroLayout id="avro-schema">
-            <fields type="json">
+            <record type="json">
                 <field auto-trim="yes">symbol</field>
                 <field auto-trim="yes">description</field>
-            </fields>
+            </record>
             <schema>
             {
                 "type": "record",
                 "name": "EodCompanyInfo",
                 "namespace": "com.shocktrade.avro",
-                "fields":[
+                "record":[
                     { "name": "symbol", "type":"string", "doc":"stock symbol" },
                     { "name": "description", "type":"string", "doc":"company description" }
                 ],
@@ -55,4 +55,4 @@
             </schema>
         </AvroLayout>
     </layouts>
-</etl-config>
+</story>

@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<story id="eod-history-fixed">
+
+    <properties>
+        <property name="incoming" value="/Users/ldaniels/broadway/incoming" />
+    </properties>
+
+    <archives>
+        <FileArchive id="amex_data_store" path="/Users/ldaniels/broadway/archive/amex" compression="gzip"/>
+        <FileArchive id="nasdaq_data_store" path="/Users/ldaniels/broadway/archive/nasdaq" compression="gzip"/>
+        <FileArchive id="nyse_data_store" path="/Users/ldaniels/broadway/archive/nyse" compression="gzip"/>
+        <FileArchive id="otc_data_store" path="/Users/ldaniels/broadway/archive/otc" compression="gzip"/>
+    </archives>
+
+    <triggers>
+        <FileMonitor id="Repo1">
+            <files path="{{ incoming }}/tradingHistory">
+                <feed pattern="AMEX_(.*)[.]txt" archive="amex_data_store">
+                    <BasicFlow input-source="input_file" output-source="mongo_db" />
+                </feed>
+                <feed pattern="NASDAQ_(.*)[.]txt" archive="nasdaq_data_store">
+                    <BasicFlow input-source="input_file" output-source="mongo_db" />
+                </feed>
+                <feed pattern="NYSE_(.*)[.]txt" archive="nyse_data_store">
+                    <BasicFlow input-source="input_file" output-source="mongo_db" />
+                </feed>
+                <feed pattern="OTCBB_(.*)[.]txt" archive="otc_data_store">
+                    <BasicFlow input-source="input_file" output-source="mongo_db" />
+                </feed>
+            </files>
+        </FileMonitor>
+    </triggers>
+
+    <data-sources>
+        <TextFileInputSource id="input_file" path="{{ flow.input.path }}" layout="input_text" />
+        <MongoOutputSource id="mongo_db" servers="localhost" database="shocktrade" collection="test_history" layout="mongo_doc"/>
+    </data-sources>
+
+    <layouts>
+        <TextLayout id="input_text">
+            <header validate="true">
+                <record format="csv">
+                    <field name="ticker" value="<ticker>" />
+                    <field name="date" value="<date>"/>
+                    <field name="open" value="<open>"/>
+                    <field name="high" value="<high>"/>
+                    <field name="low" value="<low>"/>
+                    <field name="close" value="<close>"/>
+                    <field name="vol" value="<vol>"/>
+                </record>
+            </header>
+            <body>
+                <record format="csv">
+                    <field name="ticker" type="string"/>
+                    <field name="date" type="string"/>
+                    <field name="open" type="string"/>
+                    <field name="high" type="string"/>
+                    <field name="low" type="string"/>
+                    <field name="close" type="string"/>
+                    <field name="vol" type="string"/>
+                </record>
+            </body>
+        </TextLayout>
+
+        <JsonLayout id="mongo_doc">
+            <field name="ticker" type="string"/>
+            <field name="date" type="date"/>
+            <field name="open" type="double"/>
+            <field name="high" type="double"/>
+            <field name="low" type="double"/>
+            <field name="close" type="double"/>
+            <field name="vol" type="long"/>
+        </JsonLayout>
+    </layouts>
+
+</story>

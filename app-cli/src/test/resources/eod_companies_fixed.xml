@@ -1,54 +1,54 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<etl-config id="eod-companies">
+<story id="eod-companies">
 
     <triggers>
         <StartUpTrigger id="Files_Combiner">
-            <flows>
-                <BasicFlow id="AMEX" input="AMEX.txt" output="fixed_output" input-layout="tabbed-delimited" output-layout="fixed-length-output"/>
-                <BasicFlow id="NASDAQ" input="NASDAQ.txt" output="fixed_output" input-layout="tabbed-delimited" output-layout="fixed-length-output"/>
-                <BasicFlow id="NYSE" input="NYSE.txt" output="fixed_output" input-layout="tabbed-delimited" output-layout="fixed-length-output"/>
-                <BasicFlow id="OTCBB" input="OTCBB.txt" output="fixed_output" input-layout="tabbed-delimited" output-layout="fixed-length-output"/>
-            </flows>
+            <CompositionFlow id="combiner" output-source="output.txt">
+                <include input-source="AMEX.txt" />
+                <include input-source="NASDAQ.txt" />
+                <include input-source="NYSE.txt" />
+                <include input-source="OTCBB.txt" />
+            </CompositionFlow>
         </StartUpTrigger>
     </triggers>
 
-    <devices>
-        <TextFileInputSource id="AMEX.txt" path="./app-cli/src/test/resources/files/AMEX.txt" />
-        <TextFileInputSource id="NASDAQ.txt" path="./app-cli/src/test/resources/files/NASDAQ.txt" />
-        <TextFileInputSource id="NYSE.txt" path="./app-cli/src/test/resources/files/NYSE.txt" />
-        <TextFileInputSource id="OTCBB.txt" path="./app-cli/src/test/resources/files/OTCBB.txt" />
-        <TextFileOutputSource id="fixed_output" path="/tmp/eod_companies_fixed.txt" />
-    </devices>
+    <data-sources>
+        <TextFileInputSource id="AMEX.txt" path="./app-cli/src/test/resources/files/AMEX.txt" layout="tabbed-delimited" />
+        <TextFileInputSource id="NASDAQ.txt" path="./app-cli/src/test/resources/files/NASDAQ.txt" layout="tabbed-delimited" />
+        <TextFileInputSource id="NYSE.txt" path="./app-cli/src/test/resources/files/NYSE.txt" layout="tabbed-delimited" />
+        <TextFileInputSource id="OTCBB.txt" path="./app-cli/src/test/resources/files/OTCBB.txt" layout="tabbed-delimited" />
+        <TextFileOutputSource id="output.txt" path="/tmp/eod_companies_fixed.txt" layout="fixed-length-output" />
+    </data-sources>
 
     <layouts>
         <TextLayout id="tabbed-delimited">
             <header>
-                <fields type="delimited" delimiter="\t">
-                    <field auto-trim="yes">Symbol</field>
-                    <field auto-trim="yes">Description</field>
-                </fields>
+                <record type="delimited" delimiter="\t">
+                    <field name="symbol" value="Symbol" type="string"/>
+                    <field name="description" value="Description" type="string"/>
+                </record>
             </header>
             <body>
-                <fields type="delimited" delimiter="\t">
-                    <field auto-trim="yes">symbol</field>
-                    <field auto-trim="yes">description</field>
-                </fields>
+                <record type="delimited" delimiter="\t">
+                    <field name="symbol" type="string"/>
+                    <field name="description" type="string"/>
+                </record>
             </body>
         </TextLayout>
 
         <TextLayout id="fixed-length-output">
             <header>
-                <fields type="delimited" delimiter="\t">
-                    <field auto-trim="yes">Ticker</field>
-                    <field auto-trim="yes">Description</field>
-                </fields>
+                <record type="fixed-length">
+                    <field name="symbol" value="Symbol" type="string" length="10" />
+                    <field name="description" value="Description" type="string" length="40"/>
+                </record>
             </header>
             <body>
-                <fields type="fixed-length">
-                    <field length="10">Symbol</field>
-                    <field length="40">Description</field>
-                </fields>
+                <record type="fixed-length">
+                    <field name="symbol" type="string" length="10"/>
+                    <field name="description" type="string" length="40"/>
+                </record>
             </body>
         </TextLayout>
     </layouts>
-</etl-config>
+</story>

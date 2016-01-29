@@ -1,7 +1,7 @@
 package com.github.ldaniels528.broadway.core.io.trigger
 
 import com.github.ldaniels528.broadway.core.StoryConfig
-import com.github.ldaniels528.broadway.core.io.KafkaMessageData
+import com.github.ldaniels528.broadway.core.io.Data
 import com.github.ldaniels528.broadway.core.io.device.OutputSource
 import com.github.ldaniels528.broadway.core.io.layout.text.fields.JsonFieldSet
 import com.github.ldaniels528.broadway.core.io.layout.{Field, Layout}
@@ -32,11 +32,11 @@ case class KafkaTrigger(id: String,
       stream <- streams
     } {
       Future {
-        val scope = GlobalScope()
+        implicit val scope = GlobalScope()
         val it = stream.iterator()
         while (it.hasNext()) {
           val mam = it.next()
-          val dataSet = Seq(KafkaMessageData(fieldSet, mam.key(), mam.message()))
+          val dataSet = Seq(Data(fieldSet, mam.message()))
           layout.out(scope, output, dataSet, isEOF = false) foreach { outdata =>
             output.write(scope, outdata)
           }

@@ -1,33 +1,26 @@
 package com.github.ldaniels528.broadway.core.io.device.nosql
 
+import java.util.UUID
+
 import com.github.ldaniels528.broadway.core.io.Data
 import com.github.ldaniels528.broadway.core.io.device.OutputSource
 import com.github.ldaniels528.broadway.core.io.device.nosql.MongoDbOutputSource._
-import com.github.ldaniels528.broadway.core.io.layout.json.MongoDbLayout
+import com.github.ldaniels528.broadway.core.io.layout.json.JsonLayout
 import com.github.ldaniels528.broadway.core.scope.Scope
-import com.ldaniels528.commons.helpers.OptionHelper.Risky._
 import com.mongodb.ServerAddress
 import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.MongoCollection
 import com.mongodb.casbah.commons.conversions.scala.RegisterJodaTimeConversionHelpers
-import org.slf4j.LoggerFactory
 import play.api.libs.json.{JsBoolean, _}
 
 /**
   * MongoDB Output Source
   */
-case class MongoDbOutputSource(id: String,
-                               serverList: String,
-                               database: String,
-                               collection: String,
-                               layout: MongoDbLayout)
+case class MongoDbOutputSource(id: String, serverList: String, database: String, collection: String, writeConcern: WriteConcern, layout: JsonLayout)
   extends OutputSource {
 
-  private var mongoConn: Option[MongoConnection] = None
-  private var mongoDb: Option[MongoDB] = None
-  private var mongoColl: Option[MongoCollection] = None
-  private val writeConcern: WriteConcern = WriteConcern.JournalSafe
-  private val logger = LoggerFactory.getLogger(getClass)
+  private val connUUID = UUID.randomUUID().toString
+  private val collUUID = UUID.randomUUID().toString
 
   override def open(scope: Scope) = {
     scope ++= Seq(
@@ -36,29 +29,21 @@ case class MongoDbOutputSource(id: String,
       "flow.output.servers" -> serverList,
       "flow.output.writeConcern" -> writeConcern.toString
     )
-    mongoConn match {
-      case Some(device) =>
-        logger.warn(s"Connection '$id' is already open")
-      case None =>
-        mongoConn = MongoConnection(makeServerList(serverList))
-        mongoDb = mongoConn.map(_.apply(database))
-        mongoColl = mongoDb.map(_.apply(collection))
-    }
+
+    val mongoConn = scope.createResource(connUUID, MongoConnection(makeServerList(serverList)))
+    scope.createResource(collUUID, mongoConn(database)(collection))
   }
 
-  override def close(scope: Scope) {
-    mongoConn.foreach(_.close())
-    mongoConn = None
-  }
+  override def close(scope: Scope) = scope.discardResource[MongoConnection](connUUID).foreach(_.close())
 
   override def write(scope: Scope, data: Data) = {
     (for {
-      mc <- mongoColl
+      mc <- scope.getResource[MongoCollection](collUUID)
     } yield {
       val js = data.asJson
       val doc = toDocument(js.asInstanceOf[JsObject])
       val result = mc.insert(doc, writeConcern)
-      updateCount(scope, 1) // TODO why aren't the number of records updated returned?
+      updateCount(scope, 1) // TODO Cannot get n property for an unacknowledged write
     }) getOrElse 0
   }
 
@@ -73,7 +58,7 @@ case class MongoDbOutputSource(id: String,
     jv match {
       case ja: JsArray => ja.value.map(unwrap)
       case jb: JsBoolean => jb.value: java.lang.Boolean
-      case jn: JsNumber => jn.value
+      case jn: JsNumber => jn.value.toDouble: java.lang.Double
       case js: JsString => js.value
       case ju =>
         throw new IllegalStateException(s"Unable to unwrap '$ju' (${Option(ju).map(_.getClass.getName).orNull})")

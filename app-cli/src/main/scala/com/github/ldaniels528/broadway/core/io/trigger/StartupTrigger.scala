@@ -12,10 +12,10 @@ import scala.concurrent.ExecutionContext
   */
 case class StartupTrigger(id: String, flows: Seq[Flow]) extends Trigger {
 
-  override def execute(config: StoryConfig)(implicit ec: ExecutionContext) = {
+  override def execute(story: StoryConfig)(implicit ec: ExecutionContext) = {
     ProcessingActor ! new Runnable {
       override def run() = {
-        val rootScope = GlobalScope()
+        implicit val rootScope = GlobalScope()
         process(flows zip (flows map (createScope(rootScope, _))))
       }
     }

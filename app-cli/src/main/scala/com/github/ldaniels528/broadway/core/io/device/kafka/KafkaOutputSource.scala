@@ -9,6 +9,7 @@ import com.github.ldaniels528.broadway.core.actors.BroadwayActorSystem
 import com.github.ldaniels528.broadway.core.io.Data
 import com.github.ldaniels528.broadway.core.io.device.AsynchronousOutputSource
 import com.github.ldaniels528.broadway.core.io.device.kafka.KafkaOutputSource.{Die, asyncActor}
+import com.github.ldaniels528.broadway.core.io.layout.Layout
 import com.github.ldaniels528.broadway.core.scope.Scope
 import org.slf4j.LoggerFactory
 
@@ -22,11 +23,11 @@ import scala.concurrent.duration._
   *
   * @author lawrence.daniels@gmail.com
   */
-case class KafkaOutputSource(id: String, topic: String, zk: ZkProxy) extends AsynchronousOutputSource {
+case class KafkaOutputSource(id: String, topic: String, zk: ZkProxy, layout: Layout) extends AsynchronousOutputSource {
   private lazy val logger = LoggerFactory.getLogger(getClass)
   private val publisher = KafkaPublisher(zk)
 
-  override def allWritesCompleted(scope: Scope)(implicit ec: ExecutionContext) = {
+  override def allWritesCompleted(implicit scope: Scope, ec: ExecutionContext) = {
     implicit val timeout: Timeout = 1.hour
     (asyncActor ? Die) map { _ =>
       logger.info("Closing Kafka publisher...")
@@ -47,10 +48,8 @@ case class KafkaOutputSource(id: String, topic: String, zk: ZkProxy) extends Asy
     val key = ByteBufferUtils.uuidToBytes(UUID.randomUUID())
     val message = data.asBytes
     implicit val timeout: Timeout = 15.seconds
-    (asyncActor ? publisher.publish(topic, key, message)) foreach { _ =>
-      updateCount(scope, 1)
-    }
-    updateCount(scope, 0)
+    (asyncActor ? publisher.publish(topic, key, message)) foreach (_ => updateCount(scope, 1))
+    0
   }
 
 }

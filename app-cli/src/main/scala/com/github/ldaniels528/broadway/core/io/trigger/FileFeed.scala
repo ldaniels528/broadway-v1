@@ -2,23 +2,33 @@ package com.github.ldaniels528.broadway.core.io.trigger
 
 import java.io.File
 
+import com.github.ldaniels528.broadway.core.io.archive.FileArchive
 import com.github.ldaniels528.broadway.core.io.flow.Flow
 
 /**
   * Represents a File Feed
   */
-case class FileFeed(name: String, matchType: String, flows: Seq[Flow]) {
+case class FileFeed(matches: File => Boolean, flows: Seq[Flow], archive: Option[FileArchive])
 
-  def matches(file: File): Boolean = {
-    val fileName = file.getName
-    matchType match {
-      case "exact" => fileName.toLowerCase == name.toLowerCase
-      case "regex" => fileName.toLowerCase.matches(name.toLowerCase)
-      case "start" => fileName.toLowerCase.startsWith(name.toLowerCase)
-      case "ends" => fileName.toLowerCase.endsWith(name.toLowerCase)
-      case unhanded =>
-        throw new IllegalArgumentException(s"Feed match type '$unhanded' was not recognized")
-    }
+/**
+  * File Feed Companion Object
+  */
+object FileFeed {
+
+  def endsWith(suffix: String, flows: Seq[Flow], archive: Option[FileArchive]) = {
+    FileFeed(matches = _.getName.endsWith(suffix), flows, archive)
+  }
+
+  def exact(name: String, flows: Seq[Flow], archive: Option[FileArchive]) = {
+    FileFeed(matches = _.getName == name, flows, archive)
+  }
+
+  def regex(pattern: String, flows: Seq[Flow], archive: Option[FileArchive]) = {
+    FileFeed(matches = _.getName.matches(pattern), flows, archive)
+  }
+
+  def startsWith(prefix: String, flows: Seq[Flow], archive: Option[FileArchive]) = {
+    FileFeed(matches = _.getName.startsWith(prefix), flows, archive)
   }
 
 }

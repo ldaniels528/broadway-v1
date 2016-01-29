@@ -1,7 +1,8 @@
 package com.github.ldaniels528.broadway.core.io.layout.text.fields
 
+import com.github.ldaniels528.broadway.core.io.Data
+import com.github.ldaniels528.broadway.core.io.Data._
 import com.github.ldaniels528.broadway.core.io.layout.{Field, FieldSet}
-import com.github.ldaniels528.broadway.core.io.{ArrayData, Data, TextData}
 
 /**
   * Delimited Field Set

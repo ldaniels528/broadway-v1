@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<etl-config id="eod-history-fixed">
+<story id="eod-history-fixed">
 
     <archives>
         <Archive id="DataStore" base="/Users/ldaniels/broadway/archive" compression="gzip" />
@@ -33,15 +33,15 @@
         </FileTrigger>
     </triggers>
 
-    <devices>
+    <data-sources>
         <TextFileInputSource id="input_file" path="{{ flow.input.path }}" />
         <TextFileOutputSource id="output_file" path="/tmp/fixed_{{ flow.input.filename }}" />
-    </devices>
+    </data-sources>
 
     <layouts>
         <TextLayout id="input_layout">
             <header>
-                <fields type="csv">
+                <record type="csv">
                     <field auto-trim="yes">&lt;ticker&gt;</field>
                     <field auto-trim="yes">&lt;date&gt;</field>
                     <field auto-trim="yes">&lt;open&gt;</field>
@@ -49,10 +49,10 @@
                     <field auto-trim="yes">&lt;low&gt;</field>
                     <field auto-trim="yes">&lt;close&gt;</field>
                     <field auto-trim="yes">&lt;vol&gt;</field>
-                </fields>
+                </record>
             </header>
             <body>
-                <fields type="csv">
+                <record type="csv">
                     <field auto-trim="yes">ticker</field>
                     <field auto-trim="yes">date</field>
                     <field auto-trim="yes">open</field>
@@ -60,13 +60,13 @@
                     <field auto-trim="yes">low</field>
                     <field auto-trim="yes">close</field>
                     <field auto-trim="yes">vol</field>
-                </fields>
+                </record>
             </body>
         </TextLayout>
 
         <TextLayout id="output_layout">
             <header>
-                <fields type="fixed-length">
+                <record type="fixed-length">
                     <field length="10">symbol</field>
                     <field length="9">date</field>
                     <field length="12">open</field>
@@ -74,10 +74,10 @@
                     <field length="12">low</field>
                     <field length="12">close</field>
                     <field length="12">volume</field>
-                </fields>
+                </record>
             </header>
             <body>
-                <fields type="fixed-length">
+                <record type="fixed-length">
                     <field length="10">ticker</field>
                     <field length="9">date</field>
                     <field length="12">open</field>
@@ -85,18 +85,18 @@
                     <field length="12">low</field>
                     <field length="12">close</field>
                     <field length="12">vol</field>
-                </fields>
+                </record>
             </body>
             <footer>
-                <fields type="fixed-length">
+                <record type="fixed-length">
                     <field length="30">{{ flow.input.filename }}</field>
                     <field length="10">{{ flow.input.count }}</field>
-                </fields>
-                <fields type="fixed-length">
+                </record>
+                <record type="fixed-length">
                     <field length="30">{{ flow.output.filename }}</field>
                     <field length="10">{{ flow.output.count }}</field>
-                </fields>
+                </record>
             </footer>
         </TextLayout>
     </layouts>
-</etl-config>
+</story>

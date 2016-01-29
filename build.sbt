@@ -56,8 +56,8 @@ lazy val coreDeps = Seq(
   //
   // SQL/NOSQL Dependencies
   "com.datastax.cassandra" % "cassandra-driver-core" % "2.1.9",
-  "org.mongodb" %% "casbah-commons" % "2.8.0" exclude("org.slf4j", "slf4j-log4j12"),
-  "org.mongodb" %% "casbah-core" % "2.8.0" exclude("org.slf4j", "slf4j-log4j12"),
+  "org.mongodb" %% "casbah-commons" % "3.1.0" exclude("org.slf4j", "slf4j-log4j12"),
+  "org.mongodb" %% "casbah-core" % "3.1.0" exclude("org.slf4j", "slf4j-log4j12"),
   //
   // General Java Dependencies
   "joda-time" % "joda-time" % "2.9.1",

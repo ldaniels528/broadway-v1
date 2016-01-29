@@ -7,9 +7,8 @@ import java.nio.file.{Path, Paths, WatchService}
 import com.github.ldaniels528.broadway.core.StoryConfig
 import com.github.ldaniels528.broadway.core.actors.FileManagementActor.ArchiveFile
 import com.github.ldaniels528.broadway.core.actors.{BroadwayActorSystem, FileManagementActor, ProcessingActor}
-import com.github.ldaniels528.broadway.core.io.archival.Archive
-import com.github.ldaniels528.broadway.core.io.device.text.TextFileInputSource.getProperties
 import com.github.ldaniels528.broadway.core.scope.GlobalScope
+import com.ldaniels528.commons.helpers.OptionHelper._
 import org.slf4j.LoggerFactory
 
 import scala.collection.JavaConversions._
@@ -22,33 +21,40 @@ import scala.util.{Failure, Success}
 /**
   * File Trigger
   */
-case class FileTrigger(id: String, path: String, feeds: Seq[FileFeed], archive: Option[Archive]) extends Trigger {
+case class FileTrigger(id: String, directories: Seq[FileFeedDirectory]) extends Trigger {
 
-  override def execute(config: StoryConfig)(implicit ec: ExecutionContext) = {
-    FileTrigger.register(watcherName = id, directory = new File(path)) { incomingFile =>
-      feeds.find(_.matches(incomingFile)) foreach { feed =>
-        logger.info(s"File triggered '${incomingFile.getAbsolutePath}' for '$id'...")
-
-        ProcessingActor ! new Runnable {
-          override def run() = {
-            val rootScope = GlobalScope()
-            val processFlows = feed.flows zip (feed.flows map { flow =>
-              val scope = createScope(rootScope, flow)
-              scope ++= Seq("trigger.path" -> path) ++ getProperties(incomingFile)
-              scope
-            })
-            process(processFlows) onComplete {
-              case Success(result) =>
-                archive foreach { strategy =>
-                  FileManagementActor ! ArchiveFile(incomingFile, strategy.base)
-                }
-              case Failure(e) =>
-                logger.error(s"Trigger $id failed: ${e.getMessage}")
-            }
-          }
+  override def execute(story: StoryConfig)(implicit ec: ExecutionContext) = {
+    directories foreach { directory =>
+      FileTrigger.register(watcherName = id, directory = new File(directory.path)) { incomingFile =>
+        directory.feeds.find(_.matches(incomingFile)) foreach { feed =>
+          logger.info(s"Processing '${incomingFile.getName}' for '$id'...")
+          ProcessingActor ! createTask(directory, feed, incomingFile)
         }
       }
     }
+  }
+
+  private def createTask(directory: FileFeedDirectory, feed: FileFeed, incomingFile: File) = new Runnable {
+    override def run() {
+      process(createProcessFlows(directory, feed, incomingFile)) onComplete {
+        case Success(result) =>
+          (feed.archive ?? directory.archive) foreach { strategy =>
+            FileManagementActor ! ArchiveFile(incomingFile, strategy.base)
+          }
+        case Failure(e) =>
+          logger.error(s"Trigger '$id' failed: ${e.getMessage}")
+      }
+    }
+  }
+
+  private def createProcessFlows(directory: FileFeedDirectory, feed: FileFeed, incomingFile: File) = {
+    feed.flows zip (feed.flows map { flow =>
+      val scope = createScope(GlobalScope(), flow)
+      scope ++= Seq(
+        "flow.input.path" -> incomingFile.getCanonicalPath,
+        "trigger.directory.path" -> directory.path)
+      scope
+    })
   }
 
 }

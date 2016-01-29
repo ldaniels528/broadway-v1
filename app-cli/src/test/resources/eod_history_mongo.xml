@@ -1,76 +1,70 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<etl-config id="eod-history-mongo">
+<story id="eod-history-mongo">
 
     <archives>
-        <Archive id="DataStore" base="/Users/ldaniels/broadway/archive" compression="gzip" />
+        <FileArchive id="DataStore" base="/Users/ldaniels/broadway/archive" compression="gzip" />
     </archives>
 
     <triggers>
-        <FileTrigger id="TradingHistory" path="/Users/ldaniels/broadway/incoming/tradingHistory" archive="DataStore">
-            <feed name="AMEX_(.*)[.]txt" match="regex">
-                <flows>
-                    <BasicFlow id="EOD_to_Mongo" input="input_file" input-layout="input_layout" output="mongodb" output-layout="mongo_output"/>
-                </flows>
-            </feed>
-            <feed name="NASDAQ_(.*)[.]txt" match="regex">
-                <flows>
-                    <BasicFlow id="EOD_to_Mongo" input="input_file" input-layout="input_layout" output="mongodb" output-layout="mongo_output"/>
-                </flows>
-            </feed>
-            <feed name="NYSE_(.*)[.]txt" match="regex">
-                <flows>
-                    <BasicFlow id="EOD_to_Mongo" input="input_file" input-layout="input_layout" output="mongodb" output-layout="mongo_output"/>
-                </flows>
-            </feed>
-            <feed name="OTCBB_(.*)[.]txt" match="regex">
-                <flows>
-                    <BasicFlow id="EOD_to_Mongo" input="input_file" input-layout="input_layout" output="mongodb" output-layout="mongo_output"/>
-                </flows>
-            </feed>
+        <FileTrigger id="Repo1">
+            <directory path="/Users/ldaniels/broadway/incoming/tradingHistory" archive="DataStore">
+                <feed pattern="AMEX_(.*)[.]txt">
+                    <BasicFlow input-source="input_file" output-source="mongo_db" />
+                </feed>
+                <feed pattern="NASDAQ_(.*)[.]txt">
+                    <BasicFlow input-source="input_file" output-source="mongo_db" />
+                </feed>
+                <feed pattern="NYSE_(.*)[.]txt">
+                    <BasicFlow input-source="input_file" output-source="mongo_db" />
+                </feed>
+                <feed pattern="OTCBB_(.*)[.]txt">
+                    <BasicFlow input-source="input_file" output-source="mongo_db" />
+                </feed>
+            </directory>
         </FileTrigger>
     </triggers>
 
-    <devices>
-        <TextFileInputSource id="input_file" path="{{ flow.input.path }}" />
-        <MongoOutputSource id="mongodb" servers="localhost" database="shocktrade" collection="test_history" layout="mongo_output"/>
-    </devices>
+    <data-sources>
+        <TextFileInputSource id="input_file" path="{{ flow.input.path }}" layout="input_layout" />
+        <MongoOutputSource id="mongo_db" servers="localhost" database="shocktrade" collection="test_history" layout="mongo_output"/>
+    </data-sources>
 
     <layouts>
         <TextLayout id="input_layout">
             <header>
-                <fields type="csv">
-                    <field auto-trim="yes">&lt;ticker&gt;</field>
-                    <field auto-trim="yes">&lt;date&gt;</field>
-                    <field auto-trim="yes">&lt;open&gt;</field>
-                    <field auto-trim="yes">&lt;high&gt;</field>
-                    <field auto-trim="yes">&lt;low&gt;</field>
-                    <field auto-trim="yes">&lt;close&gt;</field>
-                    <field auto-trim="yes">&lt;vol&gt;</field>
-                </fields>
+                <record type="csv">
+                    <field name="ticker" value="&lt;ticker&gt;" type="string" />
+                    <field name="date" value="&lt;date&gt;" type="string" />
+                    <field name="open" value="&lt;open&gt;" type="string" />
+                    <field name="high" value="&lt;high&gt;" type="string" />
+                    <field name="low" value="&lt;low&gt;" type="string" />
+                    <field name="close" value="&lt;close&gt;" type="string" />
+                    <field name="vol" value="&lt;vol&gt;" type="string" />
+                </record>
             </header>
             <body>
-                <fields type="csv">
-                    <field auto-trim="yes">ticker</field>
-                    <field auto-trim="yes">date</field>
-                    <field auto-trim="yes">open</field>
-                    <field auto-trim="yes">high</field>
-                    <field auto-trim="yes">low</field>
-                    <field auto-trim="yes">close</field>
-                    <field auto-trim="yes">vol</field>
-                </fields>
+                <record type="csv">
+                    <field name="ticker" type="string" />
+                    <field name="date" type="string" />
+                    <field name="open" type="string" />
+                    <field name="high" type="string" />
+                    <field name="low" type="string" />
+                    <field name="close" type="string" />
+                    <field name="vol" type="string" />
+                </record>
             </body>
         </TextLayout>
 
-        <MongoLayout id="mongo_output">
-            <fields type="json">
-                <field auto-trim="yes">ticker</field>
-                <field auto-trim="yes">date</field>
-                <field auto-trim="yes">open</field>
-                <field auto-trim="yes">high</field>
-                <field auto-trim="yes">low</field>
-                <field auto-trim="yes">close</field>
-                <field auto-trim="yes">vol</field>
-            </fields>
-        </MongoLayout>
+        <JsonLayout id="mongo_output">
+            <record type="json">
+                <field name="ticker" type="string" />
+                <field name="date" type="string" />
+                <field name="open" type="double" />
+                <field name="high" type="double" />
+                <field name="low" type="double" />
+                <field name="close" type="string" />
+                <field name="vol" type="long" />
+            </record>
+        </JsonLayout>
     </layouts>
-</etl-config>
+</story>

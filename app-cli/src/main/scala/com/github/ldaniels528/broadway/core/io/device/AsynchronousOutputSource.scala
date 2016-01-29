@@ -9,6 +9,6 @@ import scala.concurrent.{ExecutionContext, Future}
   */
 trait AsynchronousOutputSource extends OutputSource {
 
-  def allWritesCompleted(scope: Scope)(implicit ec: ExecutionContext): Future[Unit]
+  def allWritesCompleted(implicit scope: Scope, ec: ExecutionContext): Future[Unit]
 
 }

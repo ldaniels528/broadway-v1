@@ -1,29 +1,29 @@
 package com.github.ldaniels528.broadway.core.io.flow
 
 import com.github.ldaniels528.broadway.core.io.Data
-import com.github.ldaniels528.broadway.core.io.device._
+import com.github.ldaniels528.broadway.core.io.device.IOSource._
+import com.github.ldaniels528.broadway.core.io.device.{AsynchronousOutputSource, IOSource, InputSource, OutputSource}
 import com.github.ldaniels528.broadway.core.scope.Scope
 
 import scala.concurrent.{ExecutionContext, Future}
 
 /**
-  * Represents a basic ETL process flow implementation
+  * Composition Flow
   */
-case class BasicFlow(id: String, input: InputSource, output: OutputSource) extends Flow {
+case class CompositionFlow(id: String, output: OutputSource, inputs: Seq[InputSource]) extends Flow {
 
-  val devices = Seq(input, output)
+  override def devices: Seq[IOSource] = inputs ++ Seq(output)
 
   override def execute(implicit scope: Scope, ec: ExecutionContext) = {
     output.open(scope)
 
-    input use { in =>
+    inputs foreach (_ use { input =>
       var inputData: Option[Data] = None
       do {
-        // process the read
-        inputData = in.read(scope)
+        inputData = input.read(scope)
 
         // use the input layout to decide what the input data set should look like
-        val dataSet = in.layout.in(scope, in, inputData)
+        val dataSet = input.layout.in(scope, input, inputData)
 
         // transform the input data set to an output data set, and write to persistence layer
         output.layout.out(scope, output, dataSet, inputData.isEmpty) foreach { outputData =>
@@ -31,7 +31,7 @@ case class BasicFlow(id: String, input: InputSource, output: OutputSource) exten
         }
 
       } while (inputData.nonEmpty)
-    }
+    })
 
     // wait for all asynchronous writes to complete
     val task = output match {
@@ -45,4 +45,3 @@ case class BasicFlow(id: String, input: InputSource, output: OutputSource) exten
   }
 
 }
-

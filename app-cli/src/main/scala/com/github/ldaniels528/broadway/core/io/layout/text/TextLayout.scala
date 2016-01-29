@@ -29,7 +29,7 @@ case class TextLayout(id: String, header: Option[Division], body: Division, foot
         // if nothing has been written yet, generate the header if defined
         val headerData =
           if (device.getStatistics(scope).offset == 0 && header.nonEmpty)
-            header.map(_.fieldSets.map(fs => Data(fs, fs.encode(Data(fs, fs.fields.map(f => scope.evaluate(f.name)))))))
+            header.map(_.fieldSets.map(fs => Data(fs, fs.encode(Data(fs, fs.fields.map(f => scope.evaluate(f.value getOrElse f.name)))))))
           else
             None
 

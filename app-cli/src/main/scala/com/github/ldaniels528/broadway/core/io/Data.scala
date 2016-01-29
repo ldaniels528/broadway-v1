@@ -18,42 +18,6 @@ trait Data {
 }
 
 /**
-  * Represents a binary data array
-  *
-  * @param bytes the given byte array
-  */
-case class ByteArrayData(fieldSet: FieldSet, bytes: Array[Byte]) extends Data
-
-/**
-  * Represents collection of data
-  *
-  * @param values the given array of string
-  */
-case class ArrayData(fieldSet: FieldSet, values: Seq[String]) extends Data
-
-/**
-  * Represents JSON data
-  *
-  * @param js the given [[JsValue JSON object]]
-  */
-case class JsonData(fieldSet: FieldSet, js: JsValue) extends Data
-
-/**
-  * Represents Kafka message data
-  *
-  * @param key     the given binary key
-  * @param message the given binary message
-  */
-case class KafkaMessageData(fieldSet: FieldSet, key: Array[Byte], message: Array[Byte]) extends Data
-
-/**
-  * Represents text data
-  *
-  * @param value the given string value
-  */
-case class TextData(fieldSet: FieldSet, value: String) extends Data
-
-/**
   * Data Companion Object
   *
   * @author lawrence.daniels@gmail.com
@@ -62,13 +26,39 @@ object Data {
 
   def apply(fieldSet: FieldSet, bytes: Array[Byte]): Data = ByteArrayData(fieldSet, bytes)
 
-  def apply(fieldSet: FieldSet, key: Array[Byte], message: Array[Byte]): Data = KafkaMessageData(fieldSet, key, message)
-
   def apply(fieldSet: FieldSet, js: JsValue): Data = JsonData(fieldSet, js)
 
   def apply(fieldSet: FieldSet, value: String): Data = TextData(fieldSet, value)
 
   def apply(fieldSet: FieldSet, values: Seq[String]): Data = ArrayData(fieldSet, values)
+
+  /**
+    * Represents a binary data array
+    *
+    * @param bytes the given byte array
+    */
+  case class ByteArrayData(fieldSet: FieldSet, bytes: Array[Byte]) extends Data
+
+  /**
+    * Represents collection of data
+    *
+    * @param values the given array of string
+    */
+  case class ArrayData(fieldSet: FieldSet, values: Seq[String]) extends Data
+
+  /**
+    * Represents JSON data
+    *
+    * @param js the given [[JsValue JSON object]]
+    */
+  case class JsonData(fieldSet: FieldSet, js: JsValue) extends Data
+
+  /**
+    * Represents text data
+    *
+    * @param value the given string value
+    */
+  case class TextData(fieldSet: FieldSet, value: String) extends Data
 
   /**
     * Data Enrichment
@@ -100,8 +90,11 @@ object Data {
       case JsonData(_, js) => js
       case TextData(_, value) => Json.parse(value)
       case _ =>
-        val values = data.asTuples
-        values.foldLeft(Json.obj()) { case (js, (k, v)) => js ++ Json.obj(k -> v) }
+        val mapping = Map(data.asTuples: _*)
+        val typedValues = data.fieldSet.fields map { field =>
+          field.name -> DataConversion.convertToJson(mapping.get(field.name), field.`type`)
+        }
+        typedValues.foldLeft(Json.obj()) { case (js, (k, v)) => js ++ Json.obj(k -> v) }
     }
 
     def asText: String = data match {
@@ -120,6 +113,15 @@ object Data {
       case ByteArrayData(_, bytes) => Source.fromBytes(bytes).getLines().toSeq
       case JsonData(_, js) => Source.fromString(js.toString()).getLines().toSeq
       case TextData(_, value) => Source.fromString(value).getLines().toSeq
+      case _ =>
+        throw new IllegalArgumentException(s"Unsupported data type '$data' (${Option(data).map(_.getClass.getName).orNull})")
+    }
+
+    def migrateTo(fieldSet: FieldSet): Data = data match {
+      case a: ArrayData => a.copy(fieldSet = fieldSet)
+      case b: ByteArrayData => b.copy(fieldSet = fieldSet)
+      case j: JsonData => j.copy(fieldSet = fieldSet)
+      case t: TextData => t.copy(fieldSet = fieldSet)
       case _ =>
         throw new IllegalArgumentException(s"Unsupported data type '$data' (${Option(data).map(_.getClass.getName).orNull})")
     }

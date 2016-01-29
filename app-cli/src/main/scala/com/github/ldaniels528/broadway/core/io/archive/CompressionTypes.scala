@@ -1,4 +1,4 @@
-package com.github.ldaniels528.broadway.core.io.archival
+package com.github.ldaniels528.broadway.core.io.archive
 
 /**
   * An enumeration of Compression Types
