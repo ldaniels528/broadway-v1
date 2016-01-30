@@ -39,7 +39,7 @@
                     <field name="high" value="&lt;high&gt;" type="string" />
                     <field name="low" value="&lt;low&gt;" type="string" />
                     <field name="close" value="&lt;close&gt;" type="string" />
-                    <field name="vol" value="&lt;vol&gt;" type="string" />
+                    <field name="volume" value="&lt;vol&gt;" type="string" />
                 </record>
             </header>
             <body>
@@ -50,20 +50,20 @@
                     <field name="high" type="string" />
                     <field name="low" type="string" />
                     <field name="close" type="string" />
-                    <field name="vol" type="string" />
+                    <field name="volume" type="string" />
                 </record>
             </body>
         </TextLayout>
 
         <JsonLayout id="mongo_output">
             <record type="json">
-                <field name="ticker" type="string" />
-                <field name="date" type="string" />
-                <field name="open" type="double" />
-                <field name="high" type="double" />
-                <field name="low" type="double" />
-                <field name="close" type="string" />
-                <field name="vol" type="long" />
+                <field name="ticker" type="string" value="{{ input_layout.body.ticker }}"/>
+                <field name="date" type="string" value="{{ input_layout.body.date }}"/>
+                <field name="open" type="double" value="{{ input_layout.body.open }}"/>
+                <field name="high" type="double" value="{{ input_layout.body.high }}"/>
+                <field name="low" type="double" value="{{ input_layout.body.low }}"/>
+                <field name="close" type="string" value="{{ input_layout.body.close }}"/>
+                <field name="volume" type="long" value="{{ input_layout.body.volume }}"/>
             </record>
         </JsonLayout>
     </layouts>

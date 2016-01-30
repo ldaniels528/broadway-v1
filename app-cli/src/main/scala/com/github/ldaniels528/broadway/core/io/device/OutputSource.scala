@@ -6,7 +6,7 @@ import com.github.ldaniels528.broadway.core.scope.Scope
 /**
   * Represents an Output Source
   */
-trait OutputSource extends IOSource {
+trait OutputSource extends DataSource {
 
   def write(scope: Scope, data: Data): Int
 

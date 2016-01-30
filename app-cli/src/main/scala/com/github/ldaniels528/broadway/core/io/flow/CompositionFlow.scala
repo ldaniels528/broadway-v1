@@ -1,18 +1,18 @@
 package com.github.ldaniels528.broadway.core.io.flow
 
 import com.github.ldaniels528.broadway.core.io.Data
-import com.github.ldaniels528.broadway.core.io.device.IOSource._
-import com.github.ldaniels528.broadway.core.io.device.{AsynchronousOutputSource, IOSource, InputSource, OutputSource}
+import com.github.ldaniels528.broadway.core.io.device.DataSource._
+import com.github.ldaniels528.broadway.core.io.device._
 import com.github.ldaniels528.broadway.core.scope.Scope
 
 import scala.concurrent.{ExecutionContext, Future}
 
 /**
-  * Composition Flow
+  * Composite Input Flow
   */
 case class CompositionFlow(id: String, output: OutputSource, inputs: Seq[InputSource]) extends Flow {
 
-  override def devices: Seq[IOSource] = inputs ++ Seq(output)
+  override def devices: Seq[DataSource] = inputs ++ Seq(output)
 
   override def execute(implicit scope: Scope, ec: ExecutionContext) = {
     output.open(scope)

@@ -46,7 +46,7 @@ class StoryConfigParser(xml: Node) {
     FileArchive(id = rootNode \@ "id", base = new File(rootNode \@ "base"))
   }
 
-  private def parseDevices(rootNode: Node, layouts: Seq[Layout]): Seq[IOSource] = {
+  private def parseDevices(rootNode: Node, layouts: Seq[Layout]): Seq[DataSource] = {
     (rootNode \ "data-sources") flatMap { devicesNode =>
       devicesNode.child.filter(_.label != "#PCDATA") map { node =>
         node.label match {
@@ -92,11 +92,11 @@ class StoryConfigParser(xml: Node) {
   }
 
   private def parseDevices_TextInputDevice(node: Node, layouts: Seq[Layout]) = {
-    TextFileInputSource(id = node \@ "id", path = node \@ "path", layout = lookupLayout(layouts, node \@ "layout"))
+    TextFileInputSource(id = node \@ "id", path = node \@ "path", layout = lookupLayout(layouts, node \@ "layout").need[TextLayout]("Incompatible layout"))
   }
 
   private def parseDevices_TextOutputDevice(node: Node, layouts: Seq[Layout]) = {
-    TextFileOutputSource(id = node \@ "id", path = node \@ "path", layout = lookupLayout(layouts, node \@ "layout"))
+    TextFileOutputSource(id = node \@ "id", path = node \@ "path", layout = lookupLayout(layouts, node \@ "layout").need[TextLayout]("Incompatible layout"))
   }
 
   private def parseFields(rootNode: Node) = {
@@ -141,7 +141,7 @@ class StoryConfigParser(xml: Node) {
       length = (node \@ "length").optional map (_.toInt))
   }
 
-  private def parseFlows(rootNode: Node, devices: Seq[IOSource], layouts: Seq[Layout]): Seq[Flow] = {
+  private def parseFlows(rootNode: Node, devices: Seq[DataSource], layouts: Seq[Layout]): Seq[Flow] = {
     rootNode.child.filter(_.label != "#PCDATA") map { node =>
       node.label match {
         case "BasicFlow" => parseFlows_BasicFlow(node, devices)
@@ -152,14 +152,14 @@ class StoryConfigParser(xml: Node) {
     }
   }
 
-  private def parseFlows_BasicFlow(node: Node, devices: Seq[IOSource]) = {
+  private def parseFlows_BasicFlow(node: Node, devices: Seq[DataSource]) = {
     BasicFlow(
       id = node \@ "id",
       input = lookupInputDevice(devices, id = node \@ "input-source"),
       output = lookupOutputDevice(devices, id = node \@ "output-source"))
   }
 
-  private def parseFlows_CompositionFlow(node: Node, devices: Seq[IOSource]) = {
+  private def parseFlows_CompositionFlow(node: Node, devices: Seq[DataSource]) = {
     CompositionFlow(
       id = node \@ "id",
       output = lookupOutputDevice(devices, id = node \@ "output-source"),
@@ -231,13 +231,13 @@ class StoryConfigParser(xml: Node) {
     }
   }
 
-  private def parseTriggers_FileTrigger(rootNode: Node, archives: Seq[FileArchive], devices: Seq[IOSource], layouts: Seq[Layout]) = {
+  private def parseTriggers_FileTrigger(rootNode: Node, archives: Seq[FileArchive], devices: Seq[DataSource], layouts: Seq[Layout]) = {
     FileTrigger(
       id = rootNode \@ "id",
       directories = parseTriggers_FileTrigger_Directories(rootNode, archives, devices, layouts))
   }
 
-  private def parseTriggers_FileTrigger_Directories(rootNode: Node, archives: Seq[FileArchive], devices: Seq[IOSource], layouts: Seq[Layout]) = {
+  private def parseTriggers_FileTrigger_Directories(rootNode: Node, archives: Seq[FileArchive], devices: Seq[DataSource], layouts: Seq[Layout]) = {
     (rootNode \ "directory") map { directoryNode =>
       FileFeedDirectory(
         path = (directoryNode \@ "path").required,
@@ -246,7 +246,7 @@ class StoryConfigParser(xml: Node) {
     }
   }
 
-  private def parseTriggers_FileTrigger_Feeds(rootNode: Node, archives: Seq[FileArchive], devices: Seq[IOSource], layouts: Seq[Layout]) = {
+  private def parseTriggers_FileTrigger_Feeds(rootNode: Node, archives: Seq[FileArchive], devices: Seq[DataSource], layouts: Seq[Layout]) = {
     (rootNode \ "feed") map { feedNode =>
       val flows = parseFlows(feedNode, devices, layouts)
       val archive = (rootNode \@ "archive").optional.map(id => lookupArchive(archives, id))
@@ -266,7 +266,7 @@ class StoryConfigParser(xml: Node) {
     archives.find(_.id == id) orDie s"Archive '$id' not found"
   }
 
-  private def lookupInputDevice(devices: Seq[IOSource], id: String) = {
+  private def lookupInputDevice(devices: Seq[DataSource], id: String) = {
     devices.find(_.id == id) match {
       case Some(device: InputSource) => device
       case Some(device) =>
@@ -280,7 +280,7 @@ class StoryConfigParser(xml: Node) {
     layouts.find(_.id == id) orDie s"Layout '$id' was not found"
   }
 
-  private def lookupOutputDevice(devices: Seq[IOSource], id: String) = {
+  private def lookupOutputDevice(devices: Seq[DataSource], id: String) = {
     devices.find(_.id == id) match {
       case Some(device: OutputSource) => device
       case Some(device) =>

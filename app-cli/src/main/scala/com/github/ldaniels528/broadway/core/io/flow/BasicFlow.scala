@@ -7,7 +7,7 @@ import com.github.ldaniels528.broadway.core.scope.Scope
 import scala.concurrent.{ExecutionContext, Future}
 
 /**
-  * Represents a basic ETL process flow implementation
+  * Represents a basic process flow implementation
   */
 case class BasicFlow(id: String, input: InputSource, output: OutputSource) extends Flow {
 

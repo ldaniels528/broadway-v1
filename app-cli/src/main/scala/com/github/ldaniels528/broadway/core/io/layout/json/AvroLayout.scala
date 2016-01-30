@@ -5,7 +5,8 @@ import java.io.File
 import com.github.ldaniels528.broadway.core.io._
 import com.github.ldaniels528.broadway.core.io.device.{InputSource, OutputSource}
 import com.github.ldaniels528.broadway.core.io.layout._
-import com.github.ldaniels528.broadway.core.io.layout.json.AvroConversion._
+import com.github.ldaniels528.broadway.core.util.AvroConversion
+import AvroConversion._
 import com.github.ldaniels528.broadway.core.scope.Scope
 import org.apache.avro.Schema
 

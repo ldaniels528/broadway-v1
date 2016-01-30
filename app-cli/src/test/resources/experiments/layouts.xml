@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<story id="layouts">
+
+    <layouts>
+
+        <layout id="input_layout">
+            <CsvRecord id="header_csv" type="header">
+                <field name="ticker" value="&lt;ticker&gt;" type="string" />
+                <field name="date" value="&lt;date&gt;" type="string" />
+                <field name="open" value="&lt;open&gt;" type="string" />
+                <field name="high" value="&lt;high&gt;" type="string" />
+                <field name="low" value="&lt;low&gt;" type="string" />
+                <field name="close" value="&lt;close&gt;" type="string" />
+                <field name="volume" value="&lt;vol&gt;" type="string" />
+            </CsvRecord>
+            <CsvRecord id="body_csv" type="body">
+                <field name="ticker" type="string" />
+                <field name="date" type="string" />
+                <field name="open" type="string" />
+                <field name="high" type="string" />
+                <field name="low" type="string" />
+                <field name="close" type="string" />
+                <field name="volume" type="string" />
+            </CsvRecord>
+            <FixedLengthRecord id="footer_fixed" type="footer">
+                <field name="input_count" value="{{ flow.input.offset }}" type="string" length="20" />
+                <field name="output_count" value="{{ flow.output.offset }}" type="string" length="20" />
+            </FixedLengthRecord>
+        </layout>
+
+        <layout id="avro_input_layout">
+            <AvroRecord name="EodCompanyInfo" namespace="com.shocktrade.avro" doc="A schema for EodData companies">
+                <field name="symbol" type="string" doc="stock symbol" />
+                <field name="description" type="string" doc="company description" />
+            </AvroRecord>
+        </layout>
+
+        <layout id="csv_input_layout">
+            <CsvRecord id="csv_output">
+                <field name="ticker" type="string" value="{{ input_layout.body.ticker }}"/>
+                <field name="date" type="string" value="{{ input_layout.body.date }}"/>
+                <field name="open" type="double" value="{{ input_layout.body.open }}"/>
+                <field name="high" type="double" value="{{ input_layout.body.high }}"/>
+                <field name="low" type="double" value="{{ input_layout.body.low }}"/>
+                <field name="close" type="string" value="{{ input_layout.body.close }}"/>
+                <field name="volume" type="long" value="{{ input_layout.body.volume }}"/>
+            </CsvRecord>
+        </layout>
+
+        <layout id="delimited_input_layout">
+            <DelimitedRecord id="tab_delimited_output" delimiter="\t" quoted="false">
+                <field name="ticker" type="string" value="{{ input_layout.body.ticker }}"/>
+                <field name="date" type="string" value="{{ input_layout.body.date }}"/>
+                <field name="open" type="double" value="{{ input_layout.body.open }}"/>
+                <field name="high" type="double" value="{{ input_layout.body.high }}"/>
+                <field name="low" type="double" value="{{ input_layout.body.low }}"/>
+                <field name="close" type="string" value="{{ input_layout.body.close }}"/>
+                <field name="volume" type="long" value="{{ input_layout.body.volume }}"/>
+            </DelimitedRecord>
+        </layout>
+
+        <layout id="json_input_layout">
+            <JsonRecord id="mongo_output">
+                <field name="ticker" type="string" value="{{ input_layout.body.ticker }}"/>
+                <field name="date" type="string" value="{{ input_layout.body.date }}"/>
+                <field name="open" type="double" value="{{ input_layout.body.open }}"/>
+                <field name="high" type="double" value="{{ input_layout.body.high }}"/>
+                <field name="low" type="double" value="{{ input_layout.body.low }}"/>
+                <field name="close" type="string" value="{{ input_layout.body.close }}"/>
+                <field name="volume" type="long" value="{{ input_layout.body.volume }}"/>
+            </JsonRecord>
+        </layout>
+
+        <layout id="xml_input_layout">
+            <XmlRecord id="xml_output">
+                <field name="ticker" type="string" value="{{ input_layout.body.ticker }}"/>
+                <field name="date" type="string" value="{{ input_layout.body.date }}"/>
+                <field name="open" type="double" value="{{ input_layout.body.open }}"/>
+                <field name="high" type="double" value="{{ input_layout.body.high }}"/>
+                <field name="low" type="double" value="{{ input_layout.body.low }}"/>
+                <field name="close" type="string" value="{{ input_layout.body.close }}"/>
+                <field name="volume" type="long" value="{{ input_layout.body.volume }}"/>
+            </XmlRecord>
+        </layout>
+
+    </layouts>
+
+</story>

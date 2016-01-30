@@ -6,30 +6,21 @@
     </archives>
 
     <triggers>
-        <FileTrigger id="TradingHistory" path="/Users/ldaniels/broadway/incoming/tradingHistory" archive="DataStore">
-            <feed name="AMEX_(.*)[.]txt" match="regex">
-                <flows>
-                    <BasicFlow id="EOD_to_Fixed" input="input_file" input-layout="input_layout" output="output_file" output-layout="output_layout"/>
-                </flows>
-            </feed>
-            <feed name="NASDAQ_(.*)[.]txt" match="regex">
-                <flows>
-                    <BasicFlow id="EOD_to_Fixed" input="input_file" input-layout="input_layout" output="output_file" output-layout="output_layout"/>
-                </flows>
-             </feed>
-            <feed name="NYSE_(.*)[.]txt" match="regex">
-                <flows>
-                    <BasicFlow id="EOD_to_Fixed" input="input_file" input-layout="input_layout" output="output_file" output-layout="output_layout"/>
-                </flows>
-            </feed>
-            <feed name="OTCBB_(.*)[.]txt" match="regex">
-                <flows>
-                    <BasicFlow id="EOD_to_Fixed" input="input_file" input-layout="input_layout" output="output_file" output-layout="output_layout"/>
-                </flows>
-            </feed>
-            <!--
-            <ignore name=".DS_Store" match="exact" />
-            -->
+        <FileTrigger id="Repo1">
+            <directory path="/Users/ldaniels/broadway/incoming/tradingHistory" archive="DataStore">
+                <feed pattern="AMEX_(.*)[.]txt">
+                    <BasicFlow input-source="input_file" output-source="output_file" />
+                </feed>
+                <feed pattern="NASDAQ_(.*)[.]txt">
+                    <BasicFlow input-source="input_file" output-source="output_file" />
+                </feed>
+                <feed pattern="NYSE_(.*)[.]txt">
+                    <BasicFlow input-source="input_file" output-source="output_file" />
+                </feed>
+                <feed pattern="OTCBB_(.*)[.]txt">
+                    <BasicFlow input-source="input_file" output-source="output_file" />
+                </feed>
+            </directory>
         </FileTrigger>
     </triggers>
 

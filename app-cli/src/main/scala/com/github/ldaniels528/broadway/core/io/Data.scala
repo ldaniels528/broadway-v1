@@ -1,7 +1,8 @@
 package com.github.ldaniels528.broadway.core.io
 
 import com.github.ldaniels528.broadway.core.io.layout.FieldSet
-import com.github.ldaniels528.broadway.core.io.layout.json.AvroConversion._
+import com.github.ldaniels528.broadway.core.util.AvroConversion
+import AvroConversion._
 import org.apache.avro.Schema
 import play.api.libs.json.{JsValue, Json}
 

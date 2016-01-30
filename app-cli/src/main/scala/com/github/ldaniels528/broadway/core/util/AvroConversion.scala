@@ -1,4 +1,4 @@
-package com.github.ldaniels528.broadway.core.io.layout.json
+package com.github.ldaniels528.broadway.core.util
 
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
 import java.lang.reflect.Method

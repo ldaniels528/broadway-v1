@@ -6,7 +6,7 @@ import com.github.ldaniels528.broadway.core.scope.Scope
 /**
   * Represents an Input Source
   */
-trait InputSource extends IOSource {
+trait InputSource extends DataSource {
 
   def read(scope: Scope): Option[Data]
 

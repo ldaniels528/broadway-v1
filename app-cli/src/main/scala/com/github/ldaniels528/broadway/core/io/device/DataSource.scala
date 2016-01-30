@@ -6,7 +6,7 @@ import com.github.ldaniels528.broadway.core.scope.Scope
 /**
   * Represents a Generic Input or Output Source
   */
-trait IOSource extends StatisticsGeneration {
+trait DataSource extends StatisticsGeneration {
 
   def id: String
 
@@ -19,11 +19,11 @@ trait IOSource extends StatisticsGeneration {
 }
 
 /**
-  * I/O Source Companion Object
+  * Data Source Companion Object
   */
-object IOSource {
+object DataSource {
 
-  implicit class IOSourceEnrichment[T <: IOSource](val source: T) extends AnyVal {
+  implicit class DataSourceEnrichment[T <: DataSource](val source: T) extends AnyVal {
 
     def use[S](block: T => S)(implicit scope: Scope): S = {
       source.open(scope)
