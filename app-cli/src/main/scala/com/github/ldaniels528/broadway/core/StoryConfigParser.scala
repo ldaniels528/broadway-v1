@@ -10,9 +10,8 @@ import com.github.ldaniels528.broadway.core.io.device.nosql.MongoDbOutputSource
 import com.github.ldaniels528.broadway.core.io.device.text.{TextFileInputSource, TextFileOutputSource}
 import com.github.ldaniels528.broadway.core.io.flow.{BasicFlow, CompositionFlow, Flow}
 import com.github.ldaniels528.broadway.core.io.layout._
-import com.github.ldaniels528.broadway.core.io.layout.json.{AvroLayout, JsonLayout}
-import com.github.ldaniels528.broadway.core.io.layout.text.TextLayout
-import com.github.ldaniels528.broadway.core.io.layout.text.fields._
+import com.github.ldaniels528.broadway.core.io.layout.json.{AvroLayout, JsonFieldSet, JsonLayout}
+import com.github.ldaniels528.broadway.core.io.layout.text._
 import com.github.ldaniels528.broadway.core.io.trigger.{FileFeed, FileFeedDirectory, FileTrigger, StartupTrigger}
 import com.ldaniels528.commons.helpers.OptionHelper._
 import com.mongodb.casbah.Imports._

@@ -5,8 +5,8 @@ import java.util.UUID
 
 import com.github.ldaniels528.broadway.core.io.Data
 import com.github.ldaniels528.broadway.core.io.device.InputSource
-import com.github.ldaniels528.broadway.core.io.layout.Layout
-import com.github.ldaniels528.broadway.core.io.layout.text.fields.TextLineFieldSet
+import com.github.ldaniels528.broadway.core.io.layout.text.FixedLengthFieldSet
+import com.github.ldaniels528.broadway.core.io.layout.{Field, Layout}
 import com.github.ldaniels528.broadway.core.scope.Scope
 
 /**
@@ -15,7 +15,7 @@ import com.github.ldaniels528.broadway.core.scope.Scope
   * @author lawrence.daniels@gmail.com
   */
 case class TextFileInputSource(id: String, path: String, layout: Layout) extends InputSource {
-  private val fieldSet = TextLineFieldSet("line")
+  private val fieldSet = FixedLengthFieldSet(Seq(Field(name = "line")))
   private val uuid = UUID.randomUUID().toString
 
   override def close(scope: Scope) = scope.discardResource[BufferedReader](uuid).foreach(_.close())
@@ -38,7 +38,7 @@ case class TextFileInputSource(id: String, path: String, layout: Layout) extends
   override def read(scope: Scope) = {
     val reader = scope.getResource[BufferedReader](uuid)
     val data = reader.flatMap(r => Option(r.readLine)).map(Data(fieldSet, _))
-    data foreach(_ => updateCount(scope, 1))
+    data foreach (_ => updateCount(scope, 1))
     data
   }
 

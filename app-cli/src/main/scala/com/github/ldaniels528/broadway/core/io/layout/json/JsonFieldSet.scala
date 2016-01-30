@@ -1,4 +1,4 @@
-package com.github.ldaniels528.broadway.core.io.layout.text.fields
+package com.github.ldaniels528.broadway.core.io.layout.json
 
 import com.github.ldaniels528.broadway.core.io._
 import com.github.ldaniels528.broadway.core.io.layout.{Field, FieldSet}

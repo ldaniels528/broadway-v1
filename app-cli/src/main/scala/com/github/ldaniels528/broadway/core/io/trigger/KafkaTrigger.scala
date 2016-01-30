@@ -3,7 +3,7 @@ package com.github.ldaniels528.broadway.core.io.trigger
 import com.github.ldaniels528.broadway.core.StoryConfig
 import com.github.ldaniels528.broadway.core.io.Data
 import com.github.ldaniels528.broadway.core.io.device.OutputSource
-import com.github.ldaniels528.broadway.core.io.layout.text.fields.JsonFieldSet
+import com.github.ldaniels528.broadway.core.io.layout.json.JsonFieldSet
 import com.github.ldaniels528.broadway.core.io.layout.{Field, Layout}
 import com.github.ldaniels528.broadway.core.scope.GlobalScope
 import kafka.consumer.{Consumer, ConsumerConfig}
