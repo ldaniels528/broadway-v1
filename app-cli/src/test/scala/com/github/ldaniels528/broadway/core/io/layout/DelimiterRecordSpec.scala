@@ -1,6 +1,6 @@
 package com.github.ldaniels528.broadway.core.io.layout
 
-import com.github.ldaniels528.broadway.core.io.layout.Record.Element
+
 import org.scalatest.Matchers._
 import org.scalatest.mock.MockitoSugar
 import org.scalatest.{BeforeAndAfterEach, FeatureSpec, GivenWhenThen}
@@ -20,11 +20,11 @@ class DelimiterRecordSpec() extends FeatureSpec with BeforeAndAfterEach with Giv
 
       And("a delimited record")
       val record = DelimitedRecord(Seq(
-        Element(name = "symbol", `type` = DataTypes.STRING),
-        Element(name = "open", `type` = DataTypes.STRING),
-        Element(name = "close", `type` = DataTypes.STRING),
-        Element(name = "low", `type` = DataTypes.STRING),
-        Element(name = "high", `type` = DataTypes.STRING)
+        Field(name = "symbol", `type` = DataTypes.STRING),
+        Field(name = "open", `type` = DataTypes.STRING),
+        Field(name = "close", `type` = DataTypes.STRING),
+        Field(name = "low", `type` = DataTypes.STRING),
+        Field(name = "high", `type` = DataTypes.STRING)
       ), `type` = RecordTypes.BODY, delimiter = "\t")
 
       When("the text is consumed")

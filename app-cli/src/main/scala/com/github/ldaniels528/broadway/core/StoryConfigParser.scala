@@ -8,7 +8,7 @@ import com.github.ldaniels528.broadway.core.io.device._
 import com.github.ldaniels528.broadway.core.io.device.kafka.{KafkaOutputSource, ZkProxy}
 import com.github.ldaniels528.broadway.core.io.device.nosql.MongoDbOutputSource
 import com.github.ldaniels528.broadway.core.io.device.text.{TextFileInputSource, TextFileOutputSource}
-import com.github.ldaniels528.broadway.core.io.flow.{BasicFlow, CompositionFlow, Flow}
+import com.github.ldaniels528.broadway.core.io.flow.{BasicFlow, CompositeInputFlow, CompositionFlow, Flow}
 import com.github.ldaniels528.broadway.core.io.layout._
 import com.github.ldaniels528.broadway.core.io.layout.json.{AvroLayout, JsonFieldSet, JsonLayout}
 import com.github.ldaniels528.broadway.core.io.layout.text._
@@ -17,6 +17,7 @@ import com.ldaniels528.commons.helpers.OptionHelper._
 import com.mongodb.casbah.Imports._
 
 import scala.language.postfixOps
+import scala.reflect.ClassTag
 import scala.xml.{Node, XML}
 
 /**
@@ -99,52 +100,11 @@ class StoryConfigParser(xml: Node) {
     TextFileOutputSource(id = node \@ "id", path = node \@ "path", layout = lookupLayout(layouts, node \@ "layout").need[TextLayout]("Incompatible layout"))
   }
 
-  private def parseFields(rootNode: Node) = {
-    (rootNode \ "record") map { fieldsNode =>
-      val `type` = (fieldsNode \@ "type").required
-      val fields = fieldsNode.child.filter(_.label != "#PCDATA") map { node =>
-        node.label match {
-          case "field" => parseFields_Field(node)
-          case label =>
-            throw new IllegalArgumentException(s"Invalid field type '$label'")
-        }
-      }
-
-      // decode the field set by type
-      `type` match {
-        case "csv" => CSVFieldSet(fields)
-        case "delimited" =>
-          DelimitedFieldSet(
-            fields = fields,
-            delimiter = updateSpecials((fieldsNode \@ "delimiter").required),
-            isQuoted = (fieldsNode \@ "quoted").optional.exists(isYes))
-        case "fixed-length" => FixedLengthFieldSet(fields)
-        case "json" => JsonFieldSet(fields)
-        case "inline" => FixedLengthFieldSet(fields)
-        case unknown =>
-          throw new IllegalArgumentException(s"Unrecognized fields type '$unknown'")
-      }
-    }
-  }
-
-  private def updateSpecials(s: String) = {
-    s.replaceAllLiterally("\\n", "\n")
-      .replaceAllLiterally("\\r", "\r")
-      .replaceAllLiterally("\\t", "\t")
-  }
-
-  private def parseFields_Field(node: Node) = {
-    Field(
-      name = (node \@ "name").required,
-      `type` = (node \@ "type").optional getOrElse "string",
-      value = (node \@ "value").optional,
-      length = (node \@ "length").optional map (_.toInt))
-  }
-
   private def parseFlows(rootNode: Node, devices: Seq[DataSource], layouts: Seq[Layout]): Seq[Flow] = {
     rootNode.child.filter(_.label != "#PCDATA") map { node =>
       node.label match {
         case "BasicFlow" => parseFlows_BasicFlow(node, devices)
+        case "CompositeInputFlow" => parseFlows_CompositeInputFlow(node, devices)
         case "CompositionFlow" => parseFlows_CompositionFlow(node, devices)
         case label =>
           throw new IllegalArgumentException(s"Invalid flow reference '$label'")
@@ -157,6 +117,15 @@ class StoryConfigParser(xml: Node) {
       id = node \@ "id",
       input = lookupInputDevice(devices, id = node \@ "input-source"),
       output = lookupOutputDevice(devices, id = node \@ "output-source"))
+  }
+
+  private def parseFlows_CompositeInputFlow(node: Node, devices: Seq[DataSource]) = {
+    CompositeInputFlow(
+      id = node \@ "id",
+      theOutput = lookupOutputDevice(devices, id = node \@ "output-source"),
+      theInputs = (node \ "include") map { includeNode =>
+        lookupInputDevice(devices, id = includeNode \@ "input-source")
+      })
   }
 
   private def parseFlows_CompositionFlow(node: Node, devices: Seq[DataSource]) = {
@@ -185,7 +154,7 @@ class StoryConfigParser(xml: Node) {
   private def parseLayouts_Layout_Avro(node: Node) = {
     AvroLayout(
       id = node \@ "id",
-      fieldSet = parseFields(node).headOption orDie "Exactly one fields element was expected",
+      fieldSet = parseRecord(node).headOption orDie "Exactly one fields element was expected",
       schemaString = (node \ "schema").map(_.text).headOption orDie "Schema element required")
   }
 
@@ -198,13 +167,13 @@ class StoryConfigParser(xml: Node) {
     */
   private def parseLayouts_Layout_Division(rootNode: Node, label: String) = {
     (rootNode \ label).onlyOne(s"Only one $label element is allowed") match {
-      case Some(node) => Some(Division(parseFields(node)))
+      case Some(node) => Some(Division(parseRecord(node)))
       case None => None
     }
   }
 
   private def parseLayouts_Layout_Json(node: Node) = {
-    JsonLayout(id = node \@ "id", fieldSets = parseFields(node))
+    JsonLayout(id = node \@ "id", fieldSets = parseRecord(node))
   }
 
   private def parseLayouts_Layout_Text(node: Node) = {
@@ -213,6 +182,42 @@ class StoryConfigParser(xml: Node) {
       header = parseLayouts_Layout_Division(node, "header"),
       body = parseLayouts_Layout_Division(node, "body") orDie "The <body> element is required",
       footer = parseLayouts_Layout_Division(node, "footer"))
+  }
+
+  private def parseRecord(rootNode: Node) = {
+    (rootNode \ "record") map { fieldsNode =>
+      val `type` = (fieldsNode \@ "type").required
+      val fields = fieldsNode.child.filter(_.label != "#PCDATA") map { node =>
+        node.label match {
+          case "field" => parseRecord_Field(node)
+          case label =>
+            throw new IllegalArgumentException(s"Invalid field type '$label'")
+        }
+      }
+
+      // decode the field set by type
+      `type` match {
+        case "csv" => CSVFieldSet(fields)
+        case "delimited" =>
+          DelimitedFieldSet(
+            fields = fields,
+            delimiter = updateSpecials((fieldsNode \@ "delimiter").required),
+            isQuoted = (fieldsNode \@ "quoted").optional.exists(isYes))
+        case "fixed-length" => FixedLengthFieldSet(fields)
+        case "json" => JsonFieldSet(fields)
+        case "inline" => FixedLengthFieldSet(fields)
+        case unknown =>
+          throw new IllegalArgumentException(s"Unrecognized fields type '$unknown'")
+      }
+    }
+  }
+
+  private def parseRecord_Field(node: Node) = {
+    Field(
+      name = (node \@ "name").required,
+      `type` = (node \@ "type").optional.map(s => DataTypes.withName(s.toUpperCase)) getOrElse DataTypes.STRING,
+      value = (node \@ "value").optional,
+      length = (node \@ "length").optional map (_.toInt))
   }
 
   private def parseTriggers(rootNode: Node) = {
@@ -292,6 +297,12 @@ class StoryConfigParser(xml: Node) {
 
   private def isYes(s: String) = s == "y" || s == "yes" || s == "t" || s == "true"
 
+  private def updateSpecials(s: String) = {
+    s.replaceAllLiterally("\\n", "\n")
+      .replaceAllLiterally("\\r", "\r")
+      .replaceAllLiterally("\\t", "\t")
+  }
+
 }
 
 /**
@@ -322,7 +333,7 @@ object StoryConfigParser {
     */
   implicit class TypeConversion[T](val entity: T) extends AnyVal {
 
-    def need[A](message: String): A = entity match {
+    def need[A](message: String)(implicit tag: ClassTag[A]): A = entity match {
       case converted: A => converted
       case _ =>
         throw new IllegalArgumentException(message)
@@ -338,13 +349,13 @@ object StoryConfigParser {
     */
   implicit class SequenceEnrichment[T](val values: Seq[T]) extends AnyVal {
 
-    def only[A](name: T => String, typeName: String): Seq[A] = values map {
+    def only[A](name: T => String, typeName: String)(implicit tag: ClassTag[A]): Seq[A] = values map {
       case value: A => value
       case value =>
         throw new IllegalArgumentException(s"${name(value)} is not a $typeName")
     }
 
-    def pull[A]: Seq[A] = values flatMap {
+    def pull[A](implicit tag: ClassTag[A]): Seq[A] = values flatMap {
       case value: A => Some(value)
       case _ => None
     }

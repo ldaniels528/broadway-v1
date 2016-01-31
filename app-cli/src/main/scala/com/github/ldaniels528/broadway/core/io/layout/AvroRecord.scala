@@ -1,6 +1,6 @@
 package com.github.ldaniels528.broadway.core.io.layout
 
-import com.github.ldaniels528.broadway.core.io.layout.Record.Element
+
 import com.github.ldaniels528.broadway.core.io.layout.RecordTypes._
 import com.github.ldaniels528.broadway.core.util.AvroConversion._
 import org.apache.avro.Schema
@@ -9,10 +9,12 @@ import play.api.libs.json.{JsArray, JsObject, Json}
 /**
   * Avro Record implementation
   */
-case class AvroRecord(id: String, namespace: String, fields: Seq[Element], `type`: RecordType)
+case class AvroRecord(id: String, namespace: String, fields: Seq[Field], `type`: RecordType)
   extends Record with BinaryRecord with JsonCapability {
 
   private val schema = new Schema.Parser().parse(toSchemaString)
+
+  override def duplicate = this.copy()
 
   override def fromBytes(bytes: Array[Byte]) = fromJson(transcodeAvroBytesToAvroJson(schema, bytes))
 
@@ -34,7 +36,5 @@ case class AvroRecord(id: String, namespace: String, fields: Seq[Element], `type
           "doc" -> "auto-generated comment") :: list
       })) toString()
   }
-
-  override def toString = s"${getClass.getSimpleName}($toJson)"
 
 }

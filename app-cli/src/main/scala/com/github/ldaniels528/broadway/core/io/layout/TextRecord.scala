@@ -5,10 +5,8 @@ package com.github.ldaniels528.broadway.core.io.layout
   */
 trait TextRecord extends Record {
 
-  def fromLine(line: String): Unit
+  def fromLine(line: String): this.type
 
   def toLine: String
-
-  override def toString = s"${getClass.getSimpleName}($toLine)"
 
 }

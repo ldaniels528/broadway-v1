@@ -4,9 +4,10 @@ import java.io.{BufferedReader, File, FileReader}
 import java.util.UUID
 
 import com.github.ldaniels528.broadway.core.io.Data
-import com.github.ldaniels528.broadway.core.io.device.InputSource
+import com.github.ldaniels528.broadway.core.io.device.{InputSource, TextRecordInputSource}
+
+import com.github.ldaniels528.broadway.core.io.layout._
 import com.github.ldaniels528.broadway.core.io.layout.text.FixedLengthFieldSet
-import com.github.ldaniels528.broadway.core.io.layout.{Field, Layout}
 import com.github.ldaniels528.broadway.core.scope.Scope
 
 /**
@@ -14,9 +15,18 @@ import com.github.ldaniels528.broadway.core.scope.Scope
   *
   * @author lawrence.daniels@gmail.com
   */
-case class TextFileInputSource(id: String, path: String, layout: Layout) extends InputSource {
+case class TextFileInputSource(id: String, path: String, layout: Layout) extends InputSource with TextRecordInputSource {
   private val fieldSet = FixedLengthFieldSet(Seq(Field(name = "line")))
   private val uuid = UUID.randomUUID().toString
+
+  val templateRecord = DelimitedRecord(
+    id = "delimited_data",
+    delimiter = "\t",
+    `type` = RecordTypes.BODY,
+    fields = Seq(
+      Field(name = "symbol", `type` = DataTypes.STRING),
+      Field(name = "description", `type` = DataTypes.STRING)
+    ))
 
   override def close(scope: Scope) = scope.discardResource[BufferedReader](uuid).foreach(_.close())
 
@@ -40,6 +50,13 @@ case class TextFileInputSource(id: String, path: String, layout: Layout) extends
     val data = reader.flatMap(r => Option(r.readLine)).map(Data(fieldSet, _))
     data foreach (_ => updateCount(scope, 1))
     data
+  }
+
+  override def readRecord(implicit scope: Scope) = {
+    val reader = scope.getResource[BufferedReader](uuid)
+    val record = reader.flatMap(r => Option(r.readLine)).map(templateRecord.copy().fromLine)
+    record foreach (_ => updateCount(scope, 1))
+    record
   }
 
 }

@@ -2,7 +2,7 @@ package com.github.ldaniels528.broadway.core.io.layout
 
 import com.ldaniels528.commons.helpers.OptionHelper.Risky._
 import org.scalatest.Matchers._
-import com.github.ldaniels528.broadway.core.io.layout.Record.Element
+
 import org.scalatest.mock.MockitoSugar
 import org.scalatest.{GivenWhenThen, BeforeAndAfterEach, FeatureSpec}
 
@@ -21,11 +21,11 @@ class FixedLengthRecordSpec() extends FeatureSpec with BeforeAndAfterEach with G
 
       And("a fixed-length record")
       val record = FixedLengthRecord(Seq(
-        Element(name = "symbol", `type` = DataTypes.STRING, length = 10),
-        Element(name = "open", `type` = DataTypes.STRING, length = 10),
-        Element(name = "close", `type` = DataTypes.STRING, length = 10),
-        Element(name = "low", `type` = DataTypes.STRING, length = 10),
-        Element(name = "high", `type` = DataTypes.STRING, length = 10)
+        Field(name = "symbol", `type` = DataTypes.STRING, length = 10),
+        Field(name = "open", `type` = DataTypes.STRING, length = 10),
+        Field(name = "close", `type` = DataTypes.STRING, length = 10),
+        Field(name = "low", `type` = DataTypes.STRING, length = 10),
+        Field(name = "high", `type` = DataTypes.STRING, length = 10)
       ), `type` = RecordTypes.BODY)
 
       When("the text is consumed")

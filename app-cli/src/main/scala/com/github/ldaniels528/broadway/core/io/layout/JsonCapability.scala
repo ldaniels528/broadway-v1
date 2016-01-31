@@ -2,7 +2,7 @@ package com.github.ldaniels528.broadway.core.io.layout
 
 import com.github.ldaniels528.broadway.core.io.layout.DataTypes._
 import com.github.ldaniels528.broadway.core.io.layout.JsonCapability._
-import com.github.ldaniels528.broadway.core.io.layout.Record.Element
+
 import com.ldaniels528.commons.helpers.OptionHelper.Risky._
 import com.ldaniels528.commons.helpers.OptionHelper._
 import org.slf4j.LoggerFactory
@@ -17,12 +17,13 @@ trait JsonCapability {
   protected val logger = LoggerFactory.getLogger(getClass)
   private val fieldMappings = Map(fields.map(f => f.name -> f): _*)
 
-  def fromJson(jsonString: String) = {
+  def fromJson(jsonString: String): this.type = {
     Json.parse(jsonString) match {
       case jo: JsObject => populate(prefix = None, jo)
       case js =>
         logger.info(s"Unhandled JSON value '$js' (${js.getClass.getSimpleName})")
     }
+    this
   }
 
   def toJson: JsObject = {
@@ -57,9 +58,9 @@ object JsonCapability {
   /**
     * Json Record Enrichment
     *
-    * @param field the given [[Element field]]
+    * @param field the given [[Field field]]
     */
-  implicit class JsonRecordEnrichment(val field: Element) extends AnyVal {
+  implicit class JsonRecordEnrichment(val field: Field) extends AnyVal {
 
     def convertToJson: JsValue = {
       field.value map { value =>

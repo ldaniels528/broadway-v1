@@ -57,6 +57,7 @@ case class ConcurrentOutputSource(id: String, concurrency: Int, devices: Seq[Out
       if (System.currentTimeMillis() - lastWrite >= 15.minutes.toMillis) devices.foreach(_.close(scope))
       else delayedClose(scope)
     }
+    ()
   }
 
 }

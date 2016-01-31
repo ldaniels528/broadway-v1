@@ -93,7 +93,7 @@ object Data {
       case _ =>
         val mapping = Map(data.asTuples: _*)
         val typedValues = data.fieldSet.fields map { field =>
-          field.name -> DataConversion.convertToJson(mapping.get(field.name), field.`type`)
+          field.name -> DataConversion.convertToJson(mapping.get(field.name), field.`type`.toTypeName)
         }
         typedValues.foldLeft(Json.obj()) { case (js, (k, v)) => js ++ Json.obj(k -> v) }
     }

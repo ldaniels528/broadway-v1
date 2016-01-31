@@ -37,49 +37,49 @@
 
         <layout id="csv_input_layout">
             <CsvRecord id="csv_output">
-                <field name="ticker" type="string" value="{{ input_layout.body.ticker }}"/>
-                <field name="date" type="string" value="{{ input_layout.body.date }}"/>
-                <field name="open" type="double" value="{{ input_layout.body.open }}"/>
-                <field name="high" type="double" value="{{ input_layout.body.high }}"/>
-                <field name="low" type="double" value="{{ input_layout.body.low }}"/>
-                <field name="close" type="string" value="{{ input_layout.body.close }}"/>
-                <field name="volume" type="long" value="{{ input_layout.body.volume }}"/>
+                <field name="ticker" type="string" value="{{ body_csv.ticker }}"/>
+                <field name="date" type="string" value="{{ body_csv.date }}"/>
+                <field name="open" type="double" value="{{ body_csv.open }}"/>
+                <field name="high" type="double" value="{{ body_csv.high }}"/>
+                <field name="low" type="double" value="{{ body_csv.low }}"/>
+                <field name="close" type="string" value="{{ body_csv.close }}"/>
+                <field name="volume" type="long" value="{{ body_csv.volume }}"/>
             </CsvRecord>
         </layout>
 
         <layout id="delimited_input_layout">
             <DelimitedRecord id="tab_delimited_output" delimiter="\t" quoted="false">
-                <field name="ticker" type="string" value="{{ input_layout.body.ticker }}"/>
-                <field name="date" type="string" value="{{ input_layout.body.date }}"/>
-                <field name="open" type="double" value="{{ input_layout.body.open }}"/>
-                <field name="high" type="double" value="{{ input_layout.body.high }}"/>
-                <field name="low" type="double" value="{{ input_layout.body.low }}"/>
-                <field name="close" type="string" value="{{ input_layout.body.close }}"/>
-                <field name="volume" type="long" value="{{ input_layout.body.volume }}"/>
+                <field name="ticker" type="string" value="{{ body_csv.ticker }}"/>
+                <field name="date" type="string" value="{{ body_csv.date }}"/>
+                <field name="open" type="double" value="{{ body_csv.open }}"/>
+                <field name="high" type="double" value="{{ body_csv.high }}"/>
+                <field name="low" type="double" value="{{ body_csv.low }}"/>
+                <field name="close" type="string" value="{{ body_csv.close }}"/>
+                <field name="volume" type="long" value="{{ body_csv.volume }}"/>
             </DelimitedRecord>
         </layout>
 
         <layout id="json_input_layout">
             <JsonRecord id="mongo_output">
-                <field name="ticker" type="string" value="{{ input_layout.body.ticker }}"/>
-                <field name="date" type="string" value="{{ input_layout.body.date }}"/>
-                <field name="open" type="double" value="{{ input_layout.body.open }}"/>
-                <field name="high" type="double" value="{{ input_layout.body.high }}"/>
-                <field name="low" type="double" value="{{ input_layout.body.low }}"/>
-                <field name="close" type="string" value="{{ input_layout.body.close }}"/>
-                <field name="volume" type="long" value="{{ input_layout.body.volume }}"/>
+                <field name="ticker" type="string" value="{{ body_csv.ticker }}"/>
+                <field name="date" type="string" value="{{ body_csv.date }}"/>
+                <field name="open" type="double" value="{{ body_csv.open }}"/>
+                <field name="high" type="double" value="{{ body_csv.high }}"/>
+                <field name="low" type="double" value="{{ body_csv.low }}"/>
+                <field name="close" type="string" value="{{ body_csv.close }}"/>
+                <field name="volume" type="long" value="{{ body_csv.volume }}"/>
             </JsonRecord>
         </layout>
 
         <layout id="xml_input_layout">
             <XmlRecord id="xml_output">
-                <field name="ticker" type="string" value="{{ input_layout.body.ticker }}"/>
-                <field name="date" type="string" value="{{ input_layout.body.date }}"/>
-                <field name="open" type="double" value="{{ input_layout.body.open }}"/>
-                <field name="high" type="double" value="{{ input_layout.body.high }}"/>
-                <field name="low" type="double" value="{{ input_layout.body.low }}"/>
-                <field name="close" type="string" value="{{ input_layout.body.close }}"/>
-                <field name="volume" type="long" value="{{ input_layout.body.volume }}"/>
+                <field name="ticker" type="string" value="{{ body_csv.ticker }}"/>
+                <field name="date" type="string" value="{{ body_csv.date }}"/>
+                <field name="open" type="double" value="{{ body_csv.open }}"/>
+                <field name="high" type="double" value="{{ body_csv.high }}"/>
+                <field name="low" type="double" value="{{ body_csv.low }}"/>
+                <field name="close" type="string" value="{{ body_csv.close }}"/>
+                <field name="volume" type="long" value="{{ body_csv.volume }}"/>
             </XmlRecord>
         </layout>
 

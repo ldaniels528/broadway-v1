@@ -1,6 +1,6 @@
 package com.github.ldaniels528.broadway.core.io.layout
 
-import com.github.ldaniels528.broadway.core.io.layout.Record.Element
+
 import org.scalatest.Matchers._
 import org.scalatest.mock.MockitoSugar
 import org.scalatest.{BeforeAndAfterEach, FeatureSpec, GivenWhenThen}
@@ -20,11 +20,11 @@ class JsonRecordSpec() extends FeatureSpec with BeforeAndAfterEach with GivenWhe
 
       And("a JSON record")
       val record = JsonRecord(Seq(
-        Element(name = "symbol", `type` = DataTypes.STRING),
-        Element(name = "open", `type` = DataTypes.DOUBLE),
-        Element(name = "close", `type` = DataTypes.DOUBLE),
-        Element(name = "low", `type` = DataTypes.DOUBLE),
-        Element(name = "high", `type` = DataTypes.DOUBLE)
+        Field(name = "symbol", `type` = DataTypes.STRING),
+        Field(name = "open", `type` = DataTypes.DOUBLE),
+        Field(name = "close", `type` = DataTypes.DOUBLE),
+        Field(name = "low", `type` = DataTypes.DOUBLE),
+        Field(name = "high", `type` = DataTypes.DOUBLE)
       ), `type` = RecordTypes.BODY)
 
       When("the text is consumed")

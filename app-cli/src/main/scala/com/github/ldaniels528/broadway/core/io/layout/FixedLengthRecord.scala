@@ -1,14 +1,16 @@
 package com.github.ldaniels528.broadway.core.io.layout
 
 import scala.language.postfixOps
-import com.github.ldaniels528.broadway.core.io.layout.Record.Element
+
 import com.github.ldaniels528.broadway.core.io.layout.RecordTypes._
 import com.ldaniels528.commons.helpers.OptionHelper.Risky._
 
 /**
   * Fixed Length Record implementation
   */
-case class FixedLengthRecord(fields: Seq[Element], `type`: RecordType) extends TextRecord {
+case class FixedLengthRecord(id: String, fields: Seq[Field], `type`: RecordType) extends TextRecord {
+
+  override def duplicate = this.copy()
 
   override def fromLine(line: String) = {
     var pos = 0
@@ -17,6 +19,7 @@ case class FixedLengthRecord(fields: Seq[Element], `type`: RecordType) extends T
       field.value = extract(line, pos, pos + length).trim
       pos += length
     }
+    this
   }
 
   override def toLine = {
