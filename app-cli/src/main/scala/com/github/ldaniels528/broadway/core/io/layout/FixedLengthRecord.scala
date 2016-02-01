@@ -1,28 +1,26 @@
 package com.github.ldaniels528.broadway.core.io.layout
 
-import scala.language.postfixOps
+import com.github.ldaniels528.broadway.core.io.Scope
+import com.github.ldaniels528.broadway.core.io.layout.Field._
 
-import com.github.ldaniels528.broadway.core.io.layout.RecordTypes._
-import com.ldaniels528.commons.helpers.OptionHelper.Risky._
+import scala.language.postfixOps
 
 /**
   * Fixed Length Record implementation
   */
-case class FixedLengthRecord(id: String, fields: Seq[Field], `type`: RecordType) extends TextRecord {
+case class FixedLengthRecord(id: String, fields: Seq[Field]) extends TextRecord {
 
-  override def duplicate = this.copy()
-
-  override def fromLine(line: String) = {
+  override def fromLine(line: String)(implicit scope: Scope) = {
     var pos = 0
     fields foreach { field =>
       val length = field.length getOrElse 1
-      field.value = extract(line, pos, pos + length).trim
+      field.value = extract(line, pos, pos + length).trim.convert(field.`type`)
       pos += length
     }
     this
   }
 
-  override def toLine = {
+  override def toLine(implicit scope: Scope) = {
     fields.foldLeft[StringBuilder](new StringBuilder) { (sb, field) =>
       val raw = field.value.map(_.toString).getOrElse("")
       val length = field.length.getOrElse(raw.length)

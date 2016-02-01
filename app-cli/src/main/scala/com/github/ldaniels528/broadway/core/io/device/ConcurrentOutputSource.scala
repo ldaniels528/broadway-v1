@@ -4,8 +4,7 @@ import java.util.concurrent.Callable
 
 import akka.util.Timeout
 import com.github.ldaniels528.broadway.core.actors.{BroadwayActorSystem, TaskActorPool}
-import com.github.ldaniels528.broadway.core.io.Data
-import com.github.ldaniels528.broadway.core.scope.Scope
+import com.github.ldaniels528.broadway.core.io.{Scope, Data}
 import com.ldaniels528.commons.helpers.OptionHelper._
 
 import scala.concurrent.ExecutionContext

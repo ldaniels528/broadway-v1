@@ -5,10 +5,9 @@ import java.io.File
 import com.github.ldaniels528.broadway.core.StoryConfigParser._
 import com.github.ldaniels528.broadway.core.io.archive.FileArchive
 import com.github.ldaniels528.broadway.core.io.device._
-import com.github.ldaniels528.broadway.core.io.device.kafka.{KafkaOutputSource, ZkProxy}
-import com.github.ldaniels528.broadway.core.io.device.nosql.MongoDbOutputSource
-import com.github.ldaniels528.broadway.core.io.device.text.{TextFileInputSource, TextFileOutputSource}
-import com.github.ldaniels528.broadway.core.io.flow.{BasicFlow, CompositeInputFlow, CompositionFlow, Flow}
+import com.github.ldaniels528.broadway.core.io.device.kafka.ZkProxy
+import com.github.ldaniels528.broadway.core.io.flow._
+import com.github.ldaniels528.broadway.core.io.layout.MultiPartLayout.Section
 import com.github.ldaniels528.broadway.core.io.layout._
 import com.github.ldaniels528.broadway.core.io.layout.json.{AvroLayout, JsonFieldSet, JsonLayout}
 import com.github.ldaniels528.broadway.core.io.layout.text._
@@ -26,9 +25,9 @@ import scala.xml.{Node, XML}
 class StoryConfigParser(xml: Node) {
 
   def parse: Option[StoryConfig] = {
-    ((xml \\ "story") map { node =>
+    (xml \\ "story") map { node =>
       StoryConfig(id = node \@ "id", triggers = parseTriggers(node))
-    }).headOption
+    } headOption
   }
 
   private def parseArchives(rootNode: Node) = {
@@ -47,23 +46,23 @@ class StoryConfigParser(xml: Node) {
     FileArchive(id = rootNode \@ "id", base = new File(rootNode \@ "base"))
   }
 
-  private def parseDevices(rootNode: Node, layouts: Seq[Layout]): Seq[DataSource] = {
+  private def parseDataSources(rootNode: Node, layouts: Seq[Layout]): Seq[DataSource] = {
     (rootNode \ "data-sources") flatMap { devicesNode =>
       devicesNode.child.filter(_.label != "#PCDATA") map { node =>
         node.label match {
-          case "KafkaOutputSource" => parseDevices_KafkaOutputDevice(node, layouts)
-          case "MongoOutputSource" => parseDevices_MongoOutputDevice(node, layouts)
-          case "ConcurrentOutputSource" => parseDevices_ConcurrentOutputSource(node, layouts)
-          case "TextFileInputSource" => parseDevices_TextInputDevice(node, layouts)
-          case "TextFileOutputSource" => parseDevices_TextOutputDevice(node, layouts)
+          case "KafkaOutputSource" => parseDataSources_KafkaOutputDataSource(node, layouts)
+          case "MongoOutputSource" => parseDataSources_MongoOutputDataSource(node, layouts)
+          case "ConcurrentOutputSource" => parseDataSources_ConcurrentOutputSource(node, layouts)
+          case "TextFileInputSource" => parseDataSources_TextInputDataSource(node, layouts)
+          case "TextFileOutputSource" => parseDataSources_TextOutputDataSource(node, layouts)
           case label =>
-            throw new IllegalArgumentException(s"Invalid device type '$label'")
+            throw new IllegalArgumentException(s"Invalid data source type '$label'")
         }
       }
     }
   }
 
-  private def parseDevices_KafkaOutputDevice(node: Node, layouts: Seq[Layout]) = {
+  private def parseDataSources_KafkaOutputDataSource(node: Node, layouts: Seq[Layout]) = {
     KafkaOutputSource(
       id = node \@ "id",
       topic = node \@ "topic",
@@ -71,33 +70,33 @@ class StoryConfigParser(xml: Node) {
       layout = lookupLayout(layouts, id = node \@ "layout"))
   }
 
-  private def parseDevices_MongoOutputDevice(node: Node, layouts: Seq[Layout]) = {
+  private def parseDataSources_MongoOutputDataSource(node: Node, layouts: Seq[Layout]) = {
     MongoDbOutputSource(
       id = node \@ "id",
       serverList = node \@ "servers",
       database = node \@ "database",
       collection = node \@ "collection",
       writeConcern = (node \@ "write-concern").optional.map(getWriteConcern).getOrElse(WriteConcern.JournalSafe),
-      layout = lookupLayout(layouts, id = node \@ "layout").need[JsonLayout]("Incompatible layout"))
+      layout = lookupLayout(layouts, id = node \@ "layout"))
   }
 
   private def getWriteConcern(concern: String) = {
     WriteConcern.valueOf(concern) orDie s"Invalid write concern '$concern'"
   }
 
-  private def parseDevices_ConcurrentOutputSource(node: Node, layouts: Seq[Layout]) = {
+  private def parseDataSources_ConcurrentOutputSource(node: Node, layouts: Seq[Layout]) = {
     ConcurrentOutputSource(
       id = node \@ "id",
       concurrency = (node \@ "concurrency").optional.map(_.toInt) getOrElse 2,
-      devices = parseDevices(node, layouts).only[OutputSource](_.id, "output device"))
+      devices = parseDataSources(node, layouts).only[OutputSource](_.id, "output device"))
   }
 
-  private def parseDevices_TextInputDevice(node: Node, layouts: Seq[Layout]) = {
-    TextFileInputSource(id = node \@ "id", path = node \@ "path", layout = lookupLayout(layouts, node \@ "layout").need[TextLayout]("Incompatible layout"))
+  private def parseDataSources_TextInputDataSource(node: Node, layouts: Seq[Layout]) = {
+    TextFileInputSource(id = node \@ "id", path = node \@ "path", layout = lookupLayout(layouts, node \@ "layout"))
   }
 
-  private def parseDevices_TextOutputDevice(node: Node, layouts: Seq[Layout]) = {
-    TextFileOutputSource(id = node \@ "id", path = node \@ "path", layout = lookupLayout(layouts, node \@ "layout").need[TextLayout]("Incompatible layout"))
+  private def parseDataSources_TextOutputDataSource(node: Node, layouts: Seq[Layout]) = {
+    TextFileOutputSource(id = node \@ "id", path = node \@ "path", layout = lookupLayout(layouts, node \@ "layout"))
   }
 
   private def parseFlows(rootNode: Node, devices: Seq[DataSource], layouts: Seq[Layout]): Seq[Flow] = {
@@ -106,6 +105,7 @@ class StoryConfigParser(xml: Node) {
         case "BasicFlow" => parseFlows_BasicFlow(node, devices)
         case "CompositeInputFlow" => parseFlows_CompositeInputFlow(node, devices)
         case "CompositionFlow" => parseFlows_CompositionFlow(node, devices)
+        case "SimpleFlow" => parseFlows_SimpleFlow(node, devices)
         case label =>
           throw new IllegalArgumentException(s"Invalid flow reference '$label'")
       }
@@ -115,26 +115,33 @@ class StoryConfigParser(xml: Node) {
   private def parseFlows_BasicFlow(node: Node, devices: Seq[DataSource]) = {
     BasicFlow(
       id = node \@ "id",
-      input = lookupInputDevice(devices, id = node \@ "input-source"),
-      output = lookupOutputDevice(devices, id = node \@ "output-source"))
+      input = lookupInputDataSource(devices, id = node \@ "input-source"),
+      output = lookupOutputDataSource(devices, id = node \@ "output-source"))
   }
 
   private def parseFlows_CompositeInputFlow(node: Node, devices: Seq[DataSource]) = {
     CompositeInputFlow(
       id = node \@ "id",
-      theOutput = lookupOutputDevice(devices, id = node \@ "output-source"),
-      theInputs = (node \ "include") map { includeNode =>
-        lookupInputDevice(devices, id = includeNode \@ "input-source")
+      output = lookupOutputDataSource(devices, id = node \@ "output-source"),
+      inputs = (node \ "include") map { includeNode =>
+        lookupInputDataSource(devices, id = includeNode \@ "input-source")
       })
   }
 
   private def parseFlows_CompositionFlow(node: Node, devices: Seq[DataSource]) = {
     CompositionFlow(
       id = node \@ "id",
-      output = lookupOutputDevice(devices, id = node \@ "output-source"),
+      output = lookupOutputDataSource(devices, id = node \@ "output-source"),
       inputs = (node \ "include") map { includeNode =>
-        lookupInputDevice(devices, id = includeNode \@ "input-source")
+        lookupInputDataSource(devices, id = includeNode \@ "input-source")
       })
+  }
+
+  private def parseFlows_SimpleFlow(node: Node, devices: Seq[DataSource]) = {
+    SimpleFlow(
+      id = node \@ "id",
+      input = lookupInputDataSource(devices, id = node \@ "input-source"),
+      output = lookupOutputDataSource(devices, id = node \@ "output-source"))
   }
 
   private def parseLayouts(rootNode: Node): Seq[Layout] = {
@@ -143,6 +150,7 @@ class StoryConfigParser(xml: Node) {
         node.label match {
           case "AvroLayout" => parseLayouts_Layout_Avro(node)
           case "JsonLayout" => parseLayouts_Layout_Json(node)
+          case "MultiPartLayout" => parseLayouts_Layout_MultiPart(node)
           case "TextLayout" => parseLayouts_Layout_Text(node)
           case label =>
             throw new IllegalArgumentException(s"Invalid layout type '$label'")
@@ -154,7 +162,7 @@ class StoryConfigParser(xml: Node) {
   private def parseLayouts_Layout_Avro(node: Node) = {
     AvroLayout(
       id = node \@ "id",
-      fieldSet = parseRecord(node).headOption orDie "Exactly one fields element was expected",
+      fieldSet = parseRecord_Old(node).headOption orDie "Exactly one fields element was expected",
       schemaString = (node \ "schema").map(_.text).headOption orDie "Schema element required")
   }
 
@@ -167,13 +175,35 @@ class StoryConfigParser(xml: Node) {
     */
   private def parseLayouts_Layout_Division(rootNode: Node, label: String) = {
     (rootNode \ label).onlyOne(s"Only one $label element is allowed") match {
-      case Some(node) => Some(Division(parseRecord(node)))
+      case Some(node) => Some(Division(parseRecord_Old(node)))
+      case None => None
+    }
+  }
+
+  /**
+    * Parses a layout section
+    *
+    * @param rootNode the given [[Node node]]
+    * @param label    the given label (e.g. "body", "header" or "footer")
+    * @return a collection of [[Section sections]]
+    */
+  private def parseLayouts_Layout_Section(rootNode: Node, label: String) = {
+    (rootNode \ label).onlyOne(s"Only one $label element is allowed") match {
+      case Some(node) => Some(Section(parseRecord(node)))
       case None => None
     }
   }
 
   private def parseLayouts_Layout_Json(node: Node) = {
-    JsonLayout(id = node \@ "id", fieldSets = parseRecord(node))
+    JsonLayout(id = node \@ "id", fieldSets = parseRecord_Old(node))
+  }
+
+  private def parseLayouts_Layout_MultiPart(node: Node) = {
+    MultiPartLayout(
+      id = node \@ "id",
+      header = parseLayouts_Layout_Section(node, "header"),
+      body = parseLayouts_Layout_Section(node, "body") orDie "The <body> element is required",
+      footer = parseLayouts_Layout_Section(node, "footer"))
   }
 
   private def parseLayouts_Layout_Text(node: Node) = {
@@ -186,10 +216,45 @@ class StoryConfigParser(xml: Node) {
 
   private def parseRecord(rootNode: Node) = {
     (rootNode \ "record") map { fieldsNode =>
+      val id = (fieldsNode \@ "id").required
       val `type` = (fieldsNode \@ "type").required
       val fields = fieldsNode.child.filter(_.label != "#PCDATA") map { node =>
         node.label match {
-          case "field" => parseRecord_Field(node)
+          case "field" => parseRecord_Field(id, node)
+          case label =>
+            throw new IllegalArgumentException(s"Invalid field type '$label'")
+        }
+      }
+
+      // decode the field set by type
+      `type` match {
+        case "avro" => AvroRecord(id = id, name = (fieldsNode \@ "name").required, namespace = (fieldsNode \@ "namespace").required, fields = fields)
+        case "csv" => CsvRecord(id = id, fields = fields)
+        case "delimited" => DelimitedRecord(id = id, fields = fields, delimiter = (fieldsNode \@ "delimiter").required.specialChars)
+        case "fixed-length" => FixedLengthRecord(id = id, fields = fields)
+        case "json" => JsonRecord(id = id, fields = fields)
+        case unknown =>
+          throw new IllegalArgumentException(s"Unrecognized fields type '$unknown'")
+      }
+    }
+  }
+
+  private def parseRecord_Field(recordId: String, node: Node) = {
+    val name = (node \@ "name").required
+    Field(
+      name = name,
+      path = s"$recordId.$name",
+      `type` = (node \@ "type").optional.map(s => DataTypes.withName(s.toUpperCase)) getOrElse DataTypes.STRING,
+      defaultValue = (node \@ "value").optional,
+      length = (node \@ "length").optional map (_.toInt))
+  }
+
+  private def parseRecord_Old(rootNode: Node) = {
+    (rootNode \ "record") map { fieldsNode =>
+      val `type` = (fieldsNode \@ "type").required
+      val fields = fieldsNode.child.filter(_.label != "#PCDATA") map { node =>
+        node.label match {
+          case "field" => parseRecord_Field_Old(node)
           case label =>
             throw new IllegalArgumentException(s"Invalid field type '$label'")
         }
@@ -201,8 +266,8 @@ class StoryConfigParser(xml: Node) {
         case "delimited" =>
           DelimitedFieldSet(
             fields = fields,
-            delimiter = updateSpecials((fieldsNode \@ "delimiter").required),
-            isQuoted = (fieldsNode \@ "quoted").optional.exists(isYes))
+            delimiter = (fieldsNode \@ "delimiter").required.specialChars,
+            isQuoted = (fieldsNode \@ "quoted").optional.exists(_.isTrue))
         case "fixed-length" => FixedLengthFieldSet(fields)
         case "json" => JsonFieldSet(fields)
         case "inline" => FixedLengthFieldSet(fields)
@@ -212,17 +277,18 @@ class StoryConfigParser(xml: Node) {
     }
   }
 
-  private def parseRecord_Field(node: Node) = {
+  private def parseRecord_Field_Old(node: Node) = {
     Field(
       name = (node \@ "name").required,
+      path = (node \@ "name").required,
       `type` = (node \@ "type").optional.map(s => DataTypes.withName(s.toUpperCase)) getOrElse DataTypes.STRING,
-      value = (node \@ "value").optional,
+      defaultValue = (node \@ "value").optional,
       length = (node \@ "length").optional map (_.toInt))
   }
 
   private def parseTriggers(rootNode: Node) = {
     val layouts = parseLayouts(rootNode)
-    val devices = parseDevices(rootNode, layouts)
+    val devices = parseDataSources(rootNode, layouts)
     val archives = parseArchives(rootNode)
     (rootNode \ "triggers") flatMap { triggerNode =>
       triggerNode.child.filter(_.label != "#PCDATA") map { node =>
@@ -271,7 +337,7 @@ class StoryConfigParser(xml: Node) {
     archives.find(_.id == id) orDie s"Archive '$id' not found"
   }
 
-  private def lookupInputDevice(devices: Seq[DataSource], id: String) = {
+  private def lookupInputDataSource(devices: Seq[DataSource], id: String) = {
     devices.find(_.id == id) match {
       case Some(device: InputSource) => device
       case Some(device) =>
@@ -285,7 +351,7 @@ class StoryConfigParser(xml: Node) {
     layouts.find(_.id == id) orDie s"Layout '$id' was not found"
   }
 
-  private def lookupOutputDevice(devices: Seq[DataSource], id: String) = {
+  private def lookupOutputDataSource(devices: Seq[DataSource], id: String) = {
     devices.find(_.id == id) match {
       case Some(device: OutputSource) => device
       case Some(device) =>
@@ -293,14 +359,6 @@ class StoryConfigParser(xml: Node) {
       case None =>
         throw new IllegalStateException(s"Source '$id' was not found")
     }
-  }
-
-  private def isYes(s: String) = s == "y" || s == "yes" || s == "t" || s == "true"
-
-  private def updateSpecials(s: String) = {
-    s.replaceAllLiterally("\\n", "\n")
-      .replaceAllLiterally("\\r", "\r")
-      .replaceAllLiterally("\\t", "\t")
   }
 
 }
@@ -319,9 +377,15 @@ object StoryConfigParser {
     */
   implicit class StringEnrichment(val s: String) extends AnyVal {
 
+    def isTrue = s == "true" || s == "yes"
+
     def optional = if (s.isEmpty) None else Some(s)
 
     def required = s.optional.orDie(s"Required property '$s' is missing")
+
+    def specialChars = {
+      s.replaceAllLiterally("\\n", "\n").replaceAllLiterally("\\r", "\r").replaceAllLiterally("\\t", "\t")
+    }
 
   }
 

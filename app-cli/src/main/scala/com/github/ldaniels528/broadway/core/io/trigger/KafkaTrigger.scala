@@ -1,11 +1,10 @@
 package com.github.ldaniels528.broadway.core.io.trigger
 
 import com.github.ldaniels528.broadway.core.StoryConfig
-import com.github.ldaniels528.broadway.core.io.Data
 import com.github.ldaniels528.broadway.core.io.device.OutputSource
 import com.github.ldaniels528.broadway.core.io.layout.json.JsonFieldSet
 import com.github.ldaniels528.broadway.core.io.layout.{Field, Layout}
-import com.github.ldaniels528.broadway.core.scope.GlobalScope
+import com.github.ldaniels528.broadway.core.io.{Data, Scope}
 import kafka.consumer.{Consumer, ConsumerConfig}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -22,7 +21,7 @@ case class KafkaTrigger(id: String,
   extends Trigger {
 
   private val consumer = Consumer.create(consumerConfig)
-  private val fieldSet = JsonFieldSet(Seq(Field("key"), Field("message")))
+  private val fieldSet = JsonFieldSet(Seq(Field("key", "key"), Field("message", "message")))
 
   override def execute(config: StoryConfig)(implicit ec: ExecutionContext) {
     val streamMap = consumer.createMessageStreams(Map(topic -> parallelism))
@@ -32,7 +31,7 @@ case class KafkaTrigger(id: String,
       stream <- streams
     } {
       Future {
-        implicit val scope = GlobalScope()
+        implicit val scope = Scope()
         val it = stream.iterator()
         while (it.hasNext()) {
           val mam = it.next()

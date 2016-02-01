@@ -19,13 +19,15 @@ class CsvRecordSpec() extends FeatureSpec with BeforeAndAfterEach with GivenWhen
       val line = """"AAPL", 96.76, 96.99, 95.89, 109.99"""
 
       And("a CSV record")
-      val record = CsvRecord(Seq(
-        Field(name = "symbol", `type` = DataTypes.STRING),
-        Field(name = "open", `type` = DataTypes.STRING),
-        Field(name = "close", `type` = DataTypes.STRING),
-        Field(name = "low", `type` = DataTypes.STRING),
-        Field(name = "high", `type` = DataTypes.STRING)
-      ), `type` = RecordTypes.BODY)
+      val record = CsvRecord(
+        id = "cvs_rec",
+        fields = Seq(
+          Field(name = "symbol", `type` = DataTypes.STRING),
+          Field(name = "open", `type` = DataTypes.STRING),
+          Field(name = "close", `type` = DataTypes.STRING),
+          Field(name = "low", `type` = DataTypes.STRING),
+          Field(name = "high", `type` = DataTypes.STRING)
+        ))
 
       When("the text is consumed")
       record.fromLine(line)

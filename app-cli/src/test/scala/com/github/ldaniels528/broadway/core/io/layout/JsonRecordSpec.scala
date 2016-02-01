@@ -19,13 +19,15 @@ class JsonRecordSpec() extends FeatureSpec with BeforeAndAfterEach with GivenWhe
       val text = """{ "symbol":"AAPL", "open":96.76, "close":96.99, "low":95.89, "high":109.99 }"""
 
       And("a JSON record")
-      val record = JsonRecord(Seq(
-        Field(name = "symbol", `type` = DataTypes.STRING),
-        Field(name = "open", `type` = DataTypes.DOUBLE),
-        Field(name = "close", `type` = DataTypes.DOUBLE),
-        Field(name = "low", `type` = DataTypes.DOUBLE),
-        Field(name = "high", `type` = DataTypes.DOUBLE)
-      ), `type` = RecordTypes.BODY)
+      val record = JsonRecord(
+        id = "json_rec",
+        fields = Seq(
+          Field(name = "symbol", `type` = DataTypes.STRING),
+          Field(name = "open", `type` = DataTypes.DOUBLE),
+          Field(name = "close", `type` = DataTypes.DOUBLE),
+          Field(name = "low", `type` = DataTypes.DOUBLE),
+          Field(name = "high", `type` = DataTypes.DOUBLE)
+        ))
 
       When("the text is consumed")
       record.fromLine(text)

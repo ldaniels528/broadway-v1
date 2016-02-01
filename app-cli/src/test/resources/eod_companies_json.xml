@@ -2,13 +2,13 @@
 <story id="eod-companies">
 
     <triggers>
-        <StartUpTrigger id="Files_Combiner">
-            <CompositionFlow id="combiner" output-source="output.txt">
+        <StartUpTrigger id="File_Combining_Trigger">
+            <CompositeInputFlow id="combiner" output-source="output.txt">
                 <include input-source="AMEX.txt" />
                 <include input-source="NASDAQ.txt" />
                 <include input-source="NYSE.txt" />
                 <include input-source="OTCBB.txt" />
-            </CompositionFlow>
+            </CompositeInputFlow>
         </StartUpTrigger>
     </triggers>
 
@@ -21,28 +21,28 @@
     </data-sources>
 
     <layouts>
-        <TextLayout id="tabbed-delimited">
+        <MultiPartLayout id="tabbed-delimited">
             <header>
-                <record type="delimited" delimiter="\t">
+                <record id="delimited_header" type="delimited" delimiter="\t">
                     <field name="symbol" value="Symbol" type="string"/>
                     <field name="description" value="Description" type="string"/>
                 </record>
             </header>
             <body>
-                <record type="delimited" delimiter="\t">
+                <record id="delimited_body" type="delimited" delimiter="\t">
                     <field name="symbol" type="string"/>
                     <field name="description" type="string"/>
                 </record>
             </body>
-        </TextLayout>
+        </MultiPartLayout>
 
-        <TextLayout id="json-output">
+        <MultiPartLayout id="json-output">
             <body>
-                <record type="json">
-                    <field name="symbol" type="string"/>
-                    <field name="description" type="string"/>
+                <record id="json_body" type="json">
+                    <field name="symbol" type="string" value="{{ delimited_body.symbol }}" />
+                    <field name="description" type="string" value="{{ delimited_body.description }}" />
                 </record>
             </body>
-        </TextLayout>
+        </MultiPartLayout>
     </layouts>
 </story>

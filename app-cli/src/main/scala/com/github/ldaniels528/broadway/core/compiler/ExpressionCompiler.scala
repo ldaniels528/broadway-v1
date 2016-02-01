@@ -1,6 +1,6 @@
 package com.github.ldaniels528.broadway.core.compiler
 
-import com.github.ldaniels528.broadway.core.scope.Scope
+import com.github.ldaniels528.broadway.core.io.Scope
 
 import scala.util.{Failure, Success, Try}
 

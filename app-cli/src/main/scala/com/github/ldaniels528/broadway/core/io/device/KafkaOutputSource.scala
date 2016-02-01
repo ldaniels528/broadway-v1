@@ -1,4 +1,4 @@
-package com.github.ldaniels528.broadway.core.io.device.kafka
+package com.github.ldaniels528.broadway.core.io.device
 
 import java.util.UUID
 
@@ -6,11 +6,10 @@ import akka.actor.{Actor, ActorLogging, ActorRef, Props}
 import akka.pattern.ask
 import akka.util.Timeout
 import com.github.ldaniels528.broadway.core.actors.BroadwayActorSystem
-import com.github.ldaniels528.broadway.core.io.Data
-import com.github.ldaniels528.broadway.core.io.device.AsynchronousOutputSource
-import com.github.ldaniels528.broadway.core.io.device.kafka.KafkaOutputSource.{Die, asyncActor}
-import com.github.ldaniels528.broadway.core.io.layout.Layout
-import com.github.ldaniels528.broadway.core.scope.Scope
+import com.github.ldaniels528.broadway.core.io.device.KafkaOutputSource._
+import com.github.ldaniels528.broadway.core.io.device.kafka.{ByteBufferUtils, KafkaPublisher, ZkProxy}
+import com.github.ldaniels528.broadway.core.io.layout.{BinaryRecord, Layout, Record, TextRecord}
+import com.github.ldaniels528.broadway.core.io.{Data, Scope}
 import org.slf4j.LoggerFactory
 
 import scala.collection.concurrent.TrieMap
@@ -23,7 +22,7 @@ import scala.concurrent.duration._
   *
   * @author lawrence.daniels@gmail.com
   */
-case class KafkaOutputSource(id: String, topic: String, zk: ZkProxy, layout: Layout) extends AsynchronousOutputSource {
+case class KafkaOutputSource(id: String, topic: String, zk: ZkProxy, layout: Layout) extends AsynchronousOutputSource with RecordOutputSource {
   private lazy val logger = LoggerFactory.getLogger(getClass)
   private val publisher = KafkaPublisher(zk)
 
@@ -48,6 +47,19 @@ case class KafkaOutputSource(id: String, topic: String, zk: ZkProxy, layout: Lay
     val key = ByteBufferUtils.uuidToBytes(UUID.randomUUID())
     val message = data.asBytes
     implicit val timeout: Timeout = 15.seconds
+    (asyncActor ? publisher.publish(topic, key, message)) foreach (_ => updateCount(scope, 1))
+    0
+  }
+
+  override def writeRecord(record: Record)(implicit scope: Scope) = {
+    implicit val timeout: Timeout = 15.seconds
+    val key = ByteBufferUtils.uuidToBytes(UUID.randomUUID())
+    val message = record match {
+      case rec: BinaryRecord => rec.toBytes
+      case rec: TextRecord => rec.toLine.getBytes
+      case _ =>
+        throw new IllegalArgumentException(s"Binary-compatible record expected for record '${record.id}'")
+    }
     (asyncActor ? publisher.publish(topic, key, message)) foreach (_ => updateCount(scope, 1))
     0
   }

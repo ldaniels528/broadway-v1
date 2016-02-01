@@ -1,12 +1,11 @@
-package com.github.ldaniels528.broadway.core.io.device.nosql
+package com.github.ldaniels528.broadway.core.io.device
 
 import java.util.UUID
 
-import com.github.ldaniels528.broadway.core.io.Data
-import com.github.ldaniels528.broadway.core.io.device.OutputSource
-import com.github.ldaniels528.broadway.core.io.device.nosql.MongoDbOutputSource._
-import com.github.ldaniels528.broadway.core.io.layout.json.JsonLayout
-import com.github.ldaniels528.broadway.core.scope.Scope
+import com.github.ldaniels528.broadway.core.io.device.MongoDbOutputSource._
+import com.github.ldaniels528.broadway.core.io.layout.{JsonRecord, Layout, Record}
+import com.github.ldaniels528.broadway.core.io.{Data, Scope}
+import com.github.ldaniels528.broadway.core.util.ResourceHelper._
 import com.mongodb.ServerAddress
 import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.MongoCollection
@@ -16,8 +15,8 @@ import play.api.libs.json.{JsBoolean, _}
 /**
   * MongoDB Output Source
   */
-case class MongoDbOutputSource(id: String, serverList: String, database: String, collection: String, writeConcern: WriteConcern, layout: JsonLayout)
-  extends OutputSource {
+case class MongoDbOutputSource(id: String, serverList: String, database: String, collection: String, writeConcern: WriteConcern, layout: Layout)
+  extends OutputSource with RecordOutputSource {
 
   private val connUUID = UUID.randomUUID().toString
   private val collUUID = UUID.randomUUID().toString
@@ -41,6 +40,17 @@ case class MongoDbOutputSource(id: String, serverList: String, database: String,
       mc <- scope.getResource[MongoCollection](collUUID)
     } yield {
       val js = data.asJson
+      val doc = toDocument(js.asInstanceOf[JsObject])
+      val result = mc.insert(doc, writeConcern)
+      updateCount(scope, 1) // TODO Cannot get n property for an unacknowledged write
+    }) getOrElse 0
+  }
+
+  override def writeRecord(record: Record)(implicit scope: Scope) = {
+    (for {
+      mc <- scope.getResource[MongoCollection](collUUID)
+    } yield {
+      val js = record.require[JsonRecord](s"Unsupported record type - '$record' (${record.getClass.getSimpleName})").toJson
       val doc = toDocument(js.asInstanceOf[JsObject])
       val result = mc.insert(doc, writeConcern)
       updateCount(scope, 1) // TODO Cannot get n property for an unacknowledged write

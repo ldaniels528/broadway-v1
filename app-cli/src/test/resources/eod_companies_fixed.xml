@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<story id="eod-companies">
+<story id="eod_companies_fixed">
 
     <triggers>
-        <StartUpTrigger id="Files_Combiner">
-            <CompositionFlow id="combiner" output-source="output.txt">
+        <StartUpTrigger id="File_Combining_Trigger">
+            <CompositeInputFlow id="combiner" output-source="output.txt">
                 <include input-source="AMEX.txt" />
                 <include input-source="NASDAQ.txt" />
                 <include input-source="NYSE.txt" />
                 <include input-source="OTCBB.txt" />
-            </CompositionFlow>
+            </CompositeInputFlow>
         </StartUpTrigger>
     </triggers>
 
@@ -21,34 +21,38 @@
     </data-sources>
 
     <layouts>
-        <TextLayout id="tabbed-delimited">
+        <MultiPartLayout id="tabbed-delimited">
             <header>
-                <record type="delimited" delimiter="\t">
+                <record id="delimited_header" type="delimited" delimiter="\t">
                     <field name="symbol" value="Symbol" type="string"/>
                     <field name="description" value="Description" type="string"/>
                 </record>
             </header>
             <body>
-                <record type="delimited" delimiter="\t">
+                <record id="delimited_body" type="delimited" delimiter="\t">
                     <field name="symbol" type="string"/>
                     <field name="description" type="string"/>
                 </record>
             </body>
-        </TextLayout>
+        </MultiPartLayout>
 
-        <TextLayout id="fixed-length-output">
+        <MultiPartLayout id="fixed-length-output">
             <header>
-                <record type="fixed-length">
+                <record id="fixed_header" type="fixed-length">
                     <field name="symbol" value="Symbol" type="string" length="10" />
-                    <field name="description" value="Description" type="string" length="40"/>
+                    <field name="description" value="Description" type="string" length="50"/>
+                    <field name="source" type="string" value="Source" length="40" />
+                    <field name="lineNo" type="string" value="Line Number" length="12" />
                 </record>
             </header>
             <body>
-                <record type="fixed-length">
-                    <field name="symbol" type="string" length="10"/>
-                    <field name="description" type="string" length="40"/>
+                <record id="fixed_body" type="fixed-length">
+                    <field name="symbol" type="string" length="10" value="{{ delimited_body.symbol }}"/>
+                    <field name="description" type="string" length="50" value="{{ delimited_body.description }}"/>
+                    <field name="source" type="string" length="40" value="{{ flow.input.filename }}" />
+                    <field name="lineNo" type="int" length="12" value="{{ flow.input.offset }}" />
                 </record>
             </body>
-        </TextLayout>
+        </MultiPartLayout>
     </layouts>
 </story>

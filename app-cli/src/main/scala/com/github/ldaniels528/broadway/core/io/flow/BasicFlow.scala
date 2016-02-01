@@ -1,19 +1,21 @@
 package com.github.ldaniels528.broadway.core.io.flow
 
-import com.github.ldaniels528.broadway.core.io.Data
+import com.github.ldaniels528.broadway.core.io.{Scope, Data}
 import com.github.ldaniels528.broadway.core.io.device._
-import com.github.ldaniels528.broadway.core.scope.Scope
 
 import scala.concurrent.{ExecutionContext, Future}
 
 /**
   * Represents a basic process flow implementation
   */
+@deprecated(message = "Use SimpleFlow instead")
 case class BasicFlow(id: String, input: InputSource, output: OutputSource) extends Flow {
 
   val devices = Seq(input, output)
 
-  override def execute(implicit scope: Scope, ec: ExecutionContext) = {
+  override def execute(scope: Scope)(implicit ec: ExecutionContext) = {
+    implicit val myScope = scope
+
     output.open(scope)
 
     input use { in =>

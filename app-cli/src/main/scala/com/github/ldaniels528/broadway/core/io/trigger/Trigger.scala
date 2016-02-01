@@ -1,10 +1,12 @@
 package com.github.ldaniels528.broadway.core.io.trigger
 
+import java.util.Date
+
 import com.github.ldaniels528.broadway.core.StoryConfig
+import com.github.ldaniels528.broadway.core.io.Scope
 import com.github.ldaniels528.broadway.core.io.device.OutputSource
 import com.github.ldaniels528.broadway.core.io.flow.Flow
 import com.github.ldaniels528.broadway.core.io.trigger.Trigger.IOStats
-import com.github.ldaniels528.broadway.core.scope.{InheritedScope, Scope}
 import com.github.ldaniels528.tabular.Tabular
 import org.slf4j.LoggerFactory
 
@@ -27,7 +29,7 @@ trait Trigger {
       processFlows map { case (flow, scope) =>
         logger.info(s"Starting to process flow '${flow.id}'...")
         implicit val myScope = scope
-        val task = flow.execute
+        val task = flow.execute(scope)
 
         task onComplete {
           case Success(_) =>
@@ -43,9 +45,10 @@ trait Trigger {
     }
   }
 
-  protected def createScope(rootScope: Scope, flow: Flow) = {
-    val scope = InheritedScope(rootScope)
+  protected def createScope(flow: Flow) = {
+    val scope = Scope()
     scope ++= Seq(
+      "date()" -> (() => new Date()),
       "trigger.id" -> id,
       "trigger.type" -> getClass.getSimpleName
     )

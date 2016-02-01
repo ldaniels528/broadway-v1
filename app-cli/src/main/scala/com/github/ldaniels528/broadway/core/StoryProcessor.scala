@@ -31,11 +31,11 @@ class StoryProcessor() {
   /**
     * Executes the ETL processing
     *
-    * @param config the given [[StoryConfig ETL configuration]]
+    * @param story the given [[StoryConfig ETL configuration]]
     */
-  def run(config: StoryConfig)(implicit ec: ExecutionContext) {
-    logger.info(s"Executing story '${config.id}'...")
-    config.triggers foreach (_.execute(config))
+  def run(story: StoryConfig)(implicit ec: ExecutionContext) {
+    logger.info(s"Executing story '${story.id}'...")
+    story.triggers foreach (_.execute(story))
 
     Thread.sleep(1.seconds.toMillis)
     logger.info("*" * 30 + " PROCESS COMPLETED " + "*" * 30)

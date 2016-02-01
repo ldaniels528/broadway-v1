@@ -4,10 +4,10 @@ import java.io.File
 
 import com.github.ldaniels528.broadway.core.io._
 import com.github.ldaniels528.broadway.core.io.device.{InputSource, OutputSource}
+import com.github.ldaniels528.broadway.core.io.layout.Layout.InputSet
 import com.github.ldaniels528.broadway.core.io.layout._
 import com.github.ldaniels528.broadway.core.util.AvroConversion
 import AvroConversion._
-import com.github.ldaniels528.broadway.core.scope.Scope
 import org.apache.avro.Schema
 
 import scala.io.Source
@@ -30,6 +30,9 @@ case class AvroLayout(id: String, fieldSet: FieldSet, schemaString: String) exte
     dataSet map (_.asAvroBytes(schema)) map (Data(fieldSet, _))
   }
 
+  override def read(device: InputSource)(implicit scope: Scope): InputSet = ???
+
+  override def write(device: OutputSource, inputSet: InputSet)(implicit scope: Scope): Unit = ???
 }
 
 /**

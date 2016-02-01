@@ -3,56 +3,44 @@
 
     <triggers>
         <StartUpTrigger id="Files_Combiner">
-            <flows>
-                <BasicFlow id="AMEX" input="AMEX.txt" output="kafka-topic" input-layout="tabbed-delimited" output-layout="avro-schema"/>
-                <BasicFlow id="NASDAQ" input="NASDAQ.txt" output="kafka-topic" input-layout="tabbed-delimited" output-layout="avro-schema"/>
-                <BasicFlow id="NYSE" input="NYSE.txt" output="kafka-topic" input-layout="tabbed-delimited" output-layout="avro-schema"/>
-                <BasicFlow id="OTCBB" input="OTCBB.txt" output="kafka-topic" input-layout="tabbed-delimited" output-layout="avro-schema"/>
-            </flows>
+            <SimpleFlow id="AMEX" input-source="AMEX.txt" output-source="kafka-topic" />
+            <SimpleFlow id="NASDAQ" input-source="NASDAQ.txt" output-source="kafka-topic" />
+            <SimpleFlow id="NYSE" input-source="NYSE.txt" output-source="kafka-topic" />
+            <SimpleFlow id="OTCBB" input-source="OTCBB.txt" output-source="kafka-topic" />
         </StartUpTrigger>
     </triggers>
 
     <data-sources>
-        <TextFileInputSource id="AMEX.txt" path="./app-cli/src/test/resources/files/AMEX.txt" />
-        <TextFileInputSource id="NASDAQ.txt" path="./app-cli/src/test/resources/files/NASDAQ.txt" />
-        <TextFileInputSource id="NYSE.txt" path="./app-cli/src/test/resources/files/NYSE.txt" />
-        <TextFileInputSource id="OTCBB.txt" path="./app-cli/src/test/resources/files/OTCBB.txt" />
-        <KafkaOutputSource id="kafka-topic" topic="shocktrade.companies.avro" connectionString="vault114:2181" />
+        <TextFileInputSource id="AMEX.txt" path="./app-cli/src/test/resources/files/AMEX.txt" layout="tabbed_layout" />
+        <TextFileInputSource id="NASDAQ.txt" path="./app-cli/src/test/resources/files/NASDAQ.txt" layout="tabbed_layout" />
+        <TextFileInputSource id="NYSE.txt" path="./app-cli/src/test/resources/files/NYSE.txt" layout="tabbed_layout" />
+        <TextFileInputSource id="OTCBB.txt" path="./app-cli/src/test/resources/files/OTCBB.txt" layout="tabbed_layout" />
+        <KafkaOutputSource id="kafka-topic" topic="shocktrade.companies.avro" connectionString="vault114:2181" layout="avro_layout" />
     </data-sources>
 
     <layouts>
-        <TextLayout id="tabbed-delimited">
+        <MultiPartLayout id="tabbed_layout">
             <header>
-                <record type="delimited" delimiter="\t">
-                    <field auto-trim="yes">label1</field>
-                    <field auto-trim="yes">label2</field>
+                <record id="delimited_header" type="delimited" delimiter="\t">
+                    <field name="symbol" type="string"/>
+                    <field name="description" type="string"/>
                 </record>
             </header>
             <body>
-                <record type="delimited" delimiter="\t">
-                    <field auto-trim="yes">symbol</field>
-                    <field auto-trim="yes">description</field>
+                <record id="delimited_body" type="delimited" delimiter="\t">
+                    <field name="symbol" type="string"/>
+                    <field name="description" type="string"/>
                 </record>
             </body>
-        </TextLayout>
+        </MultiPartLayout>
 
-        <AvroLayout id="avro-schema">
-            <record type="json">
-                <field auto-trim="yes">symbol</field>
-                <field auto-trim="yes">description</field>
-            </record>
-            <schema>
-            {
-                "type": "record",
-                "name": "EodCompanyInfo",
-                "namespace": "com.shocktrade.avro",
-                "record":[
-                    { "name": "symbol", "type":"string", "doc":"stock symbol" },
-                    { "name": "description", "type":"string", "doc":"company description" }
-                ],
-                "doc": "A schema for EodData quotes"
-            }
-            </schema>
-        </AvroLayout>
+        <MultiPartLayout id="avro_layout">
+            <body>
+                <record id="avro_body" type="avro" name="EodCompanyInfo" namespace="com.shocktrade.avro" doc="EOD Data companies schema">
+                    <field name="symbol" type="string" value="{{ delimited_body.symbol }}" />
+                    <field name="description" type="string" value="{{ delimited_body.description }}" />
+                </record>
+            </body>
+        </MultiPartLayout>
     </layouts>
 </story>

@@ -2,92 +2,92 @@
 <story id="eod-history-fixed">
 
     <archives>
-        <Archive id="DataStore" base="/Users/ldaniels/broadway/archive" compression="gzip" />
+        <FileArchive id="DataStore" base="/Users/ldaniels/broadway/archive" compression="gzip" />
     </archives>
 
     <triggers>
         <FileTrigger id="Repo1">
             <directory path="/Users/ldaniels/broadway/incoming/tradingHistory" archive="DataStore">
                 <feed pattern="AMEX_(.*)[.]txt">
-                    <BasicFlow input-source="input_file" output-source="output_file" />
+                    <SimpleFlow input-source="input_file" output-source="output_file" />
                 </feed>
                 <feed pattern="NASDAQ_(.*)[.]txt">
-                    <BasicFlow input-source="input_file" output-source="output_file" />
+                    <SimpleFlow input-source="input_file" output-source="output_file" />
                 </feed>
                 <feed pattern="NYSE_(.*)[.]txt">
-                    <BasicFlow input-source="input_file" output-source="output_file" />
+                    <SimpleFlow input-source="input_file" output-source="output_file" />
                 </feed>
                 <feed pattern="OTCBB_(.*)[.]txt">
-                    <BasicFlow input-source="input_file" output-source="output_file" />
+                    <SimpleFlow input-source="input_file" output-source="output_file" />
                 </feed>
             </directory>
         </FileTrigger>
     </triggers>
 
     <data-sources>
-        <TextFileInputSource id="input_file" path="{{ flow.input.path }}" />
-        <TextFileOutputSource id="output_file" path="/tmp/fixed_{{ flow.input.filename }}" />
+        <TextFileInputSource id="input_file" path="{{ flow.input.path }}" layout="input_layout" />
+        <TextFileOutputSource id="output_file" path="/tmp/fixed_{{ flow.input.filename }}" layout="output_layout" />
     </data-sources>
 
     <layouts>
-        <TextLayout id="input_layout">
+        <MultiPartLayout id="input_layout">
             <header>
-                <record type="csv">
-                    <field auto-trim="yes">&lt;ticker&gt;</field>
-                    <field auto-trim="yes">&lt;date&gt;</field>
-                    <field auto-trim="yes">&lt;open&gt;</field>
-                    <field auto-trim="yes">&lt;high&gt;</field>
-                    <field auto-trim="yes">&lt;low&gt;</field>
-                    <field auto-trim="yes">&lt;close&gt;</field>
-                    <field auto-trim="yes">&lt;vol&gt;</field>
+                <record id="input_header" type="csv">
+                    <field name="ticker" type="string" value="&lt;ticker&gt;" />
+                    <field name="date" type="string" value="&lt;date&gt;" />
+                    <field name="open" type="string" value="&lt;open&gt;" />
+                    <field name="high" type="string" value="&lt;high&gt;" />
+                    <field name="low" type="string" value="&lt;low&gt;" />
+                    <field name="close" type="string" value="&lt;close&gt;" />
+                    <field name="volume" type="string" value="&lt;vol&gt;" />
                 </record>
             </header>
             <body>
-                <record type="csv">
-                    <field auto-trim="yes">ticker</field>
-                    <field auto-trim="yes">date</field>
-                    <field auto-trim="yes">open</field>
-                    <field auto-trim="yes">high</field>
-                    <field auto-trim="yes">low</field>
-                    <field auto-trim="yes">close</field>
-                    <field auto-trim="yes">vol</field>
+                <record id="input_body" type="csv">
+                    <field name="ticker" type="string" />
+                    <field name="date" type="string" />
+                    <field name="open" type="string" />
+                    <field name="high" type="string" />
+                    <field name="low" type="string" />
+                    <field name="close" type="string" />
+                    <field name="volume" type="string" />
                 </record>
             </body>
-        </TextLayout>
+        </MultiPartLayout>
 
-        <TextLayout id="output_layout">
+        <MultiPartLayout id="output_layout">
             <header>
-                <record type="fixed-length">
-                    <field length="10">symbol</field>
-                    <field length="9">date</field>
-                    <field length="12">open</field>
-                    <field length="12">high</field>
-                    <field length="12">low</field>
-                    <field length="12">close</field>
-                    <field length="12">volume</field>
+                <record id="output_header" type="fixed-length">
+                    <field name="symbol" type="string" length="10" value="Symbol" />
+                    <field name="date" type="string" length="9" value="Date" />
+                    <field name="open" type="string" length="12" value="Open" />
+                    <field name="high" type="string" length="12" value="High" />
+                    <field name="low" type="string" length="12" value="Low" />
+                    <field name="close" type="string" length="12" value="Close" />
+                    <field name="volume" type="string" length="12" value="Volume" />
                 </record>
             </header>
             <body>
-                <record type="fixed-length">
-                    <field length="10">ticker</field>
-                    <field length="9">date</field>
-                    <field length="12">open</field>
-                    <field length="12">high</field>
-                    <field length="12">low</field>
-                    <field length="12">close</field>
-                    <field length="12">vol</field>
+                <record id="output_body" type="fixed-length">
+                    <field name="symbol" type="string" length="10" value="{{ input_body.ticker }}" />
+                    <field name="date" type="string" length="9" value="{{ input_body.date }}" />
+                    <field name="open" type="string" length="12" value="{{ input_body.open }}" />
+                    <field name="high" type="string" length="12" value="{{ input_body.high }}" />
+                    <field name="low" type="string" length="12" value="{{ input_body.low }}" />
+                    <field name="close" type="string" length="12" value="{{ input_body.close }}" />
+                    <field name="volume" type="string" length="12" value="{{ input_body.volume }}" />
                 </record>
             </body>
             <footer>
-                <record type="fixed-length">
-                    <field length="30">{{ flow.input.filename }}</field>
-                    <field length="10">{{ flow.input.count }}</field>
+                <record id="output_footer_1" type="fixed-length">
+                    <field name="date" type="string" length="30">{{ flow.input.filename }}</field>
+                    <field name="date" type="string" length="10">{{ flow.input.count }}</field>
                 </record>
-                <record type="fixed-length">
-                    <field length="30">{{ flow.output.filename }}</field>
-                    <field length="10">{{ flow.output.count }}</field>
+                <record id="output_footer_2" type="fixed-length">
+                    <field name="date" type="string" length="30">{{ flow.output.filename }}</field>
+                    <field name="date" type="string" length="10">{{ flow.output.count }}</field>
                 </record>
             </footer>
-        </TextLayout>
+        </MultiPartLayout>
     </layouts>
 </story>

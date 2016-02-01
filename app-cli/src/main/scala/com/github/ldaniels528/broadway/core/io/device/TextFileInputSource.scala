@@ -1,14 +1,12 @@
-package com.github.ldaniels528.broadway.core.io.device.text
+package com.github.ldaniels528.broadway.core.io.device
 
 import java.io.{BufferedReader, File, FileReader}
 import java.util.UUID
 
-import com.github.ldaniels528.broadway.core.io.Data
-import com.github.ldaniels528.broadway.core.io.device.{InputSource, TextRecordInputSource}
-
+import com.github.ldaniels528.broadway.core.io.device.TextRecordInputSource.TextInput
 import com.github.ldaniels528.broadway.core.io.layout._
 import com.github.ldaniels528.broadway.core.io.layout.text.FixedLengthFieldSet
-import com.github.ldaniels528.broadway.core.scope.Scope
+import com.github.ldaniels528.broadway.core.io.{Data, Scope}
 
 /**
   * Text File Input Source
@@ -16,17 +14,8 @@ import com.github.ldaniels528.broadway.core.scope.Scope
   * @author lawrence.daniels@gmail.com
   */
 case class TextFileInputSource(id: String, path: String, layout: Layout) extends InputSource with TextRecordInputSource {
-  private val fieldSet = FixedLengthFieldSet(Seq(Field(name = "line")))
+  private val fieldSet = FixedLengthFieldSet(Seq(Field(name = "line", path = "line")))
   private val uuid = UUID.randomUUID().toString
-
-  val templateRecord = DelimitedRecord(
-    id = "delimited_data",
-    delimiter = "\t",
-    `type` = RecordTypes.BODY,
-    fields = Seq(
-      Field(name = "symbol", `type` = DataTypes.STRING),
-      Field(name = "description", `type` = DataTypes.STRING)
-    ))
 
   override def close(scope: Scope) = scope.discardResource[BufferedReader](uuid).foreach(_.close())
 
@@ -52,11 +41,13 @@ case class TextFileInputSource(id: String, path: String, layout: Layout) extends
     data
   }
 
-  override def readRecord(implicit scope: Scope) = {
-    val reader = scope.getResource[BufferedReader](uuid)
-    val record = reader.flatMap(r => Option(r.readLine)).map(templateRecord.copy().fromLine)
-    record foreach (_ => updateCount(scope, 1))
-    record
+  override def readLine(scope: Scope) = {
+    for {
+      reader <- scope.getResource[BufferedReader](uuid)
+      line <- Option(reader.readLine)
+      _ = updateCount(scope, 1)
+      offset = getStatistics(scope).offset
+    } yield TextInput(line, offset)
   }
 
 }

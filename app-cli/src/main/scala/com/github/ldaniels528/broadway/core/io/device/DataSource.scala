@@ -1,7 +1,7 @@
 package com.github.ldaniels528.broadway.core.io.device
 
+import com.github.ldaniels528.broadway.core.io.Scope
 import com.github.ldaniels528.broadway.core.io.layout.Layout
-import com.github.ldaniels528.broadway.core.scope.Scope
 
 /**
   * Represents a Generic Input or Output Source

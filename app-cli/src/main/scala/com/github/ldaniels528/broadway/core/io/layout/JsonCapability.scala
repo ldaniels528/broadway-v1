@@ -1,8 +1,8 @@
 package com.github.ldaniels528.broadway.core.io.layout
 
+import com.github.ldaniels528.broadway.core.io.Scope
 import com.github.ldaniels528.broadway.core.io.layout.DataTypes._
 import com.github.ldaniels528.broadway.core.io.layout.JsonCapability._
-
 import com.ldaniels528.commons.helpers.OptionHelper.Risky._
 import com.ldaniels528.commons.helpers.OptionHelper._
 import org.slf4j.LoggerFactory
@@ -15,36 +15,44 @@ trait JsonCapability {
   self: Record =>
 
   protected val logger = LoggerFactory.getLogger(getClass)
-  private val fieldMappings = Map(fields.map(f => f.name -> f): _*)
 
-  def fromJson(jsonString: String): this.type = {
+  def fromJson(jsonString: String)(implicit scope: Scope): this.type = {
     Json.parse(jsonString) match {
-      case jo: JsObject => populate(prefix = None, jo)
+      case jsObject: JsObject => scope ++= toProperties(jsObject)
       case js =>
         logger.info(s"Unhandled JSON value '$js' (${js.getClass.getSimpleName})")
     }
     this
   }
 
-  def toJson: JsObject = {
+  def toJson(implicit scope: Scope): JsObject = {
     val jsValues = fields.map(f => f.name -> f.convertToJson)
     jsValues.foldLeft(Json.obj()) { case (js, (k, v)) => js ++ Json.obj(k -> v) }
   }
 
-  private def populate(prefix: Option[String], jsObject: JsObject) {
-    jsObject.value foreach { case (name, js) =>
-      logger.info(s"js.path = ${prefix.map(s => s"$s.$name") getOrElse name}")
-      fieldMappings.get(name) foreach { field =>
-        js match {
-          case JsBoolean(value) => field.value = value
-          case JsNull => field.value = None
-          case JsNumber(value) => field.value = value.toDouble
-          case jo: JsObject => populate(prefix.map(s => s"$s.$name") ?? name, jo)
-          case JsString(value) => field.value = value
-          case unknown =>
-            throw new IllegalArgumentException(s"Could not convert type '$unknown' to a Scala value")
-        }
+  protected def findFieldInPath(originalFields: Seq[Field], property: String) = {
+    val path = property.split("[.]")
+    val firstName = path.headOption orDie "Path is empty"
+    val firstField = fields.find(_.name == firstName) orDie s"$firstName of path $property not found"
+
+    path.tail.foldLeft(firstField) { case (field, name) =>
+      field.elements.find(_.name == name) orDie s"$name of path $property not found"
+    }
+  }
+
+  protected def toProperties(jsObject: JsObject, prefix: Option[String] = None): List[(String, Any)] = {
+    def fullName(name: String) = prefix.map(s => s"$s.$name") getOrElse name
+
+    jsObject.value.foldLeft[List[(String, Any)]](Nil) { case (list, (name, js)) =>
+      val result: List[(String, Any)] = js match {
+        case JsBoolean(value) => List(fullName(name) -> value)
+        case JsNull => Nil
+        case JsNumber(value) => List(fullName(name) -> value.toDouble)
+        case jo: JsObject => toProperties(jo, prefix = fullName(name))
+        case unknown =>
+          throw new IllegalArgumentException(s"Could not convert property '$name' type '$unknown' to a Scala value")
       }
+      result ::: list
     }
   }
 
@@ -62,7 +70,7 @@ object JsonCapability {
     */
   implicit class JsonRecordEnrichment(val field: Field) extends AnyVal {
 
-    def convertToJson: JsValue = {
+    def convertToJson(implicit scope: Scope): JsValue = {
       field.value map { value =>
         field.`type` match {
           case BOOLEAN => JsBoolean(value == "true")

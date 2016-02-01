@@ -1,15 +1,22 @@
 package com.github.ldaniels528.broadway.core.io.device
 
-import com.github.ldaniels528.broadway.core.io.layout.{TextRecord, Record}
-import com.github.ldaniels528.broadway.core.scope.Scope
+import com.github.ldaniels528.broadway.core.io.Scope
+import com.github.ldaniels528.broadway.core.io.device.TextRecordInputSource.TextInput
 
 /**
   * Text Record Input Source
   */
 trait TextRecordInputSource extends InputSource {
 
-  def readRecord(implicit scope: Scope): Option[Record]
+  def readLine(scope: Scope): Option[TextInput]
 
-  def templateRecord: TextRecord
+}
+
+/**
+  * Text Record Input Source Companion Object
+  */
+object TextRecordInputSource {
+
+  case class TextInput(line: String, offset: Long)
 
 }

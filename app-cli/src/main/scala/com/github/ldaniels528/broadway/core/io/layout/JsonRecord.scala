@@ -1,19 +1,15 @@
 package com.github.ldaniels528.broadway.core.io.layout
 
-
-import com.github.ldaniels528.broadway.core.io.layout.RecordTypes._
+import com.github.ldaniels528.broadway.core.io.Scope
 
 /**
   * Json Record implementation
   */
-case class JsonRecord(id: String, fields: Seq[Field], `type`: RecordType)
-  extends TextRecord with JsonCapability {
+case class JsonRecord(id: String, fields: Seq[Field]) extends TextRecord with JsonCapability {
 
-  override def duplicate = this.copy()
+  override def fromLine(line: String)(implicit scope: Scope) = fromJson(line)
 
-  override def fromLine(line: String) = fromJson(line)
-
-  override def toLine = toJson.toString()
+  override def toLine(implicit scope: Scope) = toJson.toString()
 
 }
 

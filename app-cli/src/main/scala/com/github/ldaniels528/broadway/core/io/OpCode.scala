@@ -1,7 +1,5 @@
 package com.github.ldaniels528.broadway.core.io
 
-import com.github.ldaniels528.broadway.core.scope.Scope
-
 import scala.concurrent.ExecutionContext
 
 /**
@@ -9,6 +7,6 @@ import scala.concurrent.ExecutionContext
   */
 trait OpCode[T] {
 
-  def execute(implicit scope: Scope, ec: ExecutionContext): T
+  def execute(scope: Scope)(implicit ec: ExecutionContext): T
 
 }

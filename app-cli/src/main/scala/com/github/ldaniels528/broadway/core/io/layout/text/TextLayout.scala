@@ -1,9 +1,9 @@
 package com.github.ldaniels528.broadway.core.io.layout.text
 
-import com.github.ldaniels528.broadway.core.io.Data
+import com.github.ldaniels528.broadway.core.io.layout.Layout.InputSet
+import com.github.ldaniels528.broadway.core.io.{Scope, Data}
 import com.github.ldaniels528.broadway.core.io.device.{InputSource, OutputSource}
 import com.github.ldaniels528.broadway.core.io.layout._
-import com.github.ldaniels528.broadway.core.scope.Scope
 import com.ldaniels528.commons.helpers.OptionHelper._
 
 import scala.language.postfixOps
@@ -29,7 +29,7 @@ case class TextLayout(id: String, header: Option[Division], body: Division, foot
         // if nothing has been written yet, generate the header if defined
         val headerData =
           if (device.getStatistics(scope).offset == 0 && header.nonEmpty)
-            header.map(_.fieldSets.map(fs => Data(fs, fs.encode(Data(fs, fs.fields.map(f => scope.evaluate(f.value.map(_.toString) getOrElse f.name)))))))
+            header.map(_.fieldSets.map(fs => Data(fs, fs.encode(Data(fs, fs.fields.map(f => scope.evaluate(f.defaultValue getOrElse f.name)))))))
           else
             None
 
@@ -40,4 +40,7 @@ case class TextLayout(id: String, header: Option[Division], body: Division, foot
     line_? getOrElse Nil
   }
 
+  override def read(device: InputSource)(implicit scope: Scope): InputSet = ???
+
+  override def write(device: OutputSource, inputSet: InputSet)(implicit scope: Scope): Unit = ???
 }

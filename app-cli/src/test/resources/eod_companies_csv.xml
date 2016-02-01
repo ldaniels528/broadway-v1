@@ -1,54 +1,58 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<story id="eod-companies">
+<story id="eod_companies_csv">
 
     <triggers>
-        <StartUpTrigger id="Files_Combiner">
-            <CompositionFlow id="combiner" output-source="output.txt">
-                <include input-source="AMEX.txt" />
-                <include input-source="NASDAQ.txt" />
-                <include input-source="NYSE.txt" />
-                <include input-source="OTCBB.txt" />
-            </CompositionFlow>
+        <StartUpTrigger id="File_Combining_Trigger">
+            <CompositeInputFlow id="combiner_flow" output-source="output_file">
+                <include input-source="AMEX_file" />
+                <include input-source="NASDAQ_file" />
+                <include input-source="NYSE_file" />
+                <include input-source="OTCBB_file" />
+            </CompositeInputFlow>
         </StartUpTrigger>
     </triggers>
 
     <data-sources>
-        <TextFileInputSource id="AMEX.txt" path="./app-cli/src/test/resources/files/AMEX.txt" layout="tabbed-delimited" />
-        <TextFileInputSource id="NASDAQ.txt" path="./app-cli/src/test/resources/files/NASDAQ.txt" layout="tabbed-delimited" />
-        <TextFileInputSource id="NYSE.txt" path="./app-cli/src/test/resources/files/NYSE.txt" layout="tabbed-delimited" />
-        <TextFileInputSource id="OTCBB.txt" path="./app-cli/src/test/resources/files/OTCBB.txt" layout="tabbed-delimited" />
-        <TextFileOutputSource id="output.txt" path="/tmp/eod_companies_csv.txt" layout="csv-output" />
+        <TextFileInputSource id="AMEX_file" path="./app-cli/src/test/resources/files/AMEX.txt" layout="tabbed_layout" />
+        <TextFileInputSource id="NASDAQ_file" path="./app-cli/src/test/resources/files/NASDAQ.txt" layout="tabbed_layout" />
+        <TextFileInputSource id="NYSE_file" path="./app-cli/src/test/resources/files/NYSE.txt" layout="tabbed_layout" />
+        <TextFileInputSource id="OTCBB_file" path="./app-cli/src/test/resources/files/OTCBB.txt" layout="tabbed_layout" />
+        <TextFileOutputSource id="output_file" path="/tmp/eod_companies_csv_new.txt" layout="csv_layout" />
     </data-sources>
 
     <layouts>
-        <TextLayout id="tabbed-delimited">
+        <MultiPartLayout id="tabbed_layout">
             <header>
-                <record type="delimited" delimiter="\t">
-                    <field name="symbol" value="Symbol" type="string"/>
-                    <field name="description" value="Description" type="string"/>
+                <record id="delimited_header" type="delimited" delimiter="\t">
+                    <field name="symbol" type="string"/>
+                    <field name="description" type="string"/>
                 </record>
             </header>
             <body>
-                <record type="delimited" delimiter="\t">
+                <record id="delimited_data" type="delimited" delimiter="\t">
                     <field name="symbol" type="string"/>
                     <field name="description" type="string"/>
                 </record>
             </body>
-        </TextLayout>
+        </MultiPartLayout>
 
-        <TextLayout id="csv-output">
+        <MultiPartLayout id="csv_layout">
             <header>
-                <record type="csv">
-                    <field name="symbol" value="Symbol" type="string"/>
-                    <field name="description" value="Description" type="string"/>
+                <record id="cvs_header" type="csv">
+                    <field name="symbol" type="string" value="Ticker" />
+                    <field name="description" type="string" value="Description" />
+                    <field name="source" type="string" value="Source" />
+                    <field name="lineNo" type="string" value="Line Number" />
                 </record>
             </header>
             <body>
-                <record type="csv">
-                    <field name="symbol" type="string"/>
-                    <field name="description" type="string"/>
+                <record id="csv_data" type="csv">
+                    <field name="symbol" type="string" value="{{ delimited_data.symbol }}" />
+                    <field name="description" type="string" value="{{ delimited_data.description }}" />
+                    <field name="source" type="string" value="{{ flow.input.filename }}" />
+                    <field name="lineNo" type="int" value="{{ flow.input.offset }}" />
                 </record>
             </body>
-        </TextLayout>
+        </MultiPartLayout>
     </layouts>
 </story>

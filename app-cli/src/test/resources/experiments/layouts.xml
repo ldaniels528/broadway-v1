@@ -83,6 +83,37 @@
             </XmlRecord>
         </layout>
 
+
+        <MultiPartLayout id="tabbed-delimited">
+            <header>
+                <record id="delimited_header" type="delimited" delimiter="\t">
+                    <field name="symbol" value="Symbol" type="string"/>
+                    <field name="description" value="Description" type="string"/>
+                </record>
+            </header>
+            <body>
+                <record id="delimited_data" type="delimited" delimiter="\t">
+                    <field name="symbol" type="string"/>
+                    <field name="description" type="string"/>
+                </record>
+            </body>
+        </MultiPartLayout>
+
+        <MultiPartLayout id="csv-output">
+            <header>
+                <record id="csv_header" type="csv">
+                    <field name="symbol" value="Symbol" type="string"/>
+                    <field name="description" value="Description" type="string"/>
+                </record>
+            </header>
+            <body>
+                <record id="csv_data" type="csv">
+                    <field name="symbol" type="string" value="{{ delimited_data.symbol }}" />
+                    <field name="description" type="string" value="{{ delimited_data.description }}" />
+                </record>
+            </body>
+        </MultiPartLayout>
+
     </layouts>
 
 </story>

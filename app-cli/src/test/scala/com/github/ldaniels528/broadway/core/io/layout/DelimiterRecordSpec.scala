@@ -19,13 +19,16 @@ class DelimiterRecordSpec() extends FeatureSpec with BeforeAndAfterEach with Giv
       val line = "AAPL\t96.76\t96.99\t95.89\t109.99"
 
       And("a delimited record")
-      val record = DelimitedRecord(Seq(
-        Field(name = "symbol", `type` = DataTypes.STRING),
-        Field(name = "open", `type` = DataTypes.STRING),
-        Field(name = "close", `type` = DataTypes.STRING),
-        Field(name = "low", `type` = DataTypes.STRING),
-        Field(name = "high", `type` = DataTypes.STRING)
-      ), `type` = RecordTypes.BODY, delimiter = "\t")
+      val record = DelimitedRecord(
+        id = "delim_rec",
+        delimiter = "\t",
+        fields = Seq(
+          Field(name = "symbol", `type` = DataTypes.STRING),
+          Field(name = "open", `type` = DataTypes.STRING),
+          Field(name = "close", `type` = DataTypes.STRING),
+          Field(name = "low", `type` = DataTypes.STRING),
+          Field(name = "high", `type` = DataTypes.STRING)
+        ))
 
       When("the text is consumed")
       record.fromLine(line)

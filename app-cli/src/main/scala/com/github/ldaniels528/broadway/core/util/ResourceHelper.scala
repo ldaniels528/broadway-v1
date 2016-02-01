@@ -1,9 +1,11 @@
 package com.github.ldaniels528.broadway.core.util
 
 import scala.language.reflectiveCalls
+import scala.reflect.ClassTag
 
 /**
   * Resource Helper Utility Class
+  *
   * @author lawrence.daniels@gmail.com
   */
 object ResourceHelper {
@@ -37,6 +39,7 @@ object ResourceHelper {
 
   /**
     * A collection of useful chaining methods
+    *
     * @param value the return value
     */
   implicit class FlowExtensions[T](val value: T) extends AnyVal {
@@ -44,6 +47,16 @@ object ResourceHelper {
     def and[S](block: T => S): T = {
       block(value)
       value
+    }
+
+  }
+
+  implicit class TypeEnrichment[A](val entity: A) extends AnyVal {
+
+    def require[B <: A](message: String)(implicit tag: ClassTag[B]) = entity match {
+      case entityB: B => entityB
+      case _ =>
+        throw new IllegalArgumentException(message)
     }
 
   }

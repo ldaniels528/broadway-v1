@@ -21,7 +21,8 @@ class AvroRecordSpec() extends FeatureSpec with BeforeAndAfterEach with GivenWhe
 
       And("a Avro record")
       val record = AvroRecord(
-        id = "EodCompanyInfo",
+        id = "avro_rec",
+        name = "EodCompanyInfo",
         namespace = "com.shocktrade.avro",
         fields = Seq(
           Field(name = "symbol", `type` = DataTypes.STRING),
@@ -29,7 +30,7 @@ class AvroRecordSpec() extends FeatureSpec with BeforeAndAfterEach with GivenWhe
           Field(name = "close", `type` = DataTypes.DOUBLE),
           Field(name = "low", `type` = DataTypes.DOUBLE),
           Field(name = "high", `type` = DataTypes.DOUBLE)
-        ), `type` = RecordTypes.BODY)
+        ))
 
       When("the Avro Schema is queried:")
       info(s"The Avro Schema is ${Json.prettyPrint(Json.parse(record.toSchemaString))}")

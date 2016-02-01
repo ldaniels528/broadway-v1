@@ -7,7 +7,6 @@ import java.nio.file.{Path, Paths, WatchService}
 import com.github.ldaniels528.broadway.core.StoryConfig
 import com.github.ldaniels528.broadway.core.actors.FileManagementActor.ArchiveFile
 import com.github.ldaniels528.broadway.core.actors.{BroadwayActorSystem, FileManagementActor, ProcessingActor}
-import com.github.ldaniels528.broadway.core.scope.GlobalScope
 import com.ldaniels528.commons.helpers.OptionHelper._
 import org.slf4j.LoggerFactory
 
@@ -49,7 +48,7 @@ case class FileTrigger(id: String, directories: Seq[FileFeedDirectory]) extends 
 
   private def createProcessFlows(directory: FileFeedDirectory, feed: FileFeed, incomingFile: File) = {
     feed.flows zip (feed.flows map { flow =>
-      val scope = createScope(GlobalScope(), flow)
+      val scope = createScope(flow)
       scope ++= Seq(
         "flow.input.path" -> incomingFile.getCanonicalPath,
         "trigger.directory.path" -> directory.path)

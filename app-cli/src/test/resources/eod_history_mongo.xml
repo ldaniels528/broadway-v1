@@ -9,30 +9,30 @@
         <FileTrigger id="Repo1">
             <directory path="/Users/ldaniels/broadway/incoming/tradingHistory" archive="DataStore">
                 <feed pattern="AMEX_(.*)[.]txt">
-                    <BasicFlow input-source="input_file" output-source="mongo_db" />
+                    <SimpleFlow input-source="input_file" output-source="mongo_output" />
                 </feed>
                 <feed pattern="NASDAQ_(.*)[.]txt">
-                    <BasicFlow input-source="input_file" output-source="mongo_db" />
+                    <SimpleFlow input-source="input_file" output-source="mongo_output" />
                 </feed>
                 <feed pattern="NYSE_(.*)[.]txt">
-                    <BasicFlow input-source="input_file" output-source="mongo_db" />
+                    <SimpleFlow input-source="input_file" output-source="mongo_output" />
                 </feed>
                 <feed pattern="OTCBB_(.*)[.]txt">
-                    <BasicFlow input-source="input_file" output-source="mongo_db" />
+                    <SimpleFlow input-source="input_file" output-source="mongo_output" />
                 </feed>
             </directory>
         </FileTrigger>
     </triggers>
 
     <data-sources>
-        <TextFileInputSource id="input_file" path="{{ flow.input.path }}" layout="input_layout" />
-        <MongoOutputSource id="mongo_db" servers="localhost" database="shocktrade" collection="test_history" layout="mongo_output"/>
+        <TextFileInputSource id="input_file" path="{{ flow.input.path }}" layout="csv_layout" />
+        <MongoOutputSource id="mongo_output" servers="localhost" database="shocktrade" collection="test_history" layout="mongo_layout"/>
     </data-sources>
 
     <layouts>
-        <TextLayout id="input_layout">
+        <MultiPartLayout id="csv_layout">
             <header>
-                <record type="csv">
+                <record id="csv_header" type="csv">
                     <field name="ticker" value="&lt;ticker&gt;" type="string" />
                     <field name="date" value="&lt;date&gt;" type="string" />
                     <field name="open" value="&lt;open&gt;" type="string" />
@@ -43,7 +43,7 @@
                 </record>
             </header>
             <body>
-                <record type="csv">
+                <record id="csv_body" type="csv">
                     <field name="ticker" type="string" />
                     <field name="date" type="string" />
                     <field name="open" type="string" />
@@ -53,18 +53,20 @@
                     <field name="volume" type="string" />
                 </record>
             </body>
-        </TextLayout>
+        </MultiPartLayout>
 
-        <JsonLayout id="mongo_output">
-            <record type="json">
-                <field name="ticker" type="string" value="{{ input_layout.body.ticker }}"/>
-                <field name="date" type="string" value="{{ input_layout.body.date }}"/>
-                <field name="open" type="double" value="{{ input_layout.body.open }}"/>
-                <field name="high" type="double" value="{{ input_layout.body.high }}"/>
-                <field name="low" type="double" value="{{ input_layout.body.low }}"/>
-                <field name="close" type="string" value="{{ input_layout.body.close }}"/>
-                <field name="volume" type="long" value="{{ input_layout.body.volume }}"/>
-            </record>
-        </JsonLayout>
+        <MultiPartLayout id="mongo_layout">
+            <body>
+                <record id="json_body" type="json">
+                    <field name="ticker" type="string" value="{{ csv_body.ticker }}"/>
+                    <field name="date" type="string" value="{{ csv_body.date }}"/>
+                    <field name="open" type="double" value="{{ csv_body.open }}"/>
+                    <field name="high" type="double" value="{{ csv_body.high }}"/>
+                    <field name="low" type="double" value="{{ csv_body.low }}"/>
+                    <field name="close" type="string" value="{{ csv_body.close }}"/>
+                    <field name="volume" type="long" value="{{ csv_body.volume }}"/>
+                </record>
+            </body>
+        </MultiPartLayout>
     </layouts>
 </story>

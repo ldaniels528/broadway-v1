@@ -2,8 +2,8 @@ package com.github.ldaniels528.broadway.core.io.device
 
 import java.util.UUID
 
+import com.github.ldaniels528.broadway.core.io.Scope
 import com.github.ldaniels528.broadway.core.io.device.StatisticsGeneration.Statistics
-import com.github.ldaniels528.broadway.core.scope.Scope
 
 /**
   * I/O Statistic Generation
