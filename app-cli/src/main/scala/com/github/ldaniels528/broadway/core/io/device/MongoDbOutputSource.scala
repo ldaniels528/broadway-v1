@@ -2,9 +2,9 @@ package com.github.ldaniels528.broadway.core.io.device
 
 import java.util.UUID
 
+import com.github.ldaniels528.broadway.core.io.Scope
 import com.github.ldaniels528.broadway.core.io.device.MongoDbOutputSource._
 import com.github.ldaniels528.broadway.core.io.layout.{JsonRecord, Layout, Record}
-import com.github.ldaniels528.broadway.core.io.{Data, Scope}
 import com.github.ldaniels528.broadway.core.util.ResourceHelper._
 import com.mongodb.ServerAddress
 import com.mongodb.casbah.Imports._
@@ -16,7 +16,7 @@ import play.api.libs.json.{JsBoolean, _}
   * MongoDB Output Source
   */
 case class MongoDbOutputSource(id: String, serverList: String, database: String, collection: String, writeConcern: WriteConcern, layout: Layout)
-  extends OutputSource with RecordOutputSource {
+  extends OutputSource {
 
   private val connUUID = UUID.randomUUID().toString
   private val collUUID = UUID.randomUUID().toString
@@ -34,17 +34,6 @@ case class MongoDbOutputSource(id: String, serverList: String, database: String,
   }
 
   override def close(scope: Scope) = scope.discardResource[MongoConnection](connUUID).foreach(_.close())
-
-  override def write(scope: Scope, data: Data) = {
-    (for {
-      mc <- scope.getResource[MongoCollection](collUUID)
-    } yield {
-      val js = data.asJson
-      val doc = toDocument(js.asInstanceOf[JsObject])
-      val result = mc.insert(doc, writeConcern)
-      updateCount(scope, 1) // TODO Cannot get n property for an unacknowledged write
-    }) getOrElse 0
-  }
 
   override def writeRecord(record: Record)(implicit scope: Scope) = {
     (for {

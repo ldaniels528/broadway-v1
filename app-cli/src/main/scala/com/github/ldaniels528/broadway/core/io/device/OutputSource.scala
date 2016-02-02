@@ -1,12 +1,13 @@
 package com.github.ldaniels528.broadway.core.io.device
 
-import com.github.ldaniels528.broadway.core.io.{Scope, Data}
+import com.github.ldaniels528.broadway.core.io.Scope
+import com.github.ldaniels528.broadway.core.io.layout.Record
 
 /**
   * Represents an Output Source
   */
 trait OutputSource extends DataSource {
 
-  def write(scope: Scope, data: Data): Int
+  def writeRecord(record: Record)(implicit scope: Scope): Int
 
 }

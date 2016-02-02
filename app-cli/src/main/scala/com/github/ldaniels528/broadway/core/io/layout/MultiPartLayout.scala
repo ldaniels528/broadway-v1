@@ -1,9 +1,9 @@
 package com.github.ldaniels528.broadway.core.io.layout
 
+import com.github.ldaniels528.broadway.core.io.Scope
 import com.github.ldaniels528.broadway.core.io.device._
 import com.github.ldaniels528.broadway.core.io.layout.Layout.InputSet
 import com.github.ldaniels528.broadway.core.io.layout.MultiPartLayout.Section
-import com.github.ldaniels528.broadway.core.io.{Data, Scope}
 import com.github.ldaniels528.broadway.core.util.ResourceHelper._
 
 /**
@@ -34,18 +34,13 @@ case class MultiPartLayout(id: String, body: Section, header: Option[Section] = 
   }
 
   override def write(device: OutputSource, inputSet: InputSet)(implicit scope: Scope) {
-    val out = device.require[RecordOutputSource](s"Text-capable output source required for device '${device.id}'")
     inputSet match {
-      case is if is.isEOF => footer.foreach(_.records foreach out.writeRecord)
+      case is if is.isEOF => footer.foreach(_.records foreach device.writeRecord)
       case is =>
-        if (device.getStatistics(scope).offset == 0L) header.foreach(_.records foreach out.writeRecord)
-        body.records foreach out.writeRecord
+        if (device.getStatistics(scope).offset == 0L) header.foreach(_.records foreach device.writeRecord)
+        body.records foreach device.writeRecord
     }
   }
-
-  override def in(scope: Scope, device: InputSource, data: Option[Data]): Seq[Data] = ???
-
-  override def out(scope: Scope, device: OutputSource, dataSet: Seq[Data], isEOF: Boolean): Seq[Data] = ???
 
 }
 

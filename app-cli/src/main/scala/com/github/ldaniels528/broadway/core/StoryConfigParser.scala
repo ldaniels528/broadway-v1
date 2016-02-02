@@ -9,8 +9,6 @@ import com.github.ldaniels528.broadway.core.io.device.kafka.ZkProxy
 import com.github.ldaniels528.broadway.core.io.flow._
 import com.github.ldaniels528.broadway.core.io.layout.MultiPartLayout.Section
 import com.github.ldaniels528.broadway.core.io.layout._
-import com.github.ldaniels528.broadway.core.io.layout.json.{AvroLayout, JsonFieldSet, JsonLayout}
-import com.github.ldaniels528.broadway.core.io.layout.text._
 import com.github.ldaniels528.broadway.core.io.trigger.{FileFeed, FileFeedDirectory, FileTrigger, StartupTrigger}
 import com.ldaniels528.commons.helpers.OptionHelper._
 import com.mongodb.casbah.Imports._
@@ -102,9 +100,7 @@ class StoryConfigParser(xml: Node) {
   private def parseFlows(rootNode: Node, devices: Seq[DataSource], layouts: Seq[Layout]): Seq[Flow] = {
     rootNode.child.filter(_.label != "#PCDATA") map { node =>
       node.label match {
-        case "BasicFlow" => parseFlows_BasicFlow(node, devices)
         case "CompositeInputFlow" => parseFlows_CompositeInputFlow(node, devices)
-        case "CompositionFlow" => parseFlows_CompositionFlow(node, devices)
         case "SimpleFlow" => parseFlows_SimpleFlow(node, devices)
         case label =>
           throw new IllegalArgumentException(s"Invalid flow reference '$label'")
@@ -112,24 +108,8 @@ class StoryConfigParser(xml: Node) {
     }
   }
 
-  private def parseFlows_BasicFlow(node: Node, devices: Seq[DataSource]) = {
-    BasicFlow(
-      id = node \@ "id",
-      input = lookupInputDataSource(devices, id = node \@ "input-source"),
-      output = lookupOutputDataSource(devices, id = node \@ "output-source"))
-  }
-
   private def parseFlows_CompositeInputFlow(node: Node, devices: Seq[DataSource]) = {
     CompositeInputFlow(
-      id = node \@ "id",
-      output = lookupOutputDataSource(devices, id = node \@ "output-source"),
-      inputs = (node \ "include") map { includeNode =>
-        lookupInputDataSource(devices, id = includeNode \@ "input-source")
-      })
-  }
-
-  private def parseFlows_CompositionFlow(node: Node, devices: Seq[DataSource]) = {
-    CompositionFlow(
       id = node \@ "id",
       output = lookupOutputDataSource(devices, id = node \@ "output-source"),
       inputs = (node \ "include") map { includeNode =>
@@ -148,35 +128,11 @@ class StoryConfigParser(xml: Node) {
     (rootNode \ "layouts") flatMap { layoutsNode =>
       layoutsNode.child.filter(_.label != "#PCDATA") map { node =>
         node.label match {
-          case "AvroLayout" => parseLayouts_Layout_Avro(node)
-          case "JsonLayout" => parseLayouts_Layout_Json(node)
           case "MultiPartLayout" => parseLayouts_Layout_MultiPart(node)
-          case "TextLayout" => parseLayouts_Layout_Text(node)
           case label =>
             throw new IllegalArgumentException(s"Invalid layout type '$label'")
         }
       }
-    }
-  }
-
-  private def parseLayouts_Layout_Avro(node: Node) = {
-    AvroLayout(
-      id = node \@ "id",
-      fieldSet = parseRecord_Old(node).headOption orDie "Exactly one fields element was expected",
-      schemaString = (node \ "schema").map(_.text).headOption orDie "Schema element required")
-  }
-
-  /**
-    * Parses a layout division
-    *
-    * @param rootNode the given [[Node node]]
-    * @param label    the given label (e.g. "body", "header" or "footer")
-    * @return a collection of [[Division divisions]]
-    */
-  private def parseLayouts_Layout_Division(rootNode: Node, label: String) = {
-    (rootNode \ label).onlyOne(s"Only one $label element is allowed") match {
-      case Some(node) => Some(Division(parseRecord_Old(node)))
-      case None => None
     }
   }
 
@@ -194,24 +150,12 @@ class StoryConfigParser(xml: Node) {
     }
   }
 
-  private def parseLayouts_Layout_Json(node: Node) = {
-    JsonLayout(id = node \@ "id", fieldSets = parseRecord_Old(node))
-  }
-
   private def parseLayouts_Layout_MultiPart(node: Node) = {
     MultiPartLayout(
       id = node \@ "id",
       header = parseLayouts_Layout_Section(node, "header"),
       body = parseLayouts_Layout_Section(node, "body") orDie "The <body> element is required",
       footer = parseLayouts_Layout_Section(node, "footer"))
-  }
-
-  private def parseLayouts_Layout_Text(node: Node) = {
-    TextLayout(
-      id = node \@ "id",
-      header = parseLayouts_Layout_Division(node, "header"),
-      body = parseLayouts_Layout_Division(node, "body") orDie "The <body> element is required",
-      footer = parseLayouts_Layout_Division(node, "footer"))
   }
 
   private def parseRecord(rootNode: Node) = {
@@ -244,43 +188,6 @@ class StoryConfigParser(xml: Node) {
     Field(
       name = name,
       path = s"$recordId.$name",
-      `type` = (node \@ "type").optional.map(s => DataTypes.withName(s.toUpperCase)) getOrElse DataTypes.STRING,
-      defaultValue = (node \@ "value").optional,
-      length = (node \@ "length").optional map (_.toInt))
-  }
-
-  private def parseRecord_Old(rootNode: Node) = {
-    (rootNode \ "record") map { fieldsNode =>
-      val `type` = (fieldsNode \@ "type").required
-      val fields = fieldsNode.child.filter(_.label != "#PCDATA") map { node =>
-        node.label match {
-          case "field" => parseRecord_Field_Old(node)
-          case label =>
-            throw new IllegalArgumentException(s"Invalid field type '$label'")
-        }
-      }
-
-      // decode the field set by type
-      `type` match {
-        case "csv" => CSVFieldSet(fields)
-        case "delimited" =>
-          DelimitedFieldSet(
-            fields = fields,
-            delimiter = (fieldsNode \@ "delimiter").required.specialChars,
-            isQuoted = (fieldsNode \@ "quoted").optional.exists(_.isTrue))
-        case "fixed-length" => FixedLengthFieldSet(fields)
-        case "json" => JsonFieldSet(fields)
-        case "inline" => FixedLengthFieldSet(fields)
-        case unknown =>
-          throw new IllegalArgumentException(s"Unrecognized fields type '$unknown'")
-      }
-    }
-  }
-
-  private def parseRecord_Field_Old(node: Node) = {
-    Field(
-      name = (node \@ "name").required,
-      path = (node \@ "name").required,
       `type` = (node \@ "type").optional.map(s => DataTypes.withName(s.toUpperCase)) getOrElse DataTypes.STRING,
       defaultValue = (node \@ "value").optional,
       length = (node \@ "length").optional map (_.toInt))

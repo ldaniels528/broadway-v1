@@ -1,10 +1,8 @@
 package com.github.ldaniels528.broadway.core.io.device
 
-import java.util.concurrent.Callable
-
-import akka.util.Timeout
 import com.github.ldaniels528.broadway.core.actors.{BroadwayActorSystem, TaskActorPool}
-import com.github.ldaniels528.broadway.core.io.{Scope, Data}
+import com.github.ldaniels528.broadway.core.io.Scope
+import com.github.ldaniels528.broadway.core.io.layout.Record
 import com.ldaniels528.commons.helpers.OptionHelper._
 
 import scala.concurrent.ExecutionContext
@@ -40,14 +38,7 @@ case class ConcurrentOutputSource(id: String, concurrency: Int, devices: Seq[Out
     devices.foreach(_.open(scope))
   }
 
-  override def write(scope: Scope, data: Data) = {
-    implicit val timeout: Timeout = 30.seconds
-    lastWrite = System.currentTimeMillis()
-    ticker += 1
-    val promise = taskActorPool ? new Callable[Int] {
-      override def call: Int = devices(ticker % devices.length).write(scope, data)
-    }
-    promise foreach (updateCount(scope, _))
+  override def writeRecord(record: Record)(implicit scope: Scope) = {
     0
   }
 
@@ -58,5 +49,6 @@ case class ConcurrentOutputSource(id: String, concurrency: Int, devices: Seq[Out
     }
     ()
   }
+
 
 }

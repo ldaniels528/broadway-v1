@@ -3,8 +3,8 @@ package com.github.ldaniels528.broadway.core.io.device
 import java.io.{BufferedWriter, File, FileWriter}
 import java.util.UUID
 
+import com.github.ldaniels528.broadway.core.io.Scope
 import com.github.ldaniels528.broadway.core.io.layout._
-import com.github.ldaniels528.broadway.core.io.{Data, Scope}
 import com.github.ldaniels528.broadway.core.util.ResourceHelper._
 
 /**
@@ -12,7 +12,7 @@ import com.github.ldaniels528.broadway.core.util.ResourceHelper._
   *
   * @author lawrence.daniels@gmail.com
   */
-case class TextFileOutputSource(id: String, path: String, layout: Layout) extends OutputSource with RecordOutputSource {
+case class TextFileOutputSource(id: String, path: String, layout: Layout) extends OutputSource {
   private val uuid = UUID.randomUUID().toString
 
   override def close(scope: Scope) = scope.discardResource[BufferedWriter](uuid).foreach(_.close())
@@ -30,14 +30,6 @@ case class TextFileOutputSource(id: String, path: String, layout: Layout) extend
     )
     scope.createResource(uuid, new BufferedWriter(new FileWriter(file)))
     ()
-  }
-
-  override def write(scope: Scope, data: Data) = {
-    scope.getResource[BufferedWriter](uuid) map { writer =>
-      writer.write(data.asText)
-      writer.newLine()
-      updateCount(scope, 1)
-    } getOrElse 0
   }
 
   override def writeRecord(record: Record)(implicit scope: Scope): Int = {
