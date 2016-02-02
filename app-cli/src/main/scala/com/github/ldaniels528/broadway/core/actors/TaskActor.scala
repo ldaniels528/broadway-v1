@@ -7,6 +7,7 @@ import com.github.ldaniels528.broadway.core.actors.TaskActor.{Dead, Die}
 
 /**
   * Task Actor
+  * @author lawrence.daniels@gmail.com
   */
 class TaskActor() extends Actor with ActorLogging {
 
@@ -21,7 +22,7 @@ class TaskActor() extends Actor with ActorLogging {
 
     case Die =>
       sender ! Dead
-      //context.stop(self)
+    //context.stop(self)
 
     case message =>
       log.warning(s"Unhandled message '$message' (${Option(message).map(_.getClass.getName).orNull})")
@@ -32,6 +33,7 @@ class TaskActor() extends Actor with ActorLogging {
 
 /**
   * Task Actor Companion Object
+  * @author lawrence.daniels@gmail.com
   */
 object TaskActor {
 

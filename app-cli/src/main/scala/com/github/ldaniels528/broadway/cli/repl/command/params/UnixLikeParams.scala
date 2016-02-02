@@ -4,11 +4,10 @@ import com.github.ldaniels528.broadway.cli.repl.command.CommandParser._
 import com.github.ldaniels528.broadway.cli.repl.command.{Command, UnixLikeArgs}
 
 /**
- * Unix-Style Command Parameters
- *
- * @param flags the given collection of flag tuple
- * @author lawrence.daniels@gmail.com
- */
+  * Unix-Style Command Parameters
+  * @param flags the given collection of flag tuple
+  * @author lawrence.daniels@gmail.com
+  */
 case class UnixLikeParams(defaults: Seq[(String, Boolean)] = Nil, flags: Seq[(String, String)] = Nil)
   extends CommandParameters[UnixLikeArgs] {
 
@@ -18,8 +17,8 @@ case class UnixLikeParams(defaults: Seq[(String, Boolean)] = Nil, flags: Seq[(St
 
     // there must be at least as many parameters as required arguments
     val argCount = unixArgs.args.size
-    val arguments = "argument" + (if(argCount == 1) "" else "s")
-    val requiredArgs = defaults.count { case (_, required) => required}
+    val arguments = "argument" + (if (argCount == 1) "" else "s")
+    val requiredArgs = defaults.count { case (_, required) => required }
     if (argCount < requiredArgs) {
       throw new IllegalArgumentException(s"Invalid arguments ($argCount $arguments found, $requiredArgs required) - Usage: ${command.prototype}")
     }
@@ -32,8 +31,8 @@ case class UnixLikeParams(defaults: Seq[(String, Boolean)] = Nil, flags: Seq[(St
   }
 
   override def prototypeOf(command: Command): String = {
-    val items = defaults.map { case (param, required) => if (required) param else s"[$param]"}.reverse.toList :::
-      (flags.toList map { case (flag, name) => s"[$flag $name]"}) ::: command.name :: Nil
+    val items = defaults.map { case (param, required) => if (required) param else s"[$param]" }.reverse.toList :::
+      (flags.toList map { case (flag, name) => s"[$flag $name]" }) ::: command.name :: Nil
     items.reverse mkString " "
   }
 

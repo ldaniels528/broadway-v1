@@ -7,6 +7,7 @@ import scala.collection.concurrent.TrieMap
 
 /**
   * Represents a runtime scope
+  * @author lawrence.daniels@gmail.com
   */
 class Scope(values: (String, Any)*) {
   private val variables = TrieMap[String, Any](values: _*)
@@ -44,6 +45,7 @@ class Scope(values: (String, Any)*) {
 
 /**
   * Scope Companion Object
+  * @author lawrence.daniels@gmail.com
   */
 object Scope {
 

@@ -1,30 +1,15 @@
-+ ----------------------------------------------------------------------------- +
-| flow           device      action  count  processTimeMsec  avgRecordsPerSec   |
-+ ----------------------------------------------------------------------------- +
-| combiner_flow  AMEX.txt    reads   1926   86               22395.3            |
-| combiner_flow  NASDAQ.txt  reads   2956   58               50965.5            |
-| combiner_flow  NYSE.txt    reads   3312   53               62490.5            |
-| combiner_flow  OTCBB.txt   reads   10629  119              89319.3            |
-| combiner_flow  output.txt  writes  18823  316              59566.4            |
-+ ----------------------------------------------------------------------------- +
+sbt "project broadway_cli" "run ./app-cli/src/test/resources/eod_companies_csv.xml"
 
+# Microsoft Driver in Maven
 
-2712 [broadway_tasks-akka.actor.default-dispatcher-3] INFO  com.github.ldaniels528.broadway.core.io.layout.Field$ - delimited_data.symbol -> IWX
-2712 [broadway_tasks-akka.actor.default-dispatcher-3] INFO  com.github.ldaniels528.broadway.core.io.layout.Field$ - delimited_data.description -> Russell Top 200 Value Index Ishares
-2712 [broadway_tasks-akka.actor.default-dispatcher-3] INFO  com.github.ldaniels528.broadway.core.io.layout.Field$ - delimited_data.symbol <- Some(IWX)
-2712 [broadway_tasks-akka.actor.default-dispatcher-3] INFO  com.github.ldaniels528.broadway.core.io.layout.Field$ - delimited_data.description <- Some(Russell Top 200 Value Index Ishares)
-2712 [broadway_tasks-akka.actor.default-dispatcher-3] INFO  com.github.ldaniels528.broadway.core.io.layout.Field$ - csv_data.symbol <- None
-2712 [broadway_tasks-akka.actor.default-dispatcher-3] INFO  com.github.ldaniels528.broadway.core.io.layout.Field$ - csv_data.description <- None
-2712 [broadway_tasks-akka.actor.default-dispatcher-3] INFO  com.github.ldaniels528.broadway.core.io.layout.Field$ - delimited_data.symbol -> IWY
-2712 [broadway_tasks-akka.actor.default-dispatcher-3] INFO  com.github.ldaniels528.broadway.core.io.layout.Field$ - delimited_data.description -> Russell Top 200 Growth Index Ishares
-2712 [broadway_tasks-akka.actor.default-dispatcher-3] INFO  com.github.ldaniels528.broadway.core.io.layout.Field$ - delimited_data.symbol <- Some(IWY)
-2712 [broadway_tasks-akka.actor.default-dispatcher-3] INFO  com.github.ldaniels528.broadway.core.io.layout.Field$ - delimited_data.description <- Some(Russell Top 200 Growth Index Ishares)
-2712 [broadway_tasks-akka.actor.default-dispatcher-3] INFO  com.github.ldaniels528.broadway.core.io.layout.Field$ - csv_data.symbol <- None
-2712 [broadway_tasks-akka.actor.default-dispatcher-3] INFO  com.github.ldaniels528.broadway.core.io.layout.Field$ - csv_data.description <- None
-2713 [broadway_tasks-akka.actor.default-dispatcher-3] INFO  com.github.ldaniels528.broadway.core.io.layout.Field$ - delimited_data.symbol -> IXC
-2713 [broadway_tasks-akka.actor.default-dispatcher-3] INFO  com.github.ldaniels528.broadway.core.io.layout.Field$ - delimited_data.description -> S&P Global Energy Ishares
-2713 [broadway_tasks-akka.actor.default-dispatcher-3] INFO  com.github.ldaniels528.broadway.core.io.layout.Field$ - delimited_data.symbol <- Some(IXC)
-2713 [broadway_tasks-akka.actor.default-dispatcher-3] INFO  com.github.ldaniels528.broadway.core.io.layout.Field$ - delimited_data.description <- Some(S&P Global Energy Ishares)
-2713 [broadway_tasks-akka.actor.default-dispatcher-3] INFO  com.github.ldaniels528.broadway.core.io.layout.Field$ - csv_data.symbol <- None
-2713 [broadway_tasks-akka.actor.default-dispatcher-3] INFO  com.github.ldaniels528.broadway.core.io.layout.Field$ - csv_data.description <- None
-2713 [broadway_tasks-akka.actor.default-dispatcher-3] INFO  com.github.ldaniels528.broadway.core.io.layout.Field$ - delimited_data.symbol -> IXG
+http://claude.betancourt.us/add-microsoft-sql-jdbc-driver-to-maven/
+
+mvn install:install-file -Dfile=sqljdbc4-4.0.2206.100.jar -Dpackaging=jar -DgroupId=com.microsoft.sqlserver -DartifactId=sqljdbc4 -Dversion=4.0
+
+<dependency>
+    <groupId>com.microsoft.sqlserver</groupId>
+    <artifactId>sqljdbc4</artifactId>
+    <version>4.0</version>
+</dependency>
+
+"com.microsoft.sqlserver" % "sqljdbc4" % "4.0"

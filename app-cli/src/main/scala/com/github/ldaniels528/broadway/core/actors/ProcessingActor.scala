@@ -5,6 +5,7 @@ import akka.routing.RoundRobinPool
 
 /**
   * Processing Actor
+  * @author lawrence.daniels@gmail.com
   */
 class ProcessingActor() extends Actor with ActorLogging {
 
@@ -21,6 +22,7 @@ class ProcessingActor() extends Actor with ActorLogging {
 
 /**
   * Processing Actor Companion Object
+  * @author lawrence.daniels@gmail.com
   */
 object ProcessingActor {
   private val actors = BroadwayActorSystem.system.actorOf(Props[ProcessingActor].withRouter(RoundRobinPool(nrOfInstances = 1)))

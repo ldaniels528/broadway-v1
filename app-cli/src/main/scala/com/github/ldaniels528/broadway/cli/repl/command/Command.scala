@@ -6,7 +6,6 @@ import scala.language.existentials
 
 /**
   * Represents a Shell command
-  *
   * @author lawrence.daniels@gmail.com
   */
 case class Command(name: String,
@@ -18,14 +17,12 @@ case class Command(name: String,
 
   /**
     * Returns a usage prototype for this command
-    *
     * @return a usage prototype for this command (e.g. "zget [-t type] key")
     */
   def prototype: String = params.prototypeOf(this)
 
   /**
     * Returns the string representation for this command
-    *
     * @return a usage prototype for this command (e.g. "zget [-t type] key")
     */
   override def toString = prototype

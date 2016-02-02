@@ -1,5 +1,7 @@
 package com.github.ldaniels528.broadway.core.io.layout
 
+import com.github.ldaniels528.broadway.core.io.record.impl.FixedLengthRecord
+import com.github.ldaniels528.broadway.core.io.record.{DataTypes, Field}
 import com.ldaniels528.commons.helpers.OptionHelper.Risky._
 import org.scalatest.Matchers._
 import org.scalatest.mock.MockitoSugar

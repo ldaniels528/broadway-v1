@@ -2,7 +2,6 @@ package com.github.ldaniels528.broadway.cli.repl.command
 
 /**
   * Command Parser
-  *
   * @author lawrence.daniels@gmail.com
   */
 object CommandParser {
@@ -10,7 +9,6 @@ object CommandParser {
 
   /**
     * Parses the given input string into tokens
-    *
     * @param input the given user input to parse
     */
   def parseTokens(input: String): Seq[String] = {
@@ -107,7 +105,6 @@ object CommandParser {
 
   /**
     * Indicates whether the given string is hexadecimal dot-notation
-    *
     * @param value the given string value
     * @return true, if the string is hexadecimal dot-notation (e.g. "de.ad.be.ef.ca.fe.ba.be")
     */
@@ -117,7 +114,6 @@ object CommandParser {
 
   /**
     * Converts a binary string to a byte array
-    *
     * @param dottedHex the given binary string (e.g. "de.ad.be.ef.00")
     * @return a byte array
     */
@@ -125,14 +121,12 @@ object CommandParser {
 
   /**
     * Parses the given input string into tokens
-    *
     * @return the argument list
     */
   def parseUnixLikeArgs(input: String): UnixLikeArgs = parseUnixLikeArgs(parseTokens(input))
 
   /**
     * Parses the given items (e.g. ["-c", "-f", "myfile"]) into an argument list (e.g. ["-c" -> None, "-f" -> Some("myfile")])
-    *
     * @param items the given array of items
     * @return the argument list
     */

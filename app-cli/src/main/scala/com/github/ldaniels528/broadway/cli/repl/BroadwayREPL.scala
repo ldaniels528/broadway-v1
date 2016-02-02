@@ -12,6 +12,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 /**
   * Broadway ETL REPL
+  * @author lawrence.daniels@gmail.com
   */
 object BroadwayREPL {
   private val logger = LoggerFactory.getLogger(getClass)
@@ -28,7 +29,6 @@ object BroadwayREPL {
 
   /**
     * For standalone execution
-    *
     * @param args the given command line arguments
     */
   def main(args: Array[String]): Unit = shell(args)

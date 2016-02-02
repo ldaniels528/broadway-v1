@@ -15,6 +15,7 @@ import scala.util.{Failure, Success}
 
 /**
   * Represents an execution trigger
+  * @author lawrence.daniels@gmail.com
   */
 trait Trigger {
   protected val logger = LoggerFactory.getLogger(getClass)
@@ -45,8 +46,9 @@ trait Trigger {
     }
   }
 
-  protected def createScope(flow: Flow) = {
+  protected def createScope(story: StoryConfig, flow: Flow) = {
     val scope = Scope()
+    scope ++= story.properties
     scope ++= Seq(
       "date()" -> (() => new Date()),
       "trigger.id" -> id,
@@ -61,7 +63,7 @@ trait Trigger {
         val action = if (d.isInstanceOf[OutputSource]) "writes" else "reads"
         IOStats(
           flow = flow.id,
-          device = d.id,
+          source = d.id,
           action = action,
           count = d.getStatistics(scope).count,
           processTimeMsec = d.getStatistics(scope).elapsedTimeMillis,
@@ -74,12 +76,13 @@ trait Trigger {
 
 /**
   * Trigger Companion Object
+  * @author lawrence.daniels@gmail.com
   */
 object Trigger {
 
   /**
     * I/O Statistics
     */
-  case class IOStats(flow: String, device: String, action: String, count: Long, processTimeMsec: Long, avgRecordsPerSec: Double)
+  case class IOStats(flow: String, source: String, action: String, count: Long, processTimeMsec: Long, avgRecordsPerSec: Double)
 
 }

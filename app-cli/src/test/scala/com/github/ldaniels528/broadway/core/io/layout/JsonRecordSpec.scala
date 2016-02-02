@@ -1,6 +1,8 @@
 package com.github.ldaniels528.broadway.core.io.layout
 
 
+import com.github.ldaniels528.broadway.core.io.record.impl.JsonRecord
+import com.github.ldaniels528.broadway.core.io.record.{DataTypes, Field}
 import org.scalatest.Matchers._
 import org.scalatest.mock.MockitoSugar
 import org.scalatest.{BeforeAndAfterEach, FeatureSpec, GivenWhenThen}

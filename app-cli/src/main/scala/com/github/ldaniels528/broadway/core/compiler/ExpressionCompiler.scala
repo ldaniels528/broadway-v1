@@ -6,6 +6,7 @@ import scala.util.{Failure, Success, Try}
 
 /**
   * ETL Expression Compiler
+  * @author lawrence.daniels@gmail.com
   */
 object ExpressionCompiler {
 

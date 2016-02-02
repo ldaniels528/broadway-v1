@@ -9,7 +9,6 @@ import scala.concurrent.duration._
 
 /**
   * Story Processor
-  *
   * @author lawrence.daniels@gmail.com
   */
 class StoryProcessor() {
@@ -30,7 +29,6 @@ class StoryProcessor() {
 
   /**
     * Executes the ETL processing
-    *
     * @param story the given [[StoryConfig ETL configuration]]
     */
   def run(story: StoryConfig)(implicit ec: ExecutionContext) {

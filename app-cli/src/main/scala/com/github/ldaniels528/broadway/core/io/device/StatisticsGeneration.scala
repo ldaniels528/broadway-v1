@@ -7,20 +7,20 @@ import com.github.ldaniels528.broadway.core.io.device.StatisticsGeneration.Stati
 
 /**
   * I/O Statistic Generation
-  *
   * @author lawrence.daniels@gmail.com
   */
 trait StatisticsGeneration {
   private val uuid = UUID.randomUUID().toString
 
-  def getStatistics(scope: Scope) = scope.getOrElseUpdate(uuid, Statistics())
+  def getStatistics(implicit scope: Scope) = scope.getOrElseUpdate(uuid, Statistics())
 
-  def updateCount(scope: Scope, delta: Int) = getStatistics(scope).update(delta)
+  def updateCount(delta: Int)(implicit scope: Scope) = getStatistics.update(delta)
 
 }
 
 /**
   * I/O Statistic Generation Companion Object
+  * @author lawrence.daniels@gmail.com
   */
 object StatisticsGeneration {
 

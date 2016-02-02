@@ -3,7 +3,8 @@ package com.github.ldaniels528.broadway.core.actors
 import akka.actor.ActorSystem
 
 /**
-  * Created by ldaniels on 1/18/16.
+  * Broadway Actor System
+  * @author lawrence.daniels@gmail.com
   */
 object BroadwayActorSystem {
   val system = ActorSystem("broadway_tasks")

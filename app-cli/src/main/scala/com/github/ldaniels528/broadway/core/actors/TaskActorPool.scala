@@ -15,6 +15,7 @@ import scala.reflect.ClassTag
 
 /**
   * Task Actor Pool
+  * @author lawrence.daniels@gmail.com
   */
 class TaskActorPool(concurrency: Int) {
   private val logger = LoggerFactory.getLogger(getClass)

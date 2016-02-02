@@ -7,7 +7,6 @@ import scala.concurrent.Future
 
 /**
   * ETL Process Flow
-  *
   * @author lawrence.daniels@gmail.com
   */
 trait Flow extends OpCode[Future[Unit]] {

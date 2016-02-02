@@ -4,6 +4,7 @@ import scala.concurrent.ExecutionContext
 
 /**
   * Represents an executable opCode
+  * @author lawrence.daniels@gmail.com
   */
 trait OpCode[T] {
 

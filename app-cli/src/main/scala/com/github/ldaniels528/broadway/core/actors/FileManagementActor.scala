@@ -7,10 +7,11 @@ import java.util.Date
 import akka.actor.{Actor, ActorLogging, Props}
 import akka.routing.RoundRobinPool
 import com.github.ldaniels528.broadway.core.actors.FileManagementActor.{ArchiveFile, MoveFile}
-import com.github.ldaniels528.broadway.core.util.GzipCompression
+import com.github.ldaniels528.broadway.core.support.GzipCompression
 
 /**
   * File Management Actor
+  * @author lawrence.daniels@gmail.com
   */
 class FileManagementActor extends Actor with ActorLogging with GzipCompression {
 
@@ -51,6 +52,7 @@ class FileManagementActor extends Actor with ActorLogging with GzipCompression {
 
 /**
   * File Management Actor Companion Object
+  * @author lawrence.daniels@gmail.com
   */
 object FileManagementActor {
   private val actors = BroadwayActorSystem.system.actorOf(Props[FileManagementActor].withRouter(RoundRobinPool(nrOfInstances = 5)))

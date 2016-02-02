@@ -5,21 +5,23 @@ import com.github.ldaniels528.broadway.core.io.layout.Layout
 
 /**
   * Represents a Generic Input or Output Source
+  * @author lawrence.daniels@gmail.com
   */
 trait DataSource extends StatisticsGeneration {
 
   def id: String
 
-  def close(scope: Scope): Unit
+  def close(implicit scope: Scope): Unit
 
   def layout: Layout
 
-  def open(scope: Scope): Unit
+  def open(implicit scope: Scope): Unit
 
 }
 
 /**
   * Data Source Companion Object
+  * @author lawrence.daniels@gmail.com
   */
 object DataSource {
 

@@ -32,6 +32,7 @@ lazy val coreDeps = Seq(
   //
   // ldaniels528 Dependencies
   "com.github.ldaniels528" %% "commons-helpers" % "0.1.1",
+  "com.microsoft.sqlserver" % "sqljdbc4" % "4.0",
   //
   // Akka dependencies
   "com.typesafe.akka" %% "akka-actor" % myAkkaVersion,

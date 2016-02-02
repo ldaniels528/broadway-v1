@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<story id="eod-history-mongo">
+
+    <archives>
+        <FileArchive id="DataStore" base="/Users/ldaniels/broadway/archive" compression="gzip" />
+    </archives>
+
+    <triggers>
+        <FileTrigger id="Repo1">
+            <directory path="/Users/ldaniels/broadway/incoming/tradingHistory" archive="DataStore">
+                <feed pattern="AMEX_(.*)[.]txt">
+                    <SimpleFlow input-source="input_file" output-source="mongo_output" />
+                </feed>
+                <feed pattern="NASDAQ_(.*)[.]txt">
+                    <SimpleFlow input-source="input_file" output-source="mongo_output" />
+                </feed>
+                <feed pattern="NYSE_(.*)[.]txt">
+                    <SimpleFlow input-source="input_file" output-source="mongo_output" />
+                </feed>
+                <feed pattern="OTCBB_(.*)[.]txt">
+                    <SimpleFlow input-source="input_file" output-source="mongo_output" />
+                </feed>
+            </directory>
+        </FileTrigger>
+    </triggers>
+
+    <data-sources>
+        <TextFileInputSource id="input_file" path="{{ flow.input.path }}" layout="csv_layout" />
+        <MongoOutputSource id="mongo_output" servers="localhost" database="shocktrade" collection="test_history" layout="mongo_layout"/>
+    </data-sources>
+
+    <layouts>
+        <MultiPartLayout id="csv_layout">
+            <header validate="true">
+                <record id="csv_header" type="csv">
+                    <field name="ticker" value="&lt;ticker&gt;" type="string" />
+                    <field name="date" value="&lt;date&gt;" type="string" />
+                    <field name="open" value="&lt;open&gt;" type="string" />
+                    <field name="high" value="&lt;high&gt;" type="string" />
+                    <field name="low" value="&lt;low&gt;" type="string" />
+                    <field name="close" value="&lt;close&gt;" type="string" />
+                    <field name="volume" value="&lt;vol&gt;" type="string" />
+                </record>
+            </header>
+            <body>
+                <record id="csv_body" type="csv">
+                    <field name="ticker" type="string" />
+                    <field name="date" type="string" />
+                    <field name="open" type="string" />
+                    <field name="high" type="string" />
+                    <field name="low" type="string" />
+                    <field name="close" type="string" />
+                    <field name="volume" type="string" />
+                </record>
+            </body>
+        </MultiPartLayout>
+
+        <MultiPartLayout id="mongo_layout">
+            <body>
+                <record id="json_body" type="json">
+                    <field name="ticker" type="string" value="{{ csv_body.ticker }}"/>
+                    <field name="trade_date" type="date" value="{{ csv_body.date | date:'yyyyMMdd' }}"/>
+                    <field name="open" type="double" value="{{ csv_body.open }}"/>
+                    <field name="high" type="double" value="{{ csv_body.high }}"/>
+                    <field name="low" type="double" value="{{ csv_body.low }}"/>
+                    <field name="close" type="string" value="{{ csv_body.close }}"/>
+                    <field name="volume" type="long" value="{{ csv_body.volume }}"/>
+                </record>
+            </body>
+        </MultiPartLayout>
+    </layouts>
+</story>
