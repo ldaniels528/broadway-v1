@@ -14,12 +14,12 @@ import com.github.ldaniels528.broadway.core.io.layout._
   * @author lawrence.daniels@gmail.com
   */
 case class TextFileInputSource(id: String, path: String, layout: Layout) extends InputSource with TextReadingSupport {
-  private val uuid = UUID.randomUUID().toString
+  private val uuid = UUID.randomUUID()
 
   override def close(implicit scope: Scope) = scope.discardResource[BufferedReader](uuid).foreach(_.close())
 
   override def open(implicit scope: Scope) = {
-    val file = new File(scope.evaluate(path))
+    val file = new File(scope.evaluateAsString(path))
     scope ++= Seq(
       "flow.input.id" -> id,
       "flow.input.count" -> (() => getStatistics(scope).count),

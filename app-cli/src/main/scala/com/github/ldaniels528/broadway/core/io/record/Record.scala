@@ -25,13 +25,13 @@ object Record {
 
   /**
     * Record Enrichment Utilities
-    *
     * @param record the given [[Record record]]
     */
   implicit class RecordEnrichment[T <: Record](val record: T) extends AnyVal {
 
     def convertToBinary(implicit scope: Scope): Array[Byte] = record match {
       case rec: BinarySupport => rec.toBytes
+      case rec: JsonSupport => rec.toJson.toString().getBytes
       case rec: TextSupport => rec.toLine.getBytes()
       case rec => throw new UnsupportedRecordTypeException(rec)
     }

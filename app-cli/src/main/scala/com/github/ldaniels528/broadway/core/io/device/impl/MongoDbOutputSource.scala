@@ -19,8 +19,8 @@ import play.api.libs.json.{JsBoolean, _}
 case class MongoDbOutputSource(id: String, serverList: String, database: String, collection: String, writeConcern: WriteConcern, layout: Layout)
   extends OutputSource {
 
-  private val connUUID = UUID.randomUUID().toString
-  private val collUUID = UUID.randomUUID().toString
+  private val connUUID = UUID.randomUUID()
+  private val collUUID = UUID.randomUUID()
 
   override def open(implicit scope: Scope) = {
     scope ++= Seq(

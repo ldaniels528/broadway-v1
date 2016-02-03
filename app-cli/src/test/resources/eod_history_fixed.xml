@@ -9,16 +9,16 @@
         <FileTrigger id="Repo1">
             <directory path="/Users/ldaniels/broadway/incoming/tradingHistory" archive="DataStore">
                 <feed pattern="AMEX_(.*)[.]txt">
-                    <SimpleFlow input-source="input_file" output-source="output_file" />
+                    <SimpleFlow id="amex_file" input-source="input_file" output-source="output_file" />
                 </feed>
                 <feed pattern="NASDAQ_(.*)[.]txt">
-                    <SimpleFlow input-source="input_file" output-source="output_file" />
+                    <SimpleFlow id="nasdaq_flow" input-source="input_file" output-source="output_file" />
                 </feed>
                 <feed pattern="NYSE_(.*)[.]txt">
-                    <SimpleFlow input-source="input_file" output-source="output_file" />
+                    <SimpleFlow id="nyse_flow" input-source="input_file" output-source="output_file" />
                 </feed>
                 <feed pattern="OTCBB_(.*)[.]txt">
-                    <SimpleFlow input-source="input_file" output-source="output_file" />
+                    <SimpleFlow id="otcbb_flow" input-source="input_file" output-source="output_file" />
                 </feed>
             </directory>
         </FileTrigger>
@@ -59,7 +59,7 @@
             <header>
                 <record id="output_header" type="fixed-length">
                     <field name="symbol" type="string" length="10" value="Symbol" />
-                    <field name="date" type="string" length="9" value="Date" />
+                    <field name="date" type="string" length="15" value="Date" />
                     <field name="open" type="string" length="12" value="Open" />
                     <field name="high" type="string" length="12" value="High" />
                     <field name="low" type="string" length="12" value="Low" />
@@ -70,7 +70,7 @@
             <body>
                 <record id="output_body" type="fixed-length">
                     <field name="symbol" type="string" length="10" value="{{ input_body.ticker }}" />
-                    <field name="date" type="string" length="9" value="{{ input_body.date }}" />
+                    <field name="date" type="date" length="15" value="{{ input_body.date | date:parse:yyyyMMdd }}" />
                     <field name="open" type="string" length="12" value="{{ input_body.open }}" />
                     <field name="high" type="string" length="12" value="{{ input_body.high }}" />
                     <field name="low" type="string" length="12" value="{{ input_body.low }}" />

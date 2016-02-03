@@ -70,14 +70,14 @@ object FileTrigger {
   private[this] val queue = TrieMap[File, QueuedFile[_]]()
 
   // continually poll for new files ...
-  BroadwayActorSystem.system.scheduler.schedule(initialDelay = 0.seconds, interval = 1.seconds) {
+  BroadwayActorSystem.scheduler.schedule(initialDelay = 0.seconds, interval = 1.seconds) {
     registrations foreach { case (directory, registration) =>
       checkForNewFiles(directory, registration)
     }
   }
 
   // continually check for files completion ...
-  BroadwayActorSystem.system.scheduler.schedule(initialDelay = 0.seconds, interval = 5.seconds) {
+  BroadwayActorSystem.scheduler.schedule(initialDelay = 0.seconds, interval = 5.seconds) {
     queue foreach { case (file, queuedFile) =>
       if (queuedFile.isReady) {
         queue.remove(file) foreach { qf =>

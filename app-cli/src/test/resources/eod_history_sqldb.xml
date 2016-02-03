@@ -28,7 +28,7 @@
 
     <data-sources>
         <TextFileInputSource id="input_file" path="{{ flow.input.path }}" layout="csv_layout" />
-        
+
         <SQLOutputSource id="sql_output"
                          layout="sql_layout"
                          driver="com.microsoft.sqlserver.jdbc.SQLServerDriver"
@@ -66,7 +66,7 @@
             <body>
                 <record id="dbo.tradingHistory" type="generic">
                     <field name="symbol" type="string" value="{{ csv_body.ticker }}"/>
-                    <field name="tradeDate" type="string" value="{{ csv_body.date }}"/>
+                    <field name="tradeDate" type="date" value="{{ csv_body.date | date:parse:yyyyMMdd }}"/>
                     <field name="daysOpen" type="double" value="{{ csv_body.open }}"/>
                     <field name="daysHigh" type="double" value="{{ csv_body.high }}"/>
                     <field name="daysLow" type="double" value="{{ csv_body.low }}"/>

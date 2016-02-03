@@ -4,7 +4,7 @@ DROP TABLE tradingHistory;
 CREATE TABLE tradingHistory (
   uid BIGINT PRIMARY KEY IDENTITY(1,1),
   symbol VARCHAR(12) NOT NULL,
-  tradeDate VARCHAR(12),
+  tradeDate DATETIME,
   daysOpen DECIMAL(12,5),
   daysClose DECIMAL(12,5),
   daysHigh DECIMAL(12,5),

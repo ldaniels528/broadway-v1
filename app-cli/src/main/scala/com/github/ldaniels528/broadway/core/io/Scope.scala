@@ -1,7 +1,10 @@
 package com.github.ldaniels528.broadway.core.io
 
+import java.util.UUID
+
 import com.github.ldaniels528.broadway.core.compiler.ExpressionCompiler
 import com.github.ldaniels528.broadway.core.io.Scope.DynamicValue
+import com.github.ldaniels528.broadway.core.io.filters.Filter
 
 import scala.collection.concurrent.TrieMap
 
@@ -10,13 +13,29 @@ import scala.collection.concurrent.TrieMap
   * @author lawrence.daniels@gmail.com
   */
 class Scope(values: (String, Any)*) {
+  private val filters = TrieMap[String, Filter]()
   private val variables = TrieMap[String, Any](values: _*)
+  private val resources = TrieMap[UUID, Any]()
+
+  ///////////////////////////////////////////////////////////////////////
+  //    Filter-specific Methods
+  ///////////////////////////////////////////////////////////////////////
+
+  def addFilter(name: String, filter: Filter) = filters += name -> filter
+
+  def findFilter(name: String) = filters.get(name)
+
+  ///////////////////////////////////////////////////////////////////////
+  //    Property-specific Methods
+  ///////////////////////////////////////////////////////////////////////
 
   def ++=(values: Seq[(String, Any)]) = variables ++= values
 
   def +=(tuple: (String, Any)) = variables += tuple
 
-  def evaluate(expression: String) = ExpressionCompiler.handlebars(this, expression)
+  def evaluateAsString(expression: String) = ExpressionCompiler.handlebars(expression)(this) map(_.toString) getOrElse ""
+
+  def evaluate(expression: String) = ExpressionCompiler.handlebars(expression)(this)
 
   def find(name: String): Option[Any] = {
     variables.get(name) map {
@@ -35,11 +54,11 @@ class Scope(values: (String, Any)*) {
   //    Resource-specific Methods
   ///////////////////////////////////////////////////////////////////////
 
-  def createResource[T](id: String, action: => T) = variables.getOrElseUpdate(id, action).asInstanceOf[T]
+  def createResource[T](id: UUID, action: => T) = resources.getOrElseUpdate(id, action).asInstanceOf[T]
 
-  def discardResource[T](id: String) = variables.remove(id).map(_.asInstanceOf[T])
+  def discardResource[T](id: UUID) = resources.remove(id).map(_.asInstanceOf[T])
 
-  def getResource[T](id: String) = variables.get(id).map(_.asInstanceOf[T])
+  def getResource[T](id: UUID) = resources.get(id).map(_.asInstanceOf[T])
 
 }
 

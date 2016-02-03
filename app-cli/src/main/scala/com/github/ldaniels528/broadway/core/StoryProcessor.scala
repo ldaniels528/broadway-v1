@@ -16,7 +16,7 @@ class StoryProcessor() {
 
   def load(configFile: File): Option[StoryConfig] = {
     logger.info(s"Loading ETL config '${configFile.getAbsolutePath}'...")
-    StoryConfigParser(configFile).parse
+    StoryConfigParser.parse(configFile)
   }
 
   def run(configFile: File)(implicit ec: ExecutionContext) {

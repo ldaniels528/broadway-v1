@@ -1,5 +1,7 @@
 sbt "project broadway_cli" "run ./app-cli/src/test/resources/eod_companies_csv.xml"
 
+sbt "project broadway_cli" run
+
 # Microsoft Driver in Maven
 
 http://claude.betancourt.us/add-microsoft-sql-jdbc-driver-to-maven/

@@ -8,6 +8,7 @@ import akka.actor.ActorSystem
   */
 object BroadwayActorSystem {
   val system = ActorSystem("broadway_tasks")
+  val scheduler = system.scheduler
 
   def shutdown() = system.shutdown()
 

@@ -1,14 +1,16 @@
 package com.github.ldaniels528.broadway.core.io.device.impl
 
-import java.sql.{Connection, DriverManager, PreparedStatement}
+import java.sql.{Connection, DriverManager, PreparedStatement, Timestamp}
+import java.util.{Date, UUID}
 
 import com.github.ldaniels528.broadway.core.io.Scope
 import com.github.ldaniels528.broadway.core.io.device.OutputSource
 import com.github.ldaniels528.broadway.core.io.device.impl.SQLOutputSource._
 import com.github.ldaniels528.broadway.core.io.layout.Layout
 import com.github.ldaniels528.broadway.core.io.record.DataTypes._
-import com.github.ldaniels528.broadway.core.io.record.Record
-import com.ldaniels528.commons.helpers.OptionHelper.Risky._
+import com.github.ldaniels528.broadway.core.io.record.impl.SQLRecord
+import com.github.ldaniels528.broadway.core.io.record.{Field, Record}
+import com.github.ldaniels528.broadway.core.util.ResourcePool
 import com.ldaniels528.commons.helpers.OptionHelper._
 import org.slf4j.LoggerFactory
 
@@ -19,58 +21,24 @@ import scala.collection.concurrent.TrieMap
   * @author lawrence.daniels@gmail.com
   */
 case class SQLOutputSource(id: String, connectionInfo: SQLConnectionInfo, layout: Layout) extends OutputSource {
-  private val logger = LoggerFactory.getLogger(getClass)
-  private var connection: Option[Connection] = None
-  private val psCache = TrieMap[String, PreparedStatement]()
-  private val sqlCache = TrieMap[String, String]()
+  private val sqlCache = TrieMap[String, SQLStatement]()
+  private val uuid = UUID.randomUUID()
 
   override def close(implicit scope: Scope) = {
-    try connection.foreach(_.close()) finally connection = None
+    scope.discardResource[Connection](uuid).foreach(_.close())
   }
 
   override def open(implicit scope: Scope) = {
-    psCache.clear()
     sqlCache.clear()
-    connection = connectionInfo.connect()
+    scope.createResource(uuid, connectionInfo.connect())
+    ()
   }
 
   override def writeRecord(record: Record)(implicit scope: Scope) = {
-    val sql = sqlCache.getOrElseUpdate(record.id, createInsertSQL(record))
-    val ps = getPreparedStatement(sql)
-
-    // populate the prepared statement
-    record.fields zip record.fields.indices.map(_ + 1) foreach { case (field, index) =>
-      field.value match {
-        case Some(value) => ps.setObject(index, value)
-        case None => ps.setNull(index, getSQLType(field.`type`))
-      }
-    }
-
-    // perform the update
-    updateCount(ps.executeUpdate())
-  }
-
-  private def createInsertSQL(record: Record) = {
-    val columns = record.fields.map(_.name).mkString(", ")
-    val values = record.fields.map(_ => "?").mkString(", ")
-    val sql = s"INSERT INTO ${record.id} ($columns) VALUES ($values)"
-    logger.info(s"SQL: $sql")
-    sql
-  }
-
-  private def createUpdateSQL(record: Record) = {
-    val pairs = record.fields.map(f => s"${f.name} = ?").mkString(", ")
-    val sql = s"UPDATE ${record.id} SET $pairs WHERE ...." // TODO new to identify the condition fields
-    logger.info(s"SQL: $sql")
-    sql
-  }
-
-  private def getPreparedStatement(sql: String) = {
-    psCache.getOrElseUpdate(sql, connection.map(_.prepareStatement(sql)) orDie "Connection not available. Use open()")
-  }
-
-  private def getSQLType(`type`: DataType) = {
-    SQLTypeMapping.get(`type`) orDie s"Unhandled data type - ${`type`}"
+    scope.getResource[Connection](uuid) map { conn =>
+      val sql = sqlCache.getOrElseUpdate(s"${record.id}_INSERT", SQLInsert(conn, record))
+      updateCount(sql.execute())
+    } orDie s"SQL output source '$id' has not been opened"
   }
 
 }
@@ -80,29 +48,123 @@ case class SQLOutputSource(id: String, connectionInfo: SQLConnectionInfo, layout
   * @author lawrence.daniels@gmail.com
   */
 object SQLOutputSource {
-
-  val SQLTypeMapping = Map(
+  private[this] val logger = LoggerFactory.getLogger(getClass)
+  private val sqlTypeMapping = Map(
     BINARY -> java.sql.Types.VARBINARY,
     BOOLEAN -> java.sql.Types.BOOLEAN,
     DOUBLE -> java.sql.Types.DOUBLE,
+    DATE -> java.sql.Types.DATE,
     FLOAT -> java.sql.Types.FLOAT,
     INT -> java.sql.Types.INTEGER,
     LONG -> java.sql.Types.BIGINT,
     STRING -> java.sql.Types.VARCHAR
   )
 
+  private def getSQLType(`type`: DataType) = {
+    sqlTypeMapping.get(`type`) orDie s"Unhandled data type - ${`type`}"
+  }
+
   /**
     * SQL Connection Information
-    * @param driver the JDBC driver class (e.g. "com.microsoft.sqlserver.jdbc.SQLServerDriver")
-    * @param url the JBDC URL (e.g. "jdbc:sqlserver://ladaniel.database.windows.net:1433;database=ladaniel_sql")
-    * @param user the JDBC user name
+    * @param driver   the JDBC driver class (e.g. "com.microsoft.sqlserver.jdbc.SQLServerDriver")
+    * @param url      the JBDC URL (e.g. "jdbc:sqlserver://ladaniel.database.windows.net:1433;database=ladaniel_sql")
+    * @param user     the JDBC user name
     * @param password the JDBC user password
+    * @see [[https://azure.microsoft.com/en-us/documentation/articles/sql-database-develop-java-simple-windows/]]
     */
   case class SQLConnectionInfo(driver: String, url: String, user: String, password: String) {
 
     def connect()(implicit scope: Scope) = {
-      Class.forName(scope.evaluate(driver))
-      DriverManager.getConnection(scope.evaluate(url), scope.evaluate(user), scope.evaluate(password))
+      Class.forName(scope.evaluateAsString(driver))
+      DriverManager.getConnection(scope.evaluateAsString(url), scope.evaluateAsString(user), scope.evaluateAsString(password))
+    }
+  }
+
+  /**
+    * Represents an executable SQL statement
+    */
+  trait SQLStatement {
+
+    def execute()(implicit scope: Scope): Int
+
+    protected def populateAndExecute(ps: PreparedStatement, fields: Seq[Field])(implicit scope: Scope) = {
+      // populate the prepared statement
+      fields zip fields.indices.map(_ + 1) foreach { case (field, index) =>
+        field.value match {
+          case Some(value) =>
+            value match {
+              case date: Date => ps.setTimestamp(index, new Timestamp(date.getTime))
+              case v => ps.setObject(index, v)
+            }
+
+          case None => ps.setNull(index, getSQLType(field.`type`))
+        }
+      }
+
+      // perform the update
+      ps.executeUpdate()
+    }
+
+  }
+
+  /**
+    * Represents a SQL INSERT statement
+    * @param conn   the given [[Connection JDBC connection]]
+    * @param record the given [[Record record]]
+    */
+  case class SQLInsert(conn: Connection, record: Record) extends SQLStatement {
+    private val query = generateQuery()
+    private val psCache = ResourcePool[PreparedStatement](() => conn.prepareStatement(query))
+
+    override def execute()(implicit scope: Scope) = {
+      val ps = psCache.take
+      try populateAndExecute(ps, record.fields) finally psCache.give(ps)
+    }
+
+    override def toString = query
+
+    private def generateQuery() = {
+      val columns = record.fields.map(_.name).mkString(", ")
+      val values = record.fields.map(_ => "?").mkString(", ")
+      val table = record match {
+        case rec: SQLRecord => rec.table
+        case rec => rec.id
+      }
+      val sql = s"INSERT INTO $table ($columns) VALUES ($values)"
+      logger.info(s"SQL: $sql")
+      sql
+    }
+  }
+
+  /**
+    * Represents a SQL UPDATE statement
+    * @param conn   the given [[Connection JDBC connection]]
+    * @param record the given [[Record record]]
+    */
+  case class SQLUpdate(conn: Connection, record: Record) extends SQLStatement {
+    private val query = generateQuery()
+    private val psCache = ResourcePool[PreparedStatement](() => conn.prepareStatement(query))
+    private val fields = record.fields ++ record.fields.filter(_.updateKey.contains(true))
+
+    override def execute()(implicit scope: Scope) = {
+      val ps = psCache.take
+      try populateAndExecute(ps, fields) finally psCache.give(ps)
+    }
+
+    override def toString = query
+
+    private def generateQuery() = {
+      val pairs = record.fields.map(f => s"${f.name} = ?").mkString(", ")
+      val condition = record.fields.filter(_.updateKey.contains(true)).map(f => s"${f.name} = ?").mkString(" AND ")
+      if (condition.isEmpty)
+        throw new IllegalStateException("A SQL update is not possible without specifying update fields")
+      val table = record match {
+        case rec: SQLRecord => rec.table
+        case rec => rec.id
+      }
+      val sql = s"UPDATE $table SET $pairs WHERE $condition"
+      logger.info(s"SQL: $sql")
+      sql
     }
   }
 

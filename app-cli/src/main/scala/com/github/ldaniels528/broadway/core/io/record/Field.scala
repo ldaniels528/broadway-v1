@@ -1,7 +1,5 @@
 package com.github.ldaniels528.broadway.core.io.record
 
-import java.util.Date
-
 import com.github.ldaniels528.broadway.core.io.Scope
 import com.github.ldaniels528.broadway.core.io.record.DataTypes.{DataType, _}
 import com.github.ldaniels528.broadway.core.io.record.Field._
@@ -13,22 +11,30 @@ import scala.util.Try
   * Represents a generic column, field, property or XML element
   * @author lawrence.daniels@gmail.com
   * @param name         the name of the element
+  * @param path         the fully qualified field name (e.g. "myrecord.myfield")
   * @param `type`       the data type of the element
-  * @param defaultValue the default value of the element
-  * @param properties   the properties or attributes of the element
-  * @param elements     the child elements of this element
+  * @param defaultValue the optional default value of the element
+  * @param length       the optional fixed length of the field's value
+  * @param updateKey    an optional primary key or update key designation
+  * @param properties   the optional properties or attributes of the element
+  * @param elements     the optional child elements of this element
   */
 case class Field(name: String,
                  path: String,
                  `type`: DataType = DataTypes.STRING,
                  defaultValue: Option[String] = None,
                  length: Option[Int] = None,
+                 updateKey: Option[Boolean] = None,
                  properties: Seq[Field] = Nil,
                  elements: Seq[Field] = Nil) {
 
   def value(implicit scope: Scope): Option[Any] = {
     val result = (defaultValue flatMap {
-      case expr: String if expr.contains("{{") => scope.evaluate(expr).convert(`type`)
+      case expr: String if expr.contains("{{") && expr.contains("}}") =>
+        scope.evaluate(expr) flatMap {
+          case value: String => value.convert(`type`)
+          case value => Option(value)
+        }
       case value: String => value.convert(`type`)
       case value => Option(value)
     }) ?? scope.find(path)
@@ -45,12 +51,16 @@ case class Field(name: String,
   */
 object Field {
 
+  /**
+    * Field Type Enrichment
+    * @param value the given [[String value]]
+    */
   implicit class FieldTypeEnrichment(val value: String) extends AnyVal {
 
     def convert(`type`: DataType): Option[Any] = {
       `type` match {
         case BOOLEAN => Option(value.toLowerCase == "true")
-        case DATE => Try(new Date(value.toLong)).toOption
+        case DATE => Option(value)
         case DOUBLE => Try(value.toDouble).toOption
         case FLOAT => Try(value.toFloat).toOption
         case INT => Try(value.toInt).toOption

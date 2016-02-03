@@ -16,7 +16,8 @@ import scala.concurrent.duration._
 import scala.language.implicitConversions
 
 /**
-  * Concurrent Output Source
+  * Concurrent Output Source (Asynchronous implementation)
+  * @author lawrence.daniels@gmail.com
   */
 case class ConcurrentOutputSource(id: String, concurrency: Int, devices: Seq[OutputSource])
   extends OutputSource with AsynchronousOutputSupport {
@@ -25,13 +26,13 @@ case class ConcurrentOutputSource(id: String, concurrency: Int, devices: Seq[Out
   private var ticker = 0
   private var lastWrite = 0L
 
+  val layout = devices.headOption.map(_.layout) orDie "No output devices configured"
+
   override def allWritesCompleted(implicit scope: Scope, ec: ExecutionContext) = {
     taskActorPool.die(4.hours) map (_ => this)
   }
 
-  override def close(implicit scope: Scope) = delayedClose(scope)
-
-  override def layout = devices.headOption.map(_.layout) orDie "No output sources were specified"
+  override def close(implicit scope: Scope) = delayedClose
 
   override def open(implicit scope: Scope) = {
     scope ++= Seq(
@@ -51,10 +52,9 @@ case class ConcurrentOutputSource(id: String, concurrency: Int, devices: Seq[Out
     0
   }
 
-  private def delayedClose(scope: Scope) {
-    BroadwayActorSystem.system.scheduler.scheduleOnce(delay = 15.minutes) {
-      if (System.currentTimeMillis() - lastWrite >= 15.minutes.toMillis) devices.foreach(_.close(scope))
-      else delayedClose(scope)
+  private def delayedClose(implicit scope: Scope) {
+    BroadwayActorSystem.scheduler.scheduleOnce(delay = delayedCloseTime) {
+      if (System.currentTimeMillis() - lastWrite >= delayedCloseTime.toMillis) devices.foreach(_.close) else delayedClose
     }
     ()
   }
@@ -65,7 +65,14 @@ case class ConcurrentOutputSource(id: String, concurrency: Int, devices: Seq[Out
   * Concurrent Output Source Companion Object
   */
 object ConcurrentOutputSource {
+  private val delayedCloseTime = 10.minutes
 
+  /**
+    * Syntactic sugar for creating [[Callable callable]] implementations from anonymous functions
+    * @param f the given anonymous function
+    * @tparam T the generic return type
+    * @return a typed callable instance
+    */
   implicit def function2Callable[T](f: () => T): Callable[T] = new Callable[T] {
     override def call = f()
   }

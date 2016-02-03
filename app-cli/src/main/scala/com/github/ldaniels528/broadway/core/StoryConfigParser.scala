@@ -8,6 +8,7 @@ import com.github.ldaniels528.broadway.core.io.archive.impl.FileArchive
 import com.github.ldaniels528.broadway.core.io.device._
 import com.github.ldaniels528.broadway.core.io.device.impl.SQLOutputSource.SQLConnectionInfo
 import com.github.ldaniels528.broadway.core.io.device.impl._
+import com.github.ldaniels528.broadway.core.io.filters.impl.{DateFilter, TrimFilter}
 import com.github.ldaniels528.broadway.core.io.flow._
 import com.github.ldaniels528.broadway.core.io.flow.impl.{CompositeInputFlow, CompositeOutputFlow, SimpleFlow}
 import com.github.ldaniels528.broadway.core.io.layout._
@@ -27,6 +28,7 @@ import scala.xml.{Node, XML}
 
 /**
   * Story Configuration Parser
+  * @author lawrence.daniels@gmail.com
   */
 class StoryConfigParser(xml: Node) {
 
@@ -34,9 +36,15 @@ class StoryConfigParser(xml: Node) {
     (xml \\ "story") map { node =>
       StoryConfig(
         id = node \\@ "id",
+        filters = parseFilters(node),
         properties = parseProperties(node),
         triggers = parseTriggers(node))
     } headOption
+  }
+
+  private def parseFilters(rootNode: Node) = {
+    // TODO allow user-defined filters
+    Seq("date" -> DateFilter(), "trim" -> TrimFilter())
   }
 
   private def parseArchives(rootNode: Node) = {
@@ -59,6 +67,7 @@ class StoryConfigParser(xml: Node) {
     (rootNode \ "data-sources") flatMap { devicesNode =>
       devicesNode.child.filter(_.label != "#PCDATA") map { node =>
         node.label match {
+          case "CompositeOutputSource" => parseDataSources_CompositeOutputSource(node, layouts)
           case "ConcurrentOutputSource" => parseDataSources_ConcurrentOutput(node, layouts)
           case "KafkaOutputSource" => parseDataSources_KafkaOutput(node, layouts)
           case "MongoOutputSource" => parseDataSources_MongoOutput(node, layouts)
@@ -70,6 +79,12 @@ class StoryConfigParser(xml: Node) {
         }
       }
     }
+  }
+
+  private def parseDataSources_CompositeOutputSource(node: Node, layouts: Seq[Layout]) = {
+    CompositeOutputSource(
+      id = node \\@ "id",
+      devices = parseDataSources(node, layouts).requireType[OutputSource](_.id, "output source"))
   }
 
   private def parseDataSources_ConcurrentOutput(node: Node, layouts: Seq[Layout]) = {
@@ -222,6 +237,7 @@ class StoryConfigParser(xml: Node) {
         case "fixed-length" => FixedLengthRecord(id = id, fields = fields)
         case "generic" => GenericRecord(id = id, fields = fields)
         case "json" => JsonRecord(id = id, fields = fields)
+        case "sql" => SQLRecord(id = id, table = fieldsNode \?@ "table" getOrElse id, fields = fields)
         case unknown =>
           throw new IllegalArgumentException(s"Unrecognized fields type '$unknown'")
       }
@@ -234,7 +250,7 @@ class StoryConfigParser(xml: Node) {
       name = name,
       path = s"$recordId.$name",
       `type` = (node \?@ "type").map(_.toUpperCase) map DataTypes.withName getOrElse DataTypes.STRING,
-      defaultValue = node \?@ "value",
+      defaultValue = node \?@ "value" ?? node.text_?,
       length = (node \?@ "length") map (_.toInt))
   }
 
@@ -314,11 +330,12 @@ class StoryConfigParser(xml: Node) {
 }
 
 /**
-  * Etl Config Parser
+  * Story Config Parser
+  * @author lawrence.daniels@gmail.com
   */
 object StoryConfigParser {
 
-  def apply(file: File) = new StoryConfigParser(XML.loadFile(file))
+  def parse(file: File) = new StoryConfigParser(XML.loadFile(file)).parse
 
   /**
     * Node Enrichment
@@ -358,6 +375,11 @@ object StoryConfigParser {
     def \?@(name: String) = {
       val s = node \@ name
       if (s.trim.isEmpty) None else Option(s)
+    }
+
+    def text_? = {
+      val s = node.text
+      if (s.trim.isEmpty) None else Some(s)
     }
 
   }

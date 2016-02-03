@@ -48,6 +48,13 @@ trait Trigger {
 
   protected def createScope(story: StoryConfig, flow: Flow) = {
     val scope = Scope()
+
+    // add the built-in filters
+    story.filters foreach { case (name, filter) =>
+      scope.addFilter(name, filter)
+    }
+
+    // add some properties
     scope ++= story.properties
     scope ++= Seq(
       "date()" -> (() => new Date()),

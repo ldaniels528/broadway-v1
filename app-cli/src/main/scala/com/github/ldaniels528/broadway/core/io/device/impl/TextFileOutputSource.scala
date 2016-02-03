@@ -14,12 +14,12 @@ import com.github.ldaniels528.broadway.core.io.record.Record
   * @author lawrence.daniels@gmail.com
   */
 case class TextFileOutputSource(id: String, path: String, layout: Layout) extends OutputSource {
-  private val uuid = UUID.randomUUID().toString
+  private val uuid = UUID.randomUUID()
 
   override def close(implicit scope: Scope) = scope.discardResource[BufferedWriter](uuid).foreach(_.close())
 
   override def open(implicit scope: Scope) = {
-    val file = new File(scope.evaluate(path))
+    val file = new File(scope.evaluateAsString(path))
     scope ++= Seq(
       "flow.output.id" -> id,
       "flow.output.count" -> (() => getStatistics.count),
