@@ -21,15 +21,11 @@
 
         <TextFileOutputSource id="csv_output" path="/tmp/powerball.txt" layout="csv_layout" />
 
-        <ConcurrentOutputSource id="sql_output" concurrency="1" layout="sql_layout">
-            <data-sources>
-                <SQLOutputSource id="sql_conn_1"
-                                 layout="sql_layout"
-                                 driver="com.microsoft.sqlserver.jdbc.SQLServerDriver"
-                                 url="jdbc:sqlserver://ladaniel.database.windows.net:1433;database=ladaniel_sql"
-                                 user="{{ sqlserver.secret.user }}" password="{{ sqlserver.secret.password }}" />
-            </data-sources>
-        </ConcurrentOutputSource>
+        <SQLOutputSource id="sql_output"
+                         layout="sql_layout"
+                         driver="com.microsoft.sqlserver.jdbc.SQLServerDriver"
+                         url="jdbc:sqlserver://ladaniel.database.windows.net:1433;database=ladaniel_sql"
+                         user="{{ sqlserver.secret.user }}" password="{{ sqlserver.secret.password }}" />
     </data-sources>
 
     <layouts>
