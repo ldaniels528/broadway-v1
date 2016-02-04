@@ -1,12 +1,10 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <story id="eod-history-fixed">
 
-    <archives>
-        <FileArchive id="DataStore" base="/Users/ldaniels/broadway/archive" compression="gzip" />
-    </archives>
+    <import path="./app-cli/src/test/resources/global_settings.xml" />
 
     <triggers>
-        <FileTrigger id="Repo1">
+        <FileTrigger id="trading_history_trigger">
             <directory path="/Users/ldaniels/broadway/incoming/tradingHistory" archive="DataStore">
                 <feed pattern="AMEX_(.*)[.]txt">
                     <SimpleFlow id="amex_file" input-source="input_file" output-source="output_file" />
@@ -25,36 +23,11 @@
     </triggers>
 
     <data-sources>
-        <TextFileInputSource id="input_file" path="{{ flow.input.path }}" layout="input_layout" />
+        <TextFileInputSource id="input_file" path="{{ flow.input.path }}" layout="eod_history_input_layout" />
         <TextFileOutputSource id="output_file" path="/tmp/fixed_{{ flow.input.filename }}" layout="output_layout" />
     </data-sources>
 
     <layouts>
-        <MultiPartLayout id="input_layout">
-            <header>
-                <record id="input_header" type="csv">
-                    <field name="ticker" type="string" value="&lt;ticker&gt;" />
-                    <field name="date" type="string" value="&lt;date&gt;" />
-                    <field name="open" type="string" value="&lt;open&gt;" />
-                    <field name="high" type="string" value="&lt;high&gt;" />
-                    <field name="low" type="string" value="&lt;low&gt;" />
-                    <field name="close" type="string" value="&lt;close&gt;" />
-                    <field name="volume" type="string" value="&lt;vol&gt;" />
-                </record>
-            </header>
-            <body>
-                <record id="input_body" type="csv">
-                    <field name="ticker" type="string" />
-                    <field name="date" type="string" />
-                    <field name="open" type="string" />
-                    <field name="high" type="string" />
-                    <field name="low" type="string" />
-                    <field name="close" type="string" />
-                    <field name="volume" type="string" />
-                </record>
-            </body>
-        </MultiPartLayout>
-
         <MultiPartLayout id="output_layout">
             <header>
                 <record id="output_header" type="fixed-length">

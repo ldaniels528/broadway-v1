@@ -8,6 +8,7 @@ import com.github.ldaniels528.broadway.core.io.archive.impl.FileArchive
 import com.github.ldaniels528.broadway.core.io.device._
 import com.github.ldaniels528.broadway.core.io.device.impl.SQLOutputSource.SQLConnectionInfo
 import com.github.ldaniels528.broadway.core.io.device.impl._
+import com.github.ldaniels528.broadway.core.io.filters.Filter
 import com.github.ldaniels528.broadway.core.io.filters.impl.{DateFilter, TrimFilter}
 import com.github.ldaniels528.broadway.core.io.flow._
 import com.github.ldaniels528.broadway.core.io.flow.impl.{CompositeInputFlow, CompositeOutputFlow, SimpleFlow}
@@ -30,21 +31,41 @@ import scala.xml.{Node, XML}
   * Story Configuration Parser
   * @author lawrence.daniels@gmail.com
   */
-class StoryConfigParser(xml: Node) {
+class StoryConfigParser() {
 
-  def parse: Option[StoryConfig] = {
+  def parse(xml: Node): Seq[StoryConfig] = {
     (xml \\ "story") map { node =>
+      // first create the base configuration; processing all import statements
+      val baseConfig: StoryConfig = parseImports(node)
+        .foldLeft(StoryConfig(id = "baseConfig", filters = getbuiltInFilters)) { (accumulator, config) =>
+          accumulator.copy(
+            archives = (config.archives ++ accumulator.archives).dedup(_.id),
+            devices = (config.devices ++ accumulator.devices).dedup(_.id),
+            filters = (config.filters ++ accumulator.filters).dedup(_._1),
+            layouts = (config.layouts ++ accumulator.layouts).dedup(_.id),
+            properties = (config.properties ++ accumulator.properties).dedup(_._1),
+            triggers = (config.triggers ++ accumulator.triggers).dedup(_.id)
+          )
+        }
+
+      // next, load the objects for the current config appending the base config objects
+      val archives = (parseArchives(node) ++ baseConfig.archives).dedup(_.id)
+      val filters = (parseFilters(node) ++ baseConfig.filters).dedup(_._1)
+      val layouts = (parseLayouts(node) ++ baseConfig.layouts).dedup(_.id)
+      val devices = (parseDataSources(node, layouts) ++ baseConfig.devices).dedup(_.id)
+      val properties = (parseProperties(node) ++ baseConfig.properties).dedup(_._1)
+      val triggers = (parseTriggers(baseConfig, node, archives, devices, layouts) ++ baseConfig.triggers).dedup(_.id)
+
+      // finally, return the composite config
       StoryConfig(
         id = node \\@ "id",
-        filters = parseFilters(node),
-        properties = parseProperties(node),
-        triggers = parseTriggers(node))
-    } headOption
-  }
-
-  private def parseFilters(rootNode: Node) = {
-    // TODO allow user-defined filters
-    Seq("date" -> DateFilter(), "trim" -> TrimFilter())
+        archives = archives,
+        devices = devices,
+        filters = filters,
+        layouts = layouts,
+        properties = properties,
+        triggers = triggers)
+    }
   }
 
   private def parseArchives(rootNode: Node) = {
@@ -57,6 +78,11 @@ class StoryConfigParser(xml: Node) {
         }
       }
     }
+  }
+
+  private def parseFilters(rootNode: Node): Seq[(String, Filter)] = {
+    // TODO allow user-defined filters
+    Nil
   }
 
   private def parseArchives_File(rootNode: Node): Archive = {
@@ -187,6 +213,13 @@ class StoryConfigParser(xml: Node) {
     }
   }
 
+  private def parseImports(rootNode: Node) = {
+    (rootNode \\ "import") flatMap { importNode =>
+      val file = new File(importNode \\@ "path")
+      StoryConfigParser.parse(file)
+    }
+  }
+
   /**
     * Parses a layout section
     * @param rootNode the given [[Node node]]
@@ -254,10 +287,7 @@ class StoryConfigParser(xml: Node) {
       length = (node \?@ "length") map (_.toInt))
   }
 
-  private def parseTriggers(rootNode: Node) = {
-    val layouts = parseLayouts(rootNode)
-    val devices = parseDataSources(rootNode, layouts)
-    val archives = parseArchives(rootNode)
+  private def parseTriggers(baseConfig: StoryConfig, rootNode: Node, archives: Seq[Archive], devices: Seq[DataSource], layouts: Seq[Layout]) = {
     (rootNode \ "triggers") flatMap { triggerNode =>
       triggerNode.child.filter(_.label != "#PCDATA") map { node =>
         node.label match {
@@ -301,6 +331,11 @@ class StoryConfigParser(xml: Node) {
     StartupTrigger(id = rootNode \\@ "id", flows)
   }
 
+  private def getbuiltInFilters = Seq(
+    "date" -> DateFilter(),
+    "trim" -> TrimFilter()
+  )
+
   private def lookupArchive(archives: Seq[Archive], id: String) = {
     archives.find(_.id == id) orDie s"Archive '$id' not found"
   }
@@ -335,7 +370,9 @@ class StoryConfigParser(xml: Node) {
   */
 object StoryConfigParser {
 
-  def parse(file: File) = new StoryConfigParser(XML.loadFile(file)).parse
+  def parse(file: File) = {
+    new StoryConfigParser().parse(XML.loadFile(file))
+  }
 
   /**
     * Node Enrichment
@@ -390,6 +427,8 @@ object StoryConfigParser {
     * @tparam T the sequence's template type
     */
   implicit class SequenceEnrichment[T](val values: Seq[T]) extends AnyVal {
+
+    def dedup(id: T => String) = Map(values.map(v => id(v) -> v): _*).values.toSeq
 
     def requireType[A <: T](name: T => String, typeName: String)(implicit tagA: ClassTag[A], tagT: ClassTag[T]): Seq[A] = values map {
       case value: A => value

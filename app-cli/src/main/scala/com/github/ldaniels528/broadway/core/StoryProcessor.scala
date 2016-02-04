@@ -14,18 +14,12 @@ import scala.concurrent.duration._
 class StoryProcessor() {
   private val logger = LoggerFactory.getLogger(getClass)
 
-  def load(configFile: File): Option[StoryConfig] = {
-    logger.info(s"Loading ETL config '${configFile.getAbsolutePath}'...")
+  def load(configFile: File) = {
+    logger.info(s"Loading Broadway story config '${configFile.getAbsolutePath}'...")
     StoryConfigParser.parse(configFile)
   }
 
-  def run(configFile: File)(implicit ec: ExecutionContext) {
-    load(configFile) match {
-      case Some(config) => run(config)
-      case None =>
-        throw new IllegalArgumentException(s"ETL configuration file '${configFile.getName}' is invalid")
-    }
-  }
+  def run(configFile: File)(implicit ec: ExecutionContext): Unit = load(configFile) foreach run
 
   /**
     * Executes the ETL processing
