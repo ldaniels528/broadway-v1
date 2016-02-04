@@ -8,6 +8,21 @@
     </archives>
 
     <layouts>
+        <MultiPartLayout id="eod_company_input_layout">
+            <header>
+                <record id="delimited_header" type="delimited" delimiter="\t">
+                    <field name="symbol" type="string"/>
+                    <field name="description" type="string"/>
+                </record>
+            </header>
+            <body>
+                <record id="delimited_data" type="delimited" delimiter="\t">
+                    <field name="symbol" type="string"/>
+                    <field name="description" type="string"/>
+                </record>
+            </body>
+        </MultiPartLayout>
+
         <MultiPartLayout id="eod_history_input_layout">
             <header>
                 <record id="input_header" type="csv">

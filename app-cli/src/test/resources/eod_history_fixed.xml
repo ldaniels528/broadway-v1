@@ -31,24 +31,24 @@
         <MultiPartLayout id="output_layout">
             <header>
                 <record id="output_header" type="fixed-length">
-                    <field name="symbol" type="string" length="10" value="Symbol" />
-                    <field name="date" type="string" length="15" value="Date" />
-                    <field name="open" type="string" length="12" value="Open" />
-                    <field name="high" type="string" length="12" value="High" />
-                    <field name="low" type="string" length="12" value="Low" />
-                    <field name="close" type="string" length="12" value="Close" />
-                    <field name="volume" type="string" length="12" value="Volume" />
+                    <field name="symbol" type="string" length="10">Symbol</field>
+                    <field name="date" type="string" length="15">Date</field>
+                    <field name="open" type="string" length="12">Open</field>
+                    <field name="high" type="string" length="12">High</field>
+                    <field name="low" type="string" length="12">Low</field>
+                    <field name="close" type="string" length="12">Close</field>
+                    <field name="volume" type="string" length="12">Volume</field>
                 </record>
             </header>
             <body>
                 <record id="output_body" type="fixed-length">
-                    <field name="symbol" type="string" length="10" value="{{ input_body.ticker }}" />
-                    <field name="date" type="date" length="15" value="{{ input_body.date | date:parse:yyyyMMdd }}" />
-                    <field name="open" type="string" length="12" value="{{ input_body.open }}" />
-                    <field name="high" type="string" length="12" value="{{ input_body.high }}" />
-                    <field name="low" type="string" length="12" value="{{ input_body.low }}" />
-                    <field name="close" type="string" length="12" value="{{ input_body.close }}" />
-                    <field name="volume" type="string" length="12" value="{{ input_body.volume }}" />
+                    <field name="symbol" type="string" length="10">{{ input_body.ticker }}</field>
+                    <field name="date" type="date" length="15">{{ input_body.date | date:parse:"yyyyMMdd" }}</field>
+                    <field name="open" type="string" length="12">{{ input_body.open }}</field>
+                    <field name="high" type="string" length="12">{{ input_body.high }}</field>
+                    <field name="low" type="string" length="12">{{ input_body.low }}</field>
+                    <field name="close" type="string" length="12">{{ input_body.close }}</field>
+                    <field name="volume" type="string" length="12">{{ input_body.volume }}</field>
                 </record>
             </body>
             <footer>

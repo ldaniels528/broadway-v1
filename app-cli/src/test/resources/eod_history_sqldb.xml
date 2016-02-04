@@ -1,11 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <story id="eod-history-sqldb">
 
-    <properties file="/Users/ldaniels/connection.properties" />
-
-    <archives>
-        <FileArchive id="DataStore" base="/Users/ldaniels/broadway/archive" compression="gzip" />
-    </archives>
+    <import path="./app-cli/src/test/resources/global_settings.xml" />
 
     <triggers>
         <FileTrigger id="Repo1">
@@ -27,7 +23,7 @@
     </triggers>
 
     <data-sources>
-        <TextFileInputSource id="input_file" path="{{ flow.input.path }}" layout="csv_layout" />
+        <TextFileInputSource id="input_file" path="{{ flow.input.path }}" layout="eod_history_input_layout" />
 
         <SQLOutputSource id="sql_output"
                          layout="sql_layout"
@@ -37,31 +33,6 @@
     </data-sources>
 
     <layouts>
-        <MultiPartLayout id="csv_layout">
-            <header validate="true">
-                <record id="csv_header" type="csv">
-                    <field name="ticker" value="&lt;ticker&gt;" type="string" />
-                    <field name="date" value="&lt;date&gt;" type="string" />
-                    <field name="open" value="&lt;open&gt;" type="string" />
-                    <field name="high" value="&lt;high&gt;" type="string" />
-                    <field name="low" value="&lt;low&gt;" type="string" />
-                    <field name="close" value="&lt;close&gt;" type="string" />
-                    <field name="volume" value="&lt;vol&gt;" type="string" />
-                </record>
-            </header>
-            <body>
-                <record id="csv_body" type="csv">
-                    <field name="ticker" type="string" />
-                    <field name="date" type="string" />
-                    <field name="open" type="string" />
-                    <field name="high" type="string" />
-                    <field name="low" type="string" />
-                    <field name="close" type="string" />
-                    <field name="volume" type="string" />
-                </record>
-            </body>
-        </MultiPartLayout>
-
         <MultiPartLayout id="sql_layout">
             <body>
                 <record id="dbo.tradingHistory" type="generic">

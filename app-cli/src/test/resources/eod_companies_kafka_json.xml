@@ -1,13 +1,15 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <story id="eod-companies">
 
+    <import path="./app-cli/src/test/resources/global_settings.xml" />
+
     <triggers>
         <StartUpTrigger id="Files_Combiner">
             <flows>
-                <BasicFlow id="AMEX" input="AMEX.txt" output="kafka-topic" input-layout="tabbed-delimited" output-layout="json-output"/>
-                <BasicFlow id="NASDAQ" input="NASDAQ.txt" output="kafka-topic" input-layout="tabbed-delimited" output-layout="json-output"/>
-                <BasicFlow id="NYSE" input="NYSE.txt" output="kafka-topic" input-layout="tabbed-delimited" output-layout="json-output"/>
-                <BasicFlow id="OTCBB" input="OTCBB.txt" output="kafka-topic" input-layout="tabbed-delimited" output-layout="json-output"/>
+                <BasicFlow id="AMEX" input="AMEX.txt" output="kafka-topic" input-layout="eod_company_input_layout" output-layout="json-output"/>
+                <BasicFlow id="NASDAQ" input="NASDAQ.txt" output="kafka-topic" input-layout="eod_company_input_layout" output-layout="json-output"/>
+                <BasicFlow id="NYSE" input="NYSE.txt" output="kafka-topic" input-layout="eod_company_input_layout" output-layout="json-output"/>
+                <BasicFlow id="OTCBB" input="OTCBB.txt" output="kafka-topic" input-layout="eod_company_input_layout" output-layout="json-output"/>
             </flows>
         </StartUpTrigger>
     </triggers>
@@ -21,21 +23,6 @@
     </data-sources>
 
     <layouts>
-        <TextLayout id="tabbed-delimited">
-            <header>
-                <record type="delimited" delimiter="\t">
-                    <field auto-trim="yes">label1</field>
-                    <field auto-trim="yes">label2</field>
-                </record>
-            </header>
-            <body>
-                <record type="delimited" delimiter="\t">
-                    <field auto-trim="yes">symbol</field>
-                    <field auto-trim="yes">description</field>
-                </record>
-            </body>
-        </TextLayout>
-
         <TextLayout id="json-output">
             <body>
                 <record type="json">

@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <story id="eod_companies_fixed">
 
+    <import path="./app-cli/src/test/resources/global_settings.xml" />
+
     <triggers>
         <StartUpTrigger id="File_Combining_Trigger">
             <CompositeInputFlow id="combiner" output-source="output.txt">
@@ -13,29 +15,14 @@
     </triggers>
 
     <data-sources>
-        <TextFileInputSource id="AMEX.txt" path="./app-cli/src/test/resources/files/AMEX.txt" layout="tabbed-delimited" />
-        <TextFileInputSource id="NASDAQ.txt" path="./app-cli/src/test/resources/files/NASDAQ.txt" layout="tabbed-delimited" />
-        <TextFileInputSource id="NYSE.txt" path="./app-cli/src/test/resources/files/NYSE.txt" layout="tabbed-delimited" />
-        <TextFileInputSource id="OTCBB.txt" path="./app-cli/src/test/resources/files/OTCBB.txt" layout="tabbed-delimited" />
+        <TextFileInputSource id="AMEX.txt" path="./app-cli/src/test/resources/files/AMEX.txt" layout="eod_company_input_layout" />
+        <TextFileInputSource id="NASDAQ.txt" path="./app-cli/src/test/resources/files/NASDAQ.txt" layout="eod_company_input_layout" />
+        <TextFileInputSource id="NYSE.txt" path="./app-cli/src/test/resources/files/NYSE.txt" layout="eod_company_input_layout" />
+        <TextFileInputSource id="OTCBB.txt" path="./app-cli/src/test/resources/files/OTCBB.txt" layout="eod_company_input_layout" />
         <TextFileOutputSource id="output.txt" path="/tmp/eod_companies_fixed.txt" layout="fixed-length-output" />
     </data-sources>
 
     <layouts>
-        <MultiPartLayout id="tabbed-delimited">
-            <header>
-                <record id="delimited_header" type="delimited" delimiter="\t">
-                    <field name="symbol" value="Symbol" type="string"/>
-                    <field name="description" value="Description" type="string"/>
-                </record>
-            </header>
-            <body>
-                <record id="delimited_body" type="delimited" delimiter="\t">
-                    <field name="symbol" type="string"/>
-                    <field name="description" type="string"/>
-                </record>
-            </body>
-        </MultiPartLayout>
-
         <MultiPartLayout id="fixed-length-output">
             <header>
                 <record id="fixed_header" type="fixed-length">

@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <story id="eod_companies_csv">
 
+    <import path="./app-cli/src/test/resources/global_settings.xml" />
+
     <triggers>
         <StartUpTrigger id="File_Combining_Trigger">
             <CompositeInputFlow id="combiner_flow" output-source="output_file">
@@ -13,29 +15,14 @@
     </triggers>
 
     <data-sources>
-        <TextFileInputSource id="AMEX_file" path="./app-cli/src/test/resources/files/AMEX.txt" layout="tabbed_layout" />
-        <TextFileInputSource id="NASDAQ_file" path="./app-cli/src/test/resources/files/NASDAQ.txt" layout="tabbed_layout" />
-        <TextFileInputSource id="NYSE_file" path="./app-cli/src/test/resources/files/NYSE.txt" layout="tabbed_layout" />
-        <TextFileInputSource id="OTCBB_file" path="./app-cli/src/test/resources/files/OTCBB.txt" layout="tabbed_layout" />
+        <TextFileInputSource id="AMEX_file" path="./app-cli/src/test/resources/files/AMEX.txt" layout="eod_company_input_layout" />
+        <TextFileInputSource id="NASDAQ_file" path="./app-cli/src/test/resources/files/NASDAQ.txt" layout="eod_company_input_layout" />
+        <TextFileInputSource id="NYSE_file" path="./app-cli/src/test/resources/files/NYSE.txt" layout="eod_company_input_layout" />
+        <TextFileInputSource id="OTCBB_file" path="./app-cli/src/test/resources/files/OTCBB.txt" layout="eod_company_input_layout" />
         <TextFileOutputSource id="output_file" path="/tmp/eod_companies_csv_new.txt" layout="csv_layout" />
     </data-sources>
 
     <layouts>
-        <MultiPartLayout id="tabbed_layout">
-            <header>
-                <record id="delimited_header" type="delimited" delimiter="\t">
-                    <field name="symbol" type="string"/>
-                    <field name="description" type="string"/>
-                </record>
-            </header>
-            <body>
-                <record id="delimited_data" type="delimited" delimiter="\t">
-                    <field name="symbol" type="string"/>
-                    <field name="description" type="string"/>
-                </record>
-            </body>
-        </MultiPartLayout>
-
         <MultiPartLayout id="csv_layout">
             <header>
                 <record id="cvs_header" type="csv">

@@ -13,7 +13,7 @@
     </triggers>
 
     <data-sources>
-        <TextFileInputSource id="input_file" path="./app-cli/src/test/resources/files/DownloadAllNumbers.txt" layout="fixed_layout" />
+        <TextFileInputSource id="input_file" path="./app-cli/src/test/resources/files/DownloadAllNumbers.txt" layout="powerball_layout" />
 
         <TextFileOutputSource id="csv_output" path="/tmp/powerball.txt" layout="csv_layout" />
 
@@ -25,7 +25,7 @@
     </data-sources>
 
     <layouts>
-        <MultiPartLayout id="fixed_layout">
+        <MultiPartLayout id="powerball_layout">
             <header>
                 <record id="fixed_header1" type="fixed-length">
                     <field name="line1" type="string" length="100" />
