@@ -10,7 +10,6 @@ import com.github.ldaniels528.broadway.core.io.layout._
 
 /**
   * Text File Input Source
-  *
   * @author lawrence.daniels@gmail.com
   */
 case class TextFileInputSource(id: String, path: String, layout: Layout) extends InputSource with TextReadingSupport {
