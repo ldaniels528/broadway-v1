@@ -8,6 +8,7 @@
             <CompositeOutputFlow id="dual_output_flow" input-source="input_file">
                 <include output-source="csv_output" />
                 <include output-source="sql_output" />
+                <include output-source="docdb_output" />
             </CompositeOutputFlow>
         </StartUpTrigger>
     </triggers>
@@ -18,10 +19,19 @@
         <TextFileOutputSource id="csv_output" path="/tmp/powerball.txt" layout="csv_layout" />
 
         <SQLOutputSource id="sql_output"
+                         table="dbo.powerball_history"
                          layout="sql_layout"
                          driver="com.microsoft.sqlserver.jdbc.SQLServerDriver"
-                         url="jdbc:sqlserver://ladaniel.database.windows.net:1433;database=ladaniel_sql"
+                         url="{{ sqlserver.secret.url }}"
                          user="{{ sqlserver.secret.user }}" password="{{ sqlserver.secret.password }}" />
+
+        <DocumentDBOutputSource id="docdb_output"
+                                database="broadway"
+                                collection="powerball_history"
+                                host="{{ documentdb.secret.host }}"
+                                master-key="{{ documentdb.secret.master_key }}"
+                                layout="json_layout" />
+
     </data-sources>
 
     <layouts>
@@ -84,9 +94,24 @@
             </body>
         </MultiPartLayout>
 
+        <MultiPartLayout id="json_layout">
+            <body>
+                <record id="history_json" type="json">
+                    <field name="draw_num" type="string">{{ fixed_body.draw_num }}</field>
+                    <field name="draw_date" type="date">{{ fixed_body.draw_date | date:parse:"EEE'.' MMM dd',' yyyy" }}</field>
+                    <field name="number_1" type="string">{{ fixed_body.number_1 }}</field>
+                    <field name="number_2" type="string">{{ fixed_body.number_2 }}</field>
+                    <field name="number_3" type="string">{{ fixed_body.number_3 }}</field>
+                    <field name="number_4" type="string">{{ fixed_body.number_4 }}</field>
+                    <field name="number_5" type="string">{{ fixed_body.number_5 }}</field>
+                    <field name="powerball" type="string">{{ fixed_body.powerball }}</field>
+                </record>
+            </body>
+        </MultiPartLayout>
+
         <MultiPartLayout id="sql_layout">
             <body>
-                <record id="history_sql" table="dbo.powerball_history" type="sql">
+                <record id="history_sql" type="sql">
                     <field name="draw_num" type="string">{{ fixed_body.draw_num }}</field>
                     <field name="draw_date" type="date">{{ fixed_body.draw_date | date:parse:"EEE'.' MMM dd',' yyyy" }}</field>
                     <field name="number_1" type="string">{{ fixed_body.number_1 }}</field>

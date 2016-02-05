@@ -33,11 +33,11 @@ class DelimiterRecordSpec() extends FeatureSpec with BeforeAndAfterEach with Giv
         ))
 
       When("the text is consumed")
-      record.fromLine(line)
+      record.fromText(line)
 
       Then("the toLine method should return the delimited string")
-      info(record.toLine)
-      record.toLine shouldBe "AAPL\t96.76\t96.99\t95.89\t109.99"
+      info(record.toText)
+      record.toText shouldBe "AAPL\t96.76\t96.99\t95.89\t109.99"
 
       And(s"the record must contain the values")
       val validation = List("symbol" -> "AAPL", "open" -> "96.76", "close" -> "96.99", "low" -> "95.89", "high" -> "109.99")

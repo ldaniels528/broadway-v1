@@ -6,6 +6,7 @@ import com.github.ldaniels528.broadway.core.StoryConfigParser._
 import com.github.ldaniels528.broadway.core.io.archive.Archive
 import com.github.ldaniels528.broadway.core.io.archive.impl.FileArchive
 import com.github.ldaniels528.broadway.core.io.device._
+import com.github.ldaniels528.broadway.core.io.device.impl.DocumentDBOutputSource.DocumentDBConnectionInfo
 import com.github.ldaniels528.broadway.core.io.device.impl.SQLOutputSource.SQLConnectionInfo
 import com.github.ldaniels528.broadway.core.io.device.impl._
 import com.github.ldaniels528.broadway.core.io.filters.Filter
@@ -20,6 +21,7 @@ import com.github.ldaniels528.broadway.core.io.record.impl._
 import com.github.ldaniels528.broadway.core.io.trigger.impl.{FileFeed, FileFeedDirectory, FileTrigger, StartupTrigger}
 import com.github.ldaniels528.broadway.core.support.kafka.ZkProxy
 import com.ldaniels528.commons.helpers.OptionHelper._
+import com.microsoft.azure.documentdb.ConsistencyLevel
 import com.mongodb.casbah.Imports._
 
 import scala.collection.JavaConversions._
@@ -95,6 +97,7 @@ class StoryConfigParser() {
         node.label match {
           case "CompositeOutputSource" => parseDataSources_CompositeOutputSource(node, layouts)
           case "ConcurrentOutputSource" => parseDataSources_ConcurrentOutput(node, layouts)
+          case "DocumentDBOutputSource" => parseDataSources_DocumentDBOutput(node, layouts)
           case "KafkaOutputSource" => parseDataSources_KafkaOutput(node, layouts)
           case "MongoOutputSource" => parseDataSources_MongoOutput(node, layouts)
           case "SQLOutputSource" => parseDataSources_SQLOutput(node, layouts)
@@ -118,6 +121,18 @@ class StoryConfigParser() {
       id = node \\@ "id",
       concurrency = (node \?@ "concurrency").map(_.toInt) getOrElse 2,
       devices = parseDataSources(node, layouts).requireType[OutputSource](_.id, "output source"))
+  }
+
+  private def parseDataSources_DocumentDBOutput(node: Node, layouts: Seq[Layout]) = {
+    DocumentDBOutputSource(
+      id = node \\@ "id",
+      options = DocumentDBConnectionInfo(
+        host = node \\@ "host",
+        masterKey = node \\@ "master-key",
+        database = node \\@ "database",
+        collection = node \\@ "collection",
+        consistencyLevel = (node \?@ "consistency-level").map(ConsistencyLevel.valueOf) getOrElse ConsistencyLevel.Session),
+      layout = lookupLayout(layouts, id = node \\@ "layout"))
   }
 
   private def parseDataSources_KafkaOutput(node: Node, layouts: Seq[Layout]) = {
@@ -152,7 +167,8 @@ class StoryConfigParser() {
         driver = node \\@ "driver",
         url = node \\@ "url",
         user = node \\@ "user",
-        password = node \\@ "password"),
+        password = node \\@ "password",
+        table = node \\@ "table"),
       layout = lookupLayout(layouts, id = node \\@ "layout"))
   }
 
@@ -270,7 +286,7 @@ class StoryConfigParser() {
         case "fixed-length" => FixedLengthRecord(id = id, fields = fields)
         case "generic" => GenericRecord(id = id, fields = fields)
         case "json" => JsonRecord(id = id, fields = fields)
-        case "sql" => SQLRecord(id = id, table = fieldsNode \?@ "table" getOrElse id, fields = fields)
+        case "sql" => SQLRecord(id = id, fields = fields)
         case unknown =>
           throw new IllegalArgumentException(s"Unrecognized fields type '$unknown'")
       }

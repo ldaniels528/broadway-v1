@@ -11,13 +11,13 @@ import com.github.ldaniels528.broadway.core.io.record.{Field, Record, TextSuppor
 case class DelimitedRecord(id: String, delimiter: String, fields: Seq[Field]) extends Record with TextSupport {
   private val splitter = s"[$delimiter]"
 
-  override def fromLine(line: String)(implicit scope: Scope) = {
+  override def fromText(line: String)(implicit scope: Scope) = {
     fields zip line.split(splitter) foreach { case (field, value) =>
       field.value = value.convert(field.`type`)
     }
     this
   }
 
-  override def toLine(implicit scope: Scope) = fields.map(_.value.getOrElse("")).mkString(delimiter)
+  override def toText(implicit scope: Scope) = fields.map(_.value.getOrElse("")).mkString(delimiter)
 
 }

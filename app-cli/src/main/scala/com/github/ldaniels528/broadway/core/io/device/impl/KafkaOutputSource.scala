@@ -38,10 +38,12 @@ case class KafkaOutputSource(id: String, topic: String, zk: ZkProxy, layout: Lay
 
   override def close(implicit scope: Scope) = publisher.close()
 
-  override def open(implicit scope: Scope): Unit = {
+  override def open(implicit scope: Scope) = {
     scope ++= Seq(
       "flow.output.topic" -> topic,
-      "flow.output.connection" -> zk.connectionString
+      "flow.output.connection" -> zk.connectionString,
+      "flow.output.count" -> (() => getStatistics.count),
+      "flow.output.offset" -> (() => getStatistics.offset)
     )
     publisher.open()
   }

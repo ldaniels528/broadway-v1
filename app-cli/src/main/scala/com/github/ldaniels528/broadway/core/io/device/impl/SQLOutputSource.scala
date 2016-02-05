@@ -8,7 +8,6 @@ import com.github.ldaniels528.broadway.core.io.device.OutputSource
 import com.github.ldaniels528.broadway.core.io.device.impl.SQLOutputSource._
 import com.github.ldaniels528.broadway.core.io.layout.Layout
 import com.github.ldaniels528.broadway.core.io.record.DataTypes._
-import com.github.ldaniels528.broadway.core.io.record.impl.SQLRecord
 import com.github.ldaniels528.broadway.core.io.record.{Field, Record}
 import com.github.ldaniels528.broadway.core.util.ResourcePool
 import com.ldaniels528.commons.helpers.OptionHelper._
@@ -23,6 +22,7 @@ import scala.collection.concurrent.TrieMap
 case class SQLOutputSource(id: String, connectionInfo: SQLConnectionInfo, layout: Layout) extends OutputSource {
   private val sqlCache = TrieMap[String, SQLStatement]()
   private val uuid = UUID.randomUUID()
+  private var tableName: String = _
 
   override def close(implicit scope: Scope) = {
     scope.discardResource[Connection](uuid).foreach(_.close())
@@ -30,13 +30,19 @@ case class SQLOutputSource(id: String, connectionInfo: SQLConnectionInfo, layout
 
   override def open(implicit scope: Scope) = {
     sqlCache.clear()
+    scope ++= Seq(
+      "flow.output.id" -> id,
+      "flow.output.count" -> (() => getStatistics.count),
+      "flow.output.offset" -> (() => getStatistics.offset)
+    )
     scope.createResource(uuid, connectionInfo.connect())
+    tableName = connectionInfo.getTable
     ()
   }
 
   override def writeRecord(record: Record)(implicit scope: Scope) = {
     scope.getResource[Connection](uuid) map { conn =>
-      val sql = sqlCache.getOrElseUpdate(s"${record.id}_INSERT", SQLInsert(conn, record))
+      val sql = sqlCache.getOrElseUpdate(s"${tableName}_INSERT", SQLInsert(conn, record, tableName))
       updateCount(sql.execute())
     } orDie s"SQL output source '$id' has not been opened"
   }
@@ -72,12 +78,15 @@ object SQLOutputSource {
     * @param password the JDBC user password
     * @see [[https://azure.microsoft.com/en-us/documentation/articles/sql-database-develop-java-simple-windows/]]
     */
-  case class SQLConnectionInfo(driver: String, url: String, user: String, password: String) {
+  case class SQLConnectionInfo(driver: String, url: String, user: String, password: String, table: String) {
 
     def connect()(implicit scope: Scope) = {
       Class.forName(scope.evaluateAsString(driver))
       DriverManager.getConnection(scope.evaluateAsString(url), scope.evaluateAsString(user), scope.evaluateAsString(password))
     }
+
+    def getTable(implicit scope: Scope) = scope.evaluateAsString(table)
+
   }
 
   /**
@@ -112,7 +121,7 @@ object SQLOutputSource {
     * @param conn   the given [[Connection JDBC connection]]
     * @param record the given [[Record record]]
     */
-  case class SQLInsert(conn: Connection, record: Record) extends SQLStatement {
+  case class SQLInsert(conn: Connection, record: Record, tableName: String) extends SQLStatement {
     private val query = generateQuery()
     private val psCache = ResourcePool[PreparedStatement](() => conn.prepareStatement(query))
 
@@ -126,11 +135,7 @@ object SQLOutputSource {
     private def generateQuery() = {
       val columns = record.fields.map(_.name).mkString(", ")
       val values = record.fields.map(_ => "?").mkString(", ")
-      val table = record match {
-        case rec: SQLRecord => rec.table
-        case rec => rec.id
-      }
-      val sql = s"INSERT INTO $table ($columns) VALUES ($values)"
+      val sql = s"INSERT INTO $tableName ($columns) VALUES ($values)"
       logger.info(s"SQL: $sql")
       sql
     }
@@ -141,7 +146,7 @@ object SQLOutputSource {
     * @param conn   the given [[Connection JDBC connection]]
     * @param record the given [[Record record]]
     */
-  case class SQLUpdate(conn: Connection, record: Record) extends SQLStatement {
+  case class SQLUpdate(conn: Connection, record: Record, tableName: String) extends SQLStatement {
     private val query = generateQuery()
     private val psCache = ResourcePool[PreparedStatement](() => conn.prepareStatement(query))
     private val fields = record.fields ++ record.fields.filter(_.updateKey.contains(true))
@@ -158,11 +163,7 @@ object SQLOutputSource {
       val condition = record.fields.filter(_.updateKey.contains(true)).map(f => s"${f.name} = ?").mkString(" AND ")
       if (condition.isEmpty)
         throw new IllegalStateException("A SQL update is not possible without specifying update fields")
-      val table = record match {
-        case rec: SQLRecord => rec.table
-        case rec => rec.id
-      }
-      val sql = s"UPDATE $table SET $pairs WHERE $condition"
+      val sql = s"UPDATE $tableName SET $pairs WHERE $condition"
       logger.info(s"SQL: $sql")
       sql
     }

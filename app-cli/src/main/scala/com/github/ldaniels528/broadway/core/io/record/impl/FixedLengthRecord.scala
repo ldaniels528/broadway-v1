@@ -12,7 +12,7 @@ import scala.language.postfixOps
   */
 case class FixedLengthRecord(id: String, fields: Seq[Field]) extends Record with TextSupport {
 
-  override def fromLine(line: String)(implicit scope: Scope) = {
+  override def fromText(line: String)(implicit scope: Scope) = {
     var pos = 0
     fields foreach { field =>
       val length = field.length getOrElse 1
@@ -22,7 +22,7 @@ case class FixedLengthRecord(id: String, fields: Seq[Field]) extends Record with
     this
   }
 
-  override def toLine(implicit scope: Scope) = {
+  override def toText(implicit scope: Scope) = {
     fields.foldLeft[StringBuilder](new StringBuilder) { (sb, field) =>
       val raw = field.value.map(_.toString).getOrElse("")
       val length = field.length.getOrElse(raw.length)

@@ -32,11 +32,11 @@ class JsonRecordSpec() extends FeatureSpec with BeforeAndAfterEach with GivenWhe
         ))
 
       When("the text is consumed")
-      record.fromLine(text)
+      record.fromText(text)
 
       Then("the toLine method should return the JSON string")
-      info(record.toLine)
-      record.toLine shouldBe """{"symbol":"AAPL","open":96.76,"close":96.99,"low":95.89,"high":109.99}"""
+      info(record.toText)
+      record.toText shouldBe """{"symbol":"AAPL","open":96.76,"close":96.99,"low":95.89,"high":109.99}"""
 
       And(s"the record must contain the values")
       val validation = List("symbol" -> "AAPL", "open" -> 96.76d, "close" -> 96.99d, "low" -> 95.89d, "high" -> 109.99d)

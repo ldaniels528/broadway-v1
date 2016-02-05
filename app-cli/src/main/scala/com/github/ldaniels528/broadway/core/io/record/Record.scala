@@ -32,19 +32,19 @@ object Record {
     def convertToBinary(implicit scope: Scope): Array[Byte] = record match {
       case rec: BinarySupport => rec.toBytes
       case rec: JsonSupport => rec.toJson.toString().getBytes
-      case rec: TextSupport => rec.toLine.getBytes()
+      case rec: TextSupport => rec.toText.getBytes()
       case rec => throw new UnsupportedRecordTypeException(rec)
     }
 
     def convertToJson(implicit scope: Scope): JsObject = record match {
       case rec: BinarySupport => JsonSupport.parse(new String(rec.toBytes))
       case rec: JsonSupport => rec.toJson
-      case rec: TextSupport => JsonSupport.parse(rec.toLine)
+      case rec: TextSupport => JsonSupport.parse(rec.toText)
       case rec => throw new UnsupportedRecordTypeException(rec)
     }
 
     def convertToText(implicit scope: Scope): String = record match {
-      case rec: TextSupport => rec.toLine
+      case rec: TextSupport => rec.toText
       case rec: JsonSupport => rec.toJson.toString()
       case rec: BinarySupport => new String(rec.toBytes)
       case rec => throw new UnsupportedRecordTypeException(rec)
@@ -52,7 +52,7 @@ object Record {
 
     def importText(text: String)(implicit scope: Scope) = {
       record match {
-        case rec: TextSupport => rec.fromLine(text)
+        case rec: TextSupport => rec.fromText(text)
         case rec => throw new UnsupportedRecordTypeException(rec)
       }
       record

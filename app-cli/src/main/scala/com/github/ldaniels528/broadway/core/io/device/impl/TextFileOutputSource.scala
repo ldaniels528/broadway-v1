@@ -7,16 +7,18 @@ import com.github.ldaniels528.broadway.core.io.Scope
 import com.github.ldaniels528.broadway.core.io.device.OutputSource
 import com.github.ldaniels528.broadway.core.io.layout._
 import com.github.ldaniels528.broadway.core.io.record.Record
+import com.ldaniels528.commons.helpers.OptionHelper._
 
 /**
   * Text File Output Source
-  *
   * @author lawrence.daniels@gmail.com
   */
 case class TextFileOutputSource(id: String, path: String, layout: Layout) extends OutputSource {
   private val uuid = UUID.randomUUID()
 
-  override def close(implicit scope: Scope) = scope.discardResource[BufferedWriter](uuid).foreach(_.close())
+  override def close(implicit scope: Scope) = {
+    scope.discardResource[BufferedWriter](uuid).foreach(_.close())
+  }
 
   override def open(implicit scope: Scope) = {
     val file = new File(scope.evaluateAsString(path))
@@ -38,7 +40,7 @@ case class TextFileOutputSource(id: String, path: String, layout: Layout) extend
       writer.write(record.convertToText)
       writer.newLine()
       updateCount(1)
-    } getOrElse 0
+    } orDie s"Text file output source '$id' has not been opened"
   }
 
 }

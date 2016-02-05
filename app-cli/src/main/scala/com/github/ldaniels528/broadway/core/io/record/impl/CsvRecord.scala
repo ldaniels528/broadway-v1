@@ -10,7 +10,7 @@ import com.github.ldaniels528.broadway.core.io.record.{Field, Record, TextSuppor
   */
 case class CsvRecord(id: String, fields: Seq[Field]) extends Record with TextSupport {
 
-  override def fromLine(line: String)(implicit scope: Scope) = {
+  override def fromText(line: String)(implicit scope: Scope) = {
     val values = fromCSV(line)
     fields zip values foreach { case (field, value) =>
       field.value = value.convert(field.`type`)
@@ -18,7 +18,7 @@ case class CsvRecord(id: String, fields: Seq[Field]) extends Record with TextSup
     this
   }
 
-  override def toLine(implicit scope: Scope) = toCSV(fields.map(_.value.getOrElse("")))
+  override def toText(implicit scope: Scope) = toCSV(fields.map(_.value.getOrElse("")))
 
   private def fromCSV(text: String) = {
     var inQuotes = false

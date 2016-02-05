@@ -27,7 +27,9 @@ case class MongoDbOutputSource(id: String, serverList: String, database: String,
       "flow.output.database" -> database,
       "flow.output.collection" -> collection,
       "flow.output.servers" -> serverList,
-      "flow.output.writeConcern" -> writeConcern.toString
+      "flow.output.writeConcern" -> writeConcern.toString,
+      "flow.output.count" -> (() => getStatistics.count),
+      "flow.output.offset" -> (() => getStatistics.offset)
     )
 
     val mongoConn = scope.createResource(connUUID, MongoConnection(makeServerList(serverList)))
@@ -35,7 +37,9 @@ case class MongoDbOutputSource(id: String, serverList: String, database: String,
     ()
   }
 
-  override def close(implicit scope: Scope) = scope.discardResource[MongoConnection](connUUID).foreach(_.close())
+  override def close(implicit scope: Scope) = {
+    scope.discardResource[MongoConnection](connUUID).foreach(_.close())
+  }
 
   override def writeRecord(record: Record)(implicit scope: Scope) = {
     (for {

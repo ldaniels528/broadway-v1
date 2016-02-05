@@ -1,5 +1,7 @@
 package com.github.ldaniels528.broadway.core.io.record
 
+import java.util.Date
+
 import com.github.ldaniels528.broadway.core.io.Scope
 import com.github.ldaniels528.broadway.core.io.record.DataTypes._
 import com.github.ldaniels528.broadway.core.io.record.JsonSupport._
@@ -83,7 +85,10 @@ object JsonSupport {
       field.value map { value =>
         field.`type` match {
           case BOOLEAN => JsBoolean(value == "true")
-          case DATE => JsNumber(value.toString.toLong)
+          case DATE => value match {
+            case date: Date => JsNumber(date.getTime)
+            case number => JsNumber(number.toString.toLong)
+          }
           case DOUBLE | FLOAT | INT | LONG => JsNumber(value.toString.toDouble)
           case STRING => JsString(value.toString)
           case unknown =>

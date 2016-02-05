@@ -32,11 +32,11 @@ class FixedLengthRecordSpec() extends FeatureSpec with BeforeAndAfterEach with G
         ))
 
       When("the text is consumed")
-      record.fromLine(line)
+      record.fromText(line)
 
       Then("the toLine method should return the fixed-length string")
-      info(record.toLine)
-      record.toLine.trim shouldBe line
+      info(record.toText)
+      record.toText.trim shouldBe line
 
       And(s"the record must contain the values")
       val validation = List("symbol" -> "AAPL", "open" -> "96.76", "close" -> "96.99", "low" -> "95.89", "high" -> "109.99")

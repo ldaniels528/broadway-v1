@@ -44,6 +44,9 @@ lazy val coreDeps = Seq(
   "com.twitter" %% "bijection-avro" % "0.7.2",
   "org.apache.avro" % "avro" % "1.7.7",
   //
+  // Azure Dependencies
+  "com.microsoft.azure" % "azure-documentdb" % "1.5.1",
+  //
   // JSON dependencies
   "com.typesafe.play" %% "play-json" % myPlayVersion,
   //
