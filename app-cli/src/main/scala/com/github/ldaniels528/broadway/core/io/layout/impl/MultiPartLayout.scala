@@ -7,7 +7,6 @@ import com.github.ldaniels528.broadway.core.io.layout.Layout
 import com.github.ldaniels528.broadway.core.io.layout.Layout.InputSet
 import com.github.ldaniels528.broadway.core.io.layout.impl.MultiPartLayout._
 import com.github.ldaniels528.broadway.core.io.record.Record
-import org.slf4j.LoggerFactory
 
 import scala.collection.concurrent.TrieMap
 
@@ -15,9 +14,8 @@ import scala.collection.concurrent.TrieMap
   * Multi-Part Layout
   * @author lawrence.daniels@gmail.com
   */
-case class MultiPartLayout(id: String, body: Section, header: Option[Section] = None, footer: Option[Section] = None)
+case class MultiPartLayout(id: String, body: Section, header: Option[Section] = None, trailer: Option[Section] = None)
   extends Layout {
-  private val logger = LoggerFactory.getLogger(getClass)
   private val buffers = TrieMap[InputSource, List[TextInput]]()
 
   override def read(device: InputSource)(implicit scope: Scope) = {
@@ -25,22 +23,20 @@ case class MultiPartLayout(id: String, body: Section, header: Option[Section] = 
     val records = textInput match {
       // extract-only the optional header record(s)
       case Some(input) if input.isHeader =>
-        logger.info(s"header: ${input.textInput}")
         header.foreach(_.records.foreach(_.importText(input.textInput.line)))
         Nil
 
+      // extract-only the optional trailer record(s)
       case Some(input) if input.isTrailer =>
-        logger.info(s"trailer: ${input.textInput}")
-        footer.foreach(_.records.foreach(_.importText(input.textInput.line)))
+        trailer.foreach(_.records.foreach(_.importText(input.textInput.line)))
         Nil
 
-      // return the body record(s)
+      // extract & populate the body record(s)
       case Some(input) =>
         body.records.map(_.importText(input.textInput.line))
 
-      // EOF
+      // end-of-files
       case None =>
-        logger.info(s"${device.id}: removing tracking info")
         buffers.clear()
         Nil
     }
@@ -50,7 +46,7 @@ case class MultiPartLayout(id: String, body: Section, header: Option[Section] = 
 
   override def write(device: OutputSource, inputSet: InputSet)(implicit scope: Scope) {
     inputSet match {
-      case is if is.isEOF => footer.foreach(_.records foreach device.writeRecord)
+      case is if is.isEOF => trailer.foreach(_.records foreach device.writeRecord)
       case is =>
         if (device.getStatistics.offset == 0L) header.foreach(_.records foreach device.writeRecord)
         body.records foreach device.writeRecord
@@ -79,11 +75,11 @@ case class MultiPartLayout(id: String, body: Section, header: Option[Section] = 
       textInput = ti,
       buffer = buffer,
       isHeader = header.exists(_.records.length >= ti.offset),
-      isTrailer = footer.exists(_.records.length > buffer.length)))
+      isTrailer = trailer.exists(_.records.length > buffer.length)))
   }
 
   private def readAhead: Int = {
-    1 + (header.map(_.records.length) getOrElse 0) + (footer.map(_.records.length) getOrElse 0)
+    1 + (header.map(_.records.length) getOrElse 0) + (trailer.map(_.records.length) getOrElse 0)
   }
 
 }

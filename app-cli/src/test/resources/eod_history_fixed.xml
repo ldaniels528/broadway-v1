@@ -51,16 +51,16 @@
                     <field name="volume" type="string" length="12">{{ input_body.volume }}</field>
                 </record>
             </body>
-            <footer>
-                <record id="output_footer_1" type="fixed-length">
+            <trailer>
+                <record id="output_trailer_1" type="fixed-length">
                     <field name="date" type="string" length="30">{{ flow.input.filename }}</field>
                     <field name="date" type="string" length="10">{{ flow.input.count }}</field>
                 </record>
-                <record id="output_footer_2" type="fixed-length">
+                <record id="output_trailer_2" type="fixed-length">
                     <field name="date" type="string" length="30">{{ flow.output.filename }}</field>
                     <field name="date" type="string" length="10">{{ flow.output.count }}</field>
                 </record>
-            </footer>
+            </trailer>
         </MultiPartLayout>
     </layouts>
 </story>

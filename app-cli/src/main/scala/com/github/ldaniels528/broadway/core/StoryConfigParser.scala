@@ -223,7 +223,7 @@ class StoryConfigParser() {
   /**
     * Parses a layout section
     * @param rootNode the given [[Node node]]
-    * @param label    the given label (e.g. "body", "header" or "footer")
+    * @param label    the given label (e.g. "body", "header" or "trailer")
     * @return a collection of [[Section sections]]
     */
   private def parseLayouts_Layout_Section(rootNode: Node, label: String) = {
@@ -238,7 +238,7 @@ class StoryConfigParser() {
       id = node \\@ "id",
       header = parseLayouts_Layout_Section(node, "header"),
       body = parseLayouts_Layout_Section(node, "body") orDie "The <body> element is required",
-      footer = parseLayouts_Layout_Section(node, "footer"))
+      trailer = parseLayouts_Layout_Section(node, "trailer"))
   }
 
   private def parseProperties(rootNode: Node) = {
