@@ -1,6 +1,6 @@
-package com.github.ldaniels528.broadway.cli.repl.command.params
+package com.github.ldaniels528.broadway.cli.command.params
 
-import com.github.ldaniels528.broadway.cli.repl.command.Command
+import com.github.ldaniels528.broadway.cli.command.Command
 
 /**
   * Represents a set of Unbounded Parameters

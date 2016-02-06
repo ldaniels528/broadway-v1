@@ -7,13 +7,17 @@ val myScalaVersion = "2.11.7"
 val myAkkaVersion = "2.3.14"
 val myPlayVersion = "2.4.6"
 
+val myScalacOptions = Seq("-deprecation", "-encoding", "UTF-8", "-feature", "-target:jvm-1.7", "-unchecked",
+  "-Ywarn-adapted-args", "-Ywarn-value-discard", "-Xlint")
+val myJavacOptions = Seq("-Xlint:deprecation", "-Xlint:unchecked", "-source", "1.7", "-target", "1.7", "-g:vars")
+
 lazy val scalajsOutputDir = Def.settingKey[File]("Directory for Javascript files output by ScalaJS")
 
 lazy val broadway_js = (project in file("app-js"))
   .settings(
     name := "broadway_js",
     organization := "com.github.ldaniels528",
-    version := "0.19.0",
+    version := "0.1.0",
     scalaVersion := myScalaVersion,
     relativeSourceMaps := true,
     persistLauncher := true,
@@ -21,10 +25,10 @@ lazy val broadway_js = (project in file("app-js"))
     resolvers += "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots",
     addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full),
     libraryDependencies ++= Seq(
+      "be.doeraene" %%% "scalajs-jquery" % "0.8.1",
       "com.github.ldaniels528" %%% "scalascript" % "0.2.19",
       "com.vmunier" %% "play-scalajs-sourcemaps" % "0.1.0",
-      "org.scala-js" %%% "scalajs-dom" % "0.8.2",
-      "be.doeraene" %%% "scalajs-jquery" % "0.8.1"
+      "org.scala-js" %%% "scalajs-dom" % "0.8.2"
     ))
   .enablePlugins(ScalaJSPlugin)
 
@@ -32,7 +36,6 @@ lazy val coreDeps = Seq(
   //
   // ldaniels528 Dependencies
   "com.github.ldaniels528" %% "commons-helpers" % "0.1.1",
-  "com.microsoft.sqlserver" % "sqljdbc4" % "4.0",
   //
   // Akka dependencies
   "com.typesafe.akka" %% "akka-actor" % myAkkaVersion,
@@ -44,12 +47,6 @@ lazy val coreDeps = Seq(
   "com.twitter" %% "bijection-avro" % "0.7.2",
   "org.apache.avro" % "avro" % "1.7.7",
   //
-  // Azure Dependencies
-  "com.microsoft.azure" % "azure-documentdb" % "1.5.1",
-  //
-  // JSON dependencies
-  "com.typesafe.play" %% "play-json" % myPlayVersion,
-  //
   // Kafka and Zookeeper Dependencies
   "com.101tec" % "zkclient" % "0.7" exclude("org.slf4j", "slf4j-log4j12"),
   "org.apache.curator" % "curator-framework" % "2.7.1",
@@ -58,16 +55,11 @@ lazy val coreDeps = Seq(
   "org.apache.kafka" % "kafka-clients" % "0.9.0.0",
   "org.apache.zookeeper" % "zookeeper" % "3.4.7" exclude("org.slf4j", "slf4j-log4j12"),
   //
-  // SQL/NOSQL Dependencies
-  "com.datastax.cassandra" % "cassandra-driver-core" % "2.1.9",
-  "org.mongodb" %% "casbah-commons" % "3.1.0" exclude("org.slf4j", "slf4j-log4j12"),
-  "org.mongodb" %% "casbah-core" % "3.1.0" exclude("org.slf4j", "slf4j-log4j12"),
-  //
   // General Java Dependencies
+  "commons-io" % "commons-io" % "2.4",
   "joda-time" % "joda-time" % "2.9.1",
-  "org.joda" % "joda-convert" % "1.8.1",
-  "org.slf4j" % "slf4j-api" % "1.7.12",
   "net.liftweb" %% "lift-json" % "3.0-M7",
+  "org.joda" % "joda-convert" % "1.8.1",
   //
   // Testing dependencies
   "org.mockito" % "mockito-all" % "1.10.19" % "test",
@@ -80,19 +72,19 @@ lazy val broadway_cli = (project in file("app-cli"))
     organization := "com.github.ldaniels528",
     version := "0.1.0",
     scalaVersion := myScalaVersion,
-    scalacOptions ++= Seq("-deprecation", "-encoding", "UTF-8", "-feature", "-target:jvm-1.8", "-unchecked",
-      "-Ywarn-adapted-args", "-Ywarn-value-discard", "-Xlint"),
-    javacOptions ++= Seq("-Xlint:deprecation", "-Xlint:unchecked", "-source", "1.8", "-target", "1.8", "-g:vars"),
+    scalacOptions ++= myScalacOptions,
+    javacOptions ++= myJavacOptions,
     assemblySettings,
-    mainClass in assembly := Some("com.github.ldaniels528.broady.cli.repl.BroadwayREPL"),
+    mainClass in assembly := Some("com.github.ldaniels528.broady.cli.BroadwayREPL"),
     test in assembly := {},
     jarName in assembly := "broadway_" + version.value + ".bin.jar",
-    mergeStrategy in assembly <<= (mergeStrategy in assembly) { (old) => {
-      case PathList("stax", "stax-api", xs@_*) => MergeStrategy.first
-      case PathList("log4j-over-slf4j", xs@_*) => MergeStrategy.discard
-      case PathList("META-INF", "MANIFEST.MF", xs@_*) => MergeStrategy.discard
-      case x => MergeStrategy.first
-    }
+    mergeStrategy in assembly <<= (mergeStrategy in assembly) {
+      (old) => {
+        case PathList("stax", "stax-api", xs@_*) => MergeStrategy.first
+        case PathList("log4j-over-slf4j", xs@_*) => MergeStrategy.discard
+        case PathList("META-INF", "MANIFEST.MF", xs@_*) => MergeStrategy.discard
+        case _ => MergeStrategy.first
+      }
     },
     resolvers += "google-sedis-fix" at "http://pk11-scratch.googlecode.com/svn/trunk",
     resolvers += "clojars" at "https://clojars.org/repo",
@@ -101,15 +93,21 @@ lazy val broadway_cli = (project in file("app-cli"))
       // ldaniels528 Dependencies
       "com.github.ldaniels528" %% "tabular" % "0.1.3" exclude("org.slf4j", "slf4j-log4j12"),
       //
+      // Microsft/Azure Dependencies
+      "com.microsoft.azure" % "azure-documentdb" % "1.5.1",
+      "com.microsoft.sqlserver" % "sqljdbc4" % "4.0",
+      //
+      // Type-Safe dependencies
+      "com.typesafe.play" %% "play-json" % myPlayVersion,
+      //
+      // SQL/NOSQL Dependencies
+      "com.datastax.cassandra" % "cassandra-driver-core" % "2.1.9",
+      "org.mongodb" %% "casbah-commons" % "3.1.0" exclude("org.slf4j", "slf4j-log4j12"),
+      "org.mongodb" %% "casbah-core" % "3.1.0" exclude("org.slf4j", "slf4j-log4j12"),
+      //
       // General Scala Dependencies
       "org.slf4j" % "slf4j-api" % "1.7.14",
       "net.databinder.dispatch" %% "dispatch-core" % "0.11.2",
-      //
-      // Storm Dependencies
-      "org.apache.storm" % "storm-core" % "0.9.3"
-        exclude("org.apache.zookeeper", "zookeeper")
-        exclude("org.slf4j", "log4j-over-slf4j")
-        exclude("commons-logging", "commons-logging"),
       //
       // General Java Dependencies
       "jline" % "jline" % "2.12",
@@ -122,11 +120,10 @@ lazy val broadway_ui = (project in file("app-play"))
   .settings(
     name := "broadway_ui",
     organization := "com.github.ldaniels528",
-    version := "0.19.0",
+    version := "0.1.0",
     scalaVersion := myScalaVersion,
-    scalacOptions ++= Seq("-deprecation", "-encoding", "UTF-8", "-feature", "-target:jvm-1.8", "-unchecked",
-      "-Ywarn-adapted-args", "-Ywarn-value-discard", "-Xlint"),
-    javacOptions ++= Seq("-Xlint:deprecation", "-Xlint:unchecked", "-source", "1.8", "-target", "1.8", "-g:vars"),
+    scalacOptions ++= myScalacOptions,
+    javacOptions ++= myJavacOptions,
     relativeSourceMaps := true,
     scalajsOutputDir := (crossTarget in Compile).value / "classes" / "public" / "javascripts",
     pipelineStages := Seq(gzip, uglify),
@@ -167,12 +164,10 @@ lazy val broadway_tomcat = (project in file("app-tomcat"))
     organization := "com.github.ldaniels528",
     version := "0.1.0",
     scalaVersion := myScalaVersion,
-    scalacOptions ++= Seq("-deprecation", "-encoding", "UTF-8", "-feature", "-target:jvm-1.8", "-unchecked",
-      "-Ywarn-adapted-args", "-Ywarn-value-discard", "-Xlint"),
-    javacOptions ++= Seq("-Xlint:deprecation", "-Xlint:unchecked", "-source", "1.8", "-target", "1.8", "-g:vars"),
+    scalacOptions ++= myScalacOptions,
+    javacOptions ++= myJavacOptions,
     libraryDependencies ++= coreDeps ++ Seq(
       "javax.servlet" % "javax.servlet-api" % "3.0.1" % "provided"
-      //"org.apache.tomcat" % "tomcat-catalina" % "8.0.30"
     )
   )
 

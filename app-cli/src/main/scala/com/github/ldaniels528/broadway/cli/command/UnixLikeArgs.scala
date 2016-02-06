@@ -1,4 +1,4 @@
-package com.github.ldaniels528.broadway.cli.repl.command
+package com.github.ldaniels528.broadway.cli.command
 
 /**
  * Represents a set of Unix-style parameters (e.g. "kget -a schema -f outfile.txt shocktrades.quotes.csv 0 165 -b")

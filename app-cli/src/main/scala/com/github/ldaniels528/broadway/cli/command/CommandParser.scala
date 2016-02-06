@@ -1,4 +1,4 @@
-package com.github.ldaniels528.broadway.cli.repl.command
+package com.github.ldaniels528.broadway.cli.command
 
 /**
   * Command Parser

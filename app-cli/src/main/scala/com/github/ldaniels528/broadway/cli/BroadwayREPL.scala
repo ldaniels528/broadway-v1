@@ -1,9 +1,9 @@
-package com.github.ldaniels528.broadway.cli.repl
+package com.github.ldaniels528.broadway.cli
 
 import java.io.File
 import java.util.UUID
 
-import com.github.ldaniels528.broadway.cli.repl.command.{CommandParser, UnixLikeArgs}
+import com.github.ldaniels528.broadway.cli.command.{CommandParser, UnixLikeArgs}
 import com.github.ldaniels528.broadway.core.{StoryConfig, StoryProcessor}
 import com.github.ldaniels528.tabular.Tabular
 import com.ldaniels528.commons.helpers.OptionHelper._

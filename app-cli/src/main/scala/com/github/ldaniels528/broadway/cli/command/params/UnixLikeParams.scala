@@ -1,7 +1,7 @@
-package com.github.ldaniels528.broadway.cli.repl.command.params
+package com.github.ldaniels528.broadway.cli.command.params
 
-import com.github.ldaniels528.broadway.cli.repl.command.CommandParser._
-import com.github.ldaniels528.broadway.cli.repl.command.{Command, UnixLikeArgs}
+import com.github.ldaniels528.broadway.cli.command.CommandParser._
+import com.github.ldaniels528.broadway.cli.command.{Command, UnixLikeArgs}
 
 /**
   * Unix-Style Command Parameters

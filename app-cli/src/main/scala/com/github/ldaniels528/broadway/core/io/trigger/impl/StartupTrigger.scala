@@ -16,6 +16,7 @@ case class StartupTrigger(id: String, flows: Seq[Flow]) extends Trigger {
     Trigger.taskPool ! new Runnable {
       override def run() = {
         process(flows zip (flows map (createScope(story, _))))
+        ()
       }
     }
   }

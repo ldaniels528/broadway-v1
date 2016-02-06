@@ -12,7 +12,10 @@ case class ResourcePool[V](makeNew: () => V) {
   private val logger = LoggerFactory.getLogger(getClass)
   private val pool = new ConcurrentLinkedQueue[V]()
 
-  def give(resource: V) = pool.add(resource)
+  def give(resource: V): Unit = {
+    pool.add(resource)
+    ()
+  }
 
   def take: V = {
     Option(pool.poll()) match {

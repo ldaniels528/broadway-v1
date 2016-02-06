@@ -1,6 +1,6 @@
-package com.github.ldaniels528.broadway.cli.repl.command
+package com.github.ldaniels528.broadway.cli.command
 
-import com.github.ldaniels528.broadway.cli.repl.command.params.CommandParameters
+import com.github.ldaniels528.broadway.cli.command.params.CommandParameters
 
 import scala.language.existentials
 
