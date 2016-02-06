@@ -25,7 +25,7 @@
     <layouts>
         <MultiPartLayout id="csv_layout">
             <header>
-                <record id="cvs_header" type="csv">
+                <record id="cvs_header" format="csv">
                     <field name="symbol" type="string" value="Ticker" />
                     <field name="description" type="string" value="Description" />
                     <field name="source" type="string" value="Source" />
@@ -33,11 +33,11 @@
                 </record>
             </header>
             <body>
-                <record id="csv_data" type="csv">
-                    <field name="symbol" type="string" value="{{ delimited_data.symbol }}" />
-                    <field name="description" type="string" value="{{ delimited_data.description }}" />
-                    <field name="source" type="string" value="{{ flow.input.filename }}" />
-                    <field name="lineNo" type="int" value="{{ flow.input.offset }}" />
+                <record id="csv_data" format="csv">
+                    <field name="symbol" type="string">{{ delimited_data.symbol }}</field>
+                    <field name="description" type="string">{{ delimited_data.description }}</field>
+                    <field name="source" type="string">{{ flow.input.filename }}</field>
+                    <field name="lineNo" type="int">{{ flow.input.offset }}</field>
                 </record>
             </body>
         </MultiPartLayout>

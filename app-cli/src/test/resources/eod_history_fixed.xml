@@ -30,7 +30,7 @@
     <layouts>
         <MultiPartLayout id="output_layout">
             <header>
-                <record id="output_header" type="fixed-length">
+                <record id="output_header" format="fixed">
                     <field name="symbol" type="string" length="10">Symbol</field>
                     <field name="date" type="string" length="15">Date</field>
                     <field name="open" type="string" length="12">Open</field>
@@ -41,7 +41,7 @@
                 </record>
             </header>
             <body>
-                <record id="output_body" type="fixed-length">
+                <record id="output_body" format="fixed">
                     <field name="symbol" type="string" length="10">{{ input_body.ticker }}</field>
                     <field name="date" type="date" length="15">{{ input_body.date | date:parse:"yyyyMMdd" }}</field>
                     <field name="open" type="string" length="12">{{ input_body.open }}</field>
@@ -52,11 +52,11 @@
                 </record>
             </body>
             <trailer>
-                <record id="output_trailer_1" type="fixed-length">
+                <record id="output_trailer_1" format="fixed">
                     <field name="date" type="string" length="30">{{ flow.input.filename }}</field>
                     <field name="date" type="string" length="10">{{ flow.input.count }}</field>
                 </record>
-                <record id="output_trailer_2" type="fixed-length">
+                <record id="output_trailer_2" format="fixed">
                     <field name="date" type="string" length="30">{{ flow.output.filename }}</field>
                     <field name="date" type="string" length="10">{{ flow.output.count }}</field>
                 </record>

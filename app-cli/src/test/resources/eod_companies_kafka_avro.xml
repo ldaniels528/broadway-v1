@@ -23,7 +23,7 @@
     <layouts>
         <MultiPartLayout id="avro_layout">
             <body>
-                <record id="avro_body" type="avro" name="EodCompanyInfo" namespace="com.shocktrade.avro" doc="EOD Data companies schema">
+                <record id="avro_body" format="avro" name="EodCompanyInfo" namespace="com.shocktrade.avro" doc="EOD Data companies schema">
                     <field name="symbol" type="string" value="{{ delimited_body.symbol }}" />
                     <field name="description" type="string" value="{{ delimited_body.description }}" />
                 </record>

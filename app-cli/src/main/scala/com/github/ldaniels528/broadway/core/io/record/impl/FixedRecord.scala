@@ -10,7 +10,7 @@ import scala.language.postfixOps
   * Fixed Length Record implementation
   * @author lawrence.daniels@gmail.com
   */
-case class FixedLengthRecord(id: String, fields: Seq[Field]) extends Record with TextSupport {
+case class FixedRecord(id: String, fields: Seq[Field]) extends Record with TextSupport {
 
   override def fromText(line: String)(implicit scope: Scope) = {
     var pos = 0
@@ -31,6 +31,19 @@ case class FixedLengthRecord(id: String, fields: Seq[Field]) extends Record with
     } toString()
   }
 
+  /**
+    * Returns the record length
+    * @return the record length
+    */
+  def length = fields.flatMap(_.length).sum
+
+  /**
+    * Extracts a fixed-length portion of the given text
+    * @param text the given text
+    * @param start the starting position of the substring
+    * @param end the ending position of the substring
+    * @return a fixed-length portion
+    */
   private def extract(text: String, start: Int, end: Int) = {
     if (start > text.length) " " * (end - start)
     else if (end > text.length) text.substring(start) + " " * ((end - start) - text.length)

@@ -267,29 +267,18 @@ class StoryConfigParser() {
   }
 
   private def parseRecord(rootNode: Node) = {
-    (rootNode \ "record") map { fieldsNode =>
-      val id = fieldsNode \\@ "id"
-      val `type` = fieldsNode \\@ "type"
-      val fields = fieldsNode.child.filter(_.label != "#PCDATA") map { node =>
-        node.label match {
-          case "field" => parseRecord_Field(id, node)
+    (rootNode \ "record") map { node =>
+      val id = node \\@ "id"
+      val format = node \?@ "format" getOrElse "none"
+      val fields = node.child.filter(_.label != "#PCDATA") map { fieldNode =>
+        fieldNode.label match {
+          case "field" => parseRecord_Field(id, fieldNode)
           case label =>
             throw new IllegalArgumentException(s"Invalid field type '$label'")
         }
       }
 
-      // decode the field set by type
-      `type` match {
-        case "avro" => AvroRecord(id = id, name = fieldsNode \\@ "name", namespace = fieldsNode \\@ "namespace", fields = fields)
-        case "csv" => CsvRecord(id = id, fields = fields)
-        case "delimited" => DelimitedRecord(id = id, fields = fields, delimiter = fieldsNode \\+@ "delimiter")
-        case "fixed-length" => FixedLengthRecord(id = id, fields = fields)
-        case "generic" => GenericRecord(id = id, fields = fields)
-        case "json" => JsonRecord(id = id, fields = fields)
-        case "sql" => SQLRecord(id = id, fields = fields)
-        case unknown =>
-          throw new IllegalArgumentException(s"Unrecognized fields type '$unknown'")
-      }
+      parseRecord_Format(node, id, fields, format)
     }
   }
 
@@ -301,6 +290,29 @@ class StoryConfigParser() {
       `type` = (node \?@ "type").map(_.toUpperCase) map DataTypes.withName getOrElse DataTypes.STRING,
       defaultValue = node \?@ "value" ?? node.text_?,
       length = (node \?@ "length") map (_.toInt))
+  }
+
+  private def parseRecord_Format(node: Node, id: String, fields: Seq[Field], format: String) = {
+    format match {
+      case "avro" => AvroRecord(id = id, name = node \\@ "name", namespace = node \\@ "namespace", fields = fields)
+      case "csv" => DelimitedRecord(id = id, delimiter = ',', isTextQuoted = true, isNumbersQuoted = true, fields = fields)
+      case "delimited" => DelimitedRecord(
+        id = id,
+        delimiter = node \\+@ "delimiter" match {
+          case s if s.length == 1 => s.head
+          case s => throw new IllegalArgumentException("Only a single character is permitted")
+        },
+        isTextQuoted = (node \?@ "text-quoted").contains("true"),
+        isNumbersQuoted = (node \?@ "numbers-quoted").contains("true"),
+        fields = fields
+      )
+      case "fixed" => FixedRecord(id = id, fields = fields)
+      case "json" => JsonRecord(id = id, fields = fields)
+      case "none" => GenericRecord(id = id, fields = fields)
+      case "sql" => SQLRecord(id = id, fields = fields)
+      case unknown =>
+        throw new IllegalArgumentException(s"Unrecognized record format '$unknown'")
+    }
   }
 
   private def parseTriggers(baseConfig: StoryConfig, rootNode: Node, archives: Seq[Archive], devices: Seq[DataSource], layouts: Seq[Layout]) = {

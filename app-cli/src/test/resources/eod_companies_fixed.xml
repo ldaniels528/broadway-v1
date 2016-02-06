@@ -19,13 +19,13 @@
         <TextFileInputSource id="NASDAQ.txt" path="./app-cli/src/test/resources/files/NASDAQ.txt" layout="eod_company_input_layout" />
         <TextFileInputSource id="NYSE.txt" path="./app-cli/src/test/resources/files/NYSE.txt" layout="eod_company_input_layout" />
         <TextFileInputSource id="OTCBB.txt" path="./app-cli/src/test/resources/files/OTCBB.txt" layout="eod_company_input_layout" />
-        <TextFileOutputSource id="output.txt" path="/tmp/eod_companies_fixed.txt" layout="fixed-length-output" />
+        <TextFileOutputSource id="output.txt" path="/tmp/eod_companies_fixed.txt" layout="fixed-output" />
     </data-sources>
 
     <layouts>
-        <MultiPartLayout id="fixed-length-output">
+        <MultiPartLayout id="fixed-output">
             <header>
-                <record id="fixed_header" type="fixed-length">
+                <record id="fixed_header" format="fixed">
                     <field name="symbol" value="Symbol" type="string" length="10" />
                     <field name="description" value="Description" type="string" length="50"/>
                     <field name="source" type="string" value="Source" length="40" />
@@ -33,7 +33,7 @@
                 </record>
             </header>
             <body>
-                <record id="fixed_body" type="fixed-length">
+                <record id="fixed_body" format="fixed">
                     <field name="symbol" type="string" length="10" value="{{ delimited_body.symbol }}"/>
                     <field name="description" type="string" length="50" value="{{ delimited_body.description }}"/>
                     <field name="source" type="string" length="40" value="{{ flow.input.filename }}" />

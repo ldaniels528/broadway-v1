@@ -25,7 +25,7 @@
     <layouts>
         <TextLayout id="json-output">
             <body>
-                <record type="json">
+                <record format="json">
                     <field>symbol</field>
                     <field>description</field>
                 </record>

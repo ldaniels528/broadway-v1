@@ -25,7 +25,7 @@
     <layouts>
         <MultiPartLayout id="json-output">
             <body>
-                <record id="json_body" type="json">
+                <record id="json_body" format="json">
                     <field name="symbol" type="string" value="{{ delimited_body.symbol }}" />
                     <field name="description" type="string" value="{{ delimited_body.description }}" />
                 </record>

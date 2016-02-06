@@ -1,6 +1,7 @@
 package com.github.ldaniels528.broadway.core.io.layout
 
 
+import com.github.ldaniels528.broadway.core.io.record.impl.DelimitedRecord
 import com.github.ldaniels528.broadway.core.io.record.{DataTypes, Field}
 import org.scalatest.Matchers._
 import org.scalatest.mock.MockitoSugar
@@ -20,22 +21,25 @@ class CsvRecordSpec() extends FeatureSpec with BeforeAndAfterEach with GivenWhen
       val line = """"AAPL", 96.76, 96.99, 95.89, 109.99"""
 
       And("a CSV record")
-      val record = CsvRecord(
+      val record = DelimitedRecord(
         id = "cvs_rec",
+        delimiter = ',',
+        isTextQuoted = true,
+        isNumbersQuoted = false,
         fields = Seq(
-          Field(name = "symbol", `type` = DataTypes.STRING),
-          Field(name = "open", `type` = DataTypes.STRING),
-          Field(name = "close", `type` = DataTypes.STRING),
-          Field(name = "low", `type` = DataTypes.STRING),
-          Field(name = "high", `type` = DataTypes.STRING)
+          Field(name = "symbol", path = "symbol", `type` = DataTypes.STRING),
+          Field(name = "open", path = "open", `type` = DataTypes.STRING),
+          Field(name = "close", path = "close", `type` = DataTypes.STRING),
+          Field(name = "low", path = "low", `type` = DataTypes.STRING),
+          Field(name = "high", path = "high", `type` = DataTypes.STRING)
         ))
 
       When("the text is consumed")
-      record.fromLine(line)
+      record.fromText(line)
 
       Then("the toLine method should return the CSV string")
-      info(record.toLine)
-      record.toLine shouldBe """"AAPL","96.76","96.99","95.89","109.99""""
+      info(record.toText)
+      record.toText shouldBe """"AAPL","96.76","96.99","95.89","109.99""""
 
       And(s"the record must contain the values")
       val validation = List("symbol" -> "AAPL", "open" -> "96.76", "close" -> "96.99", "low" -> "95.89", "high" -> "109.99")

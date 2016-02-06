@@ -30,13 +30,13 @@
     <layouts>
         <TextLayout id="eod_company_input_layout">
             <header>
-                <record type="delimited" delimiter="\t">
+                <record format="delimited" delimiter="\t">
                     <field name="symbol" value="Symbol" type="string"/>
                     <field name="description" value="Description" type="string"/>
                 </record>
             </header>
             <body>
-                <record type="delimited" delimiter="\t">
+                <record format="delimited" delimiter="\t">
                     <field name="symbol" type="string"/>
                     <field name="description" type="string"/>
                 </record>
@@ -44,7 +44,7 @@
         </TextLayout>
 
         <MongoLayout id="mongo-output">
-            <record type="json">
+            <record format="json">
                 <field name="symbol" type="string"/>
                 <field name="description" type="string"/>
             </record>

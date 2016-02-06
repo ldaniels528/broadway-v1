@@ -60,7 +60,7 @@ object Field {
     def convert(`type`: DataType): Option[Any] = {
       `type` match {
         case BOOLEAN => Option(value.toLowerCase == "true")
-        case DATE => Option(value)
+        case DATE => Option(value) // TODO can we actually convert safely?
         case DOUBLE => Try(value.toDouble).toOption
         case FLOAT => Try(value.toFloat).toOption
         case INT => Try(value.toInt).toOption

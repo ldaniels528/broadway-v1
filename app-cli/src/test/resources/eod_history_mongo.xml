@@ -30,7 +30,7 @@
     <layouts>
         <MultiPartLayout id="mongo_layout">
             <body>
-                <record id="json_body" type="json">
+                <record id="json_body" format="json">
                     <field name="ticker" type="string" value="{{ csv_body.ticker }}"/>
                     <field name="date" type="string" value="{{ csv_body.date }}"/>
                     <field name="open" type="double" value="{{ csv_body.open }}"/>

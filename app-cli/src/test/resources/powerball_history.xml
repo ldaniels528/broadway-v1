@@ -37,24 +37,24 @@
     <layouts>
         <MultiPartLayout id="powerball_layout">
             <header>
-                <record id="fixed_header1" type="fixed-length">
+                <record id="fixed_header1" format="fixed">
                     <field name="line1" type="string" length="100" />
                 </record>
-                <record id="fixed_header2" type="fixed-length">
+                <record id="fixed_header2" format="fixed">
                     <field name="line2" type="string" length="100" />
                 </record>
-                <record id="fixed_header3" type="fixed-length">
+                <record id="fixed_header3" format="fixed">
                     <field name="line3" type="string" length="100" />
                 </record>
-                <record id="fixed_header4" type="fixed-length">
+                <record id="fixed_header4" format="fixed">
                     <field name="line4" type="string" length="100" />
                 </record>
-                <record id="fixed_header5" type="fixed-length">
+                <record id="fixed_header5" format="fixed">
                     <field name="line5" type="string" length="100" />
                 </record>
             </header>
             <body>
-                <record id="fixed_body" type="fixed-length">
+                <record id="fixed_body" format="fixed">
                     <field name="draw_num" type="string" length="6"/>
                     <field name="draw_date" type="string" length="24"/> <!-- Sat. Jan 30, 2016 -->
                     <field name="number_1" type="string" length="12"/>
@@ -69,7 +69,7 @@
 
         <MultiPartLayout id="csv_layout">
             <header>
-                <record id="csv_header" type="csv">
+                <record id="csv_header" format="csv">
                     <field name="draw_num" type="string">Draw Number</field>
                     <field name="draw_date" type="string">Draw Number</field>
                     <field name="number_1" type="string">Number 1</field>
@@ -81,7 +81,7 @@
                 </record>
             </header>
             <body>
-                <record id="csv_body" type="csv">
+                <record id="csv_body" format="csv">
                     <field name="draw_num" type="string">{{ fixed_body.draw_num }}</field>
                     <field name="draw_date" type="string">{{ fixed_body.draw_date | date:parse:"EEE'.' MMM dd',' yyyy" | date:format:yyyyMMdd }}</field>
                     <field name="number_1" type="string">{{ fixed_body.number_1 }}</field>
@@ -96,7 +96,7 @@
 
         <MultiPartLayout id="json_layout">
             <body>
-                <record id="history_json" type="json">
+                <record id="history_json" format="json">
                     <field name="draw_num" type="string">{{ fixed_body.draw_num }}</field>
                     <field name="draw_date" type="date">{{ fixed_body.draw_date | date:parse:"EEE'.' MMM dd',' yyyy" }}</field>
                     <field name="number_1" type="string">{{ fixed_body.number_1 }}</field>

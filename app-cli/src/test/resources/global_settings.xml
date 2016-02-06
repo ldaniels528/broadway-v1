@@ -10,13 +10,13 @@
     <layouts>
         <MultiPartLayout id="eod_company_input_layout">
             <header>
-                <record id="delimited_header" type="delimited" delimiter="\t">
+                <record id="delimited_header" format="delimited" delimiter="\t">
                     <field name="symbol" type="string"/>
                     <field name="description" type="string"/>
                 </record>
             </header>
             <body>
-                <record id="delimited_data" type="delimited" delimiter="\t">
+                <record id="delimited_data" format="delimited" delimiter="\t">
                     <field name="symbol" type="string"/>
                     <field name="description" type="string"/>
                 </record>
@@ -25,7 +25,7 @@
 
         <MultiPartLayout id="eod_history_input_layout">
             <header>
-                <record id="input_header" type="csv">
+                <record id="input_header" format="csv">
                     <field name="ticker" type="string">&lt;ticker&gt;</field>
                     <field name="date" type="string">&lt;date&gt;</field>
                     <field name="open" type="string">&lt;open&gt;</field>
@@ -36,7 +36,7 @@
                 </record>
             </header>
             <body>
-                <record id="input_body" type="csv">
+                <record id="input_body" format="csv">
                     <field name="ticker" type="string" />
                     <field name="date" type="string" />
                     <field name="open" type="string" />
