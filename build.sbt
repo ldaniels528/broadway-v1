@@ -70,7 +70,6 @@ lazy val coreDeps = Seq(
   "net.liftweb" %% "lift-json" % "3.0-M7",
   //
   // Testing dependencies
-  "junit" % "junit" % "4.12" % "test",
   "org.mockito" % "mockito-all" % "1.10.19" % "test",
   "org.scalatest" %% "scalatest" % "2.2.3" % "test"
 )
@@ -125,20 +124,18 @@ lazy val broadway_ui = (project in file("app-play"))
     organization := "com.github.ldaniels528",
     version := "0.19.0",
     scalaVersion := myScalaVersion,
-    scalacOptions ++= Seq("-deprecation", "-encoding", "UTF-8", "-feature", "-target:jvm-1.7", "-unchecked",
+    scalacOptions ++= Seq("-deprecation", "-encoding", "UTF-8", "-feature", "-target:jvm-1.8", "-unchecked",
       "-Ywarn-adapted-args", "-Ywarn-value-discard", "-Xlint"),
-    javacOptions ++= Seq("-Xlint:deprecation", "-Xlint:unchecked", "-source", "1.7", "-target", "1.7", "-g:vars"),
+    javacOptions ++= Seq("-Xlint:deprecation", "-Xlint:unchecked", "-source", "1.8", "-target", "1.8", "-g:vars"),
     relativeSourceMaps := true,
     scalajsOutputDir := (crossTarget in Compile).value / "classes" / "public" / "javascripts",
-    pipelineStages := Seq(gzip, /*htmlMinifier,*/ uglify),
+    pipelineStages := Seq(gzip, uglify),
     Seq(packageScalaJSLauncher, fastOptJS, fullOptJS) map { packageJSKey =>
       crossTarget in(broadway_js, Compile, packageJSKey) := scalajsOutputDir.value
     },
     compile in Compile <<=
       (compile in Compile) dependsOn (fastOptJS in(broadway_js, Compile)),
     ivyScala := ivyScala.value map (_.copy(overrideScalaVersion = true)),
-    //sassOptions in Assets ++= Seq("-r", "sass-globbing"),
-    sassOptions in Assets ++= Seq("--compass", "-r", "compass"),
     resolvers += "google-sedis-fix" at "http://pk11-scratch.googlecode.com/svn/trunk",
     libraryDependencies ++= coreDeps ++ Seq(cache, filters, json, ws,
       //
@@ -161,6 +158,24 @@ lazy val broadway_ui = (project in file("app-play"))
   .enablePlugins(PlayScala, play.twirl.sbt.SbtTwirl, SbtWeb)
   .aggregate(broadway_js)
 
+lazy val broadway_tomcat = (project in file("app-tomcat"))
+  .dependsOn(broadway_ui)
+  .enablePlugins(TomcatPlugin)
+  .aggregate(broadway_ui)
+  .settings(
+    name := "broadway_tomcat",
+    organization := "com.github.ldaniels528",
+    version := "0.1.0",
+    scalaVersion := myScalaVersion,
+    scalacOptions ++= Seq("-deprecation", "-encoding", "UTF-8", "-feature", "-target:jvm-1.8", "-unchecked",
+      "-Ywarn-adapted-args", "-Ywarn-value-discard", "-Xlint"),
+    javacOptions ++= Seq("-Xlint:deprecation", "-Xlint:unchecked", "-source", "1.8", "-target", "1.8", "-g:vars"),
+    libraryDependencies ++= coreDeps ++ Seq(
+      "javax.servlet" % "javax.servlet-api" % "3.0.1" % "provided"
+      //"org.apache.tomcat" % "tomcat-catalina" % "8.0.30"
+    )
+  )
+
 // loads the jvm project at sbt startup
-onLoad in Global := (Command.process("project broadway_ui", _: State)) compose (onLoad in Global).value
+onLoad in Global := (Command.process("project broadway_tomcat", _: State)) compose (onLoad in Global).value
 

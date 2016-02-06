@@ -1,0 +1,22 @@
+<web-app xmlns="http://java.sun.com/xml/ns/javaee"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd"
+         version="3.0">
+
+    <servlet>
+        <display-name>PlayStartupServlet</display-name>
+        <servlet-name>PlayStartupServlet</servlet-name>
+        <servlet-class>com.github.ldaniels528.broadway.web.PlayStartupServlet</servlet-class>
+        <init-param>
+            <param-name>sleep-time-in-seconds</param-name>
+            <param-value>10</param-value>
+        </init-param>
+        <load-on-startup>1</load-on-startup>
+    </servlet>
+
+    <servlet-mapping>
+        <servlet-name>PlayStartupServlet</servlet-name>
+        <url-pattern>/*</url-pattern>
+    </servlet-mapping>
+    
+</web-app>
