@@ -32,7 +32,7 @@ case class TextFileInputSource(id: String, path: String, layout: Layout) extends
     ()
   }
 
-  override def readLine(implicit scope: Scope) = {
+  override def readText(implicit scope: Scope) = {
     for {
       reader <- scope.getResource[BufferedReader](uuid)
       line <- Option(reader.readLine)

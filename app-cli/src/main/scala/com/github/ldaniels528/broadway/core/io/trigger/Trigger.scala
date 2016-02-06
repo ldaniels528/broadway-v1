@@ -3,6 +3,7 @@ package com.github.ldaniels528.broadway.core.io.trigger
 import java.util.Date
 
 import com.github.ldaniels528.broadway.core.StoryConfig
+import com.github.ldaniels528.broadway.core.actors.TaskActorPool
 import com.github.ldaniels528.broadway.core.io.Scope
 import com.github.ldaniels528.broadway.core.io.device.OutputSource
 import com.github.ldaniels528.broadway.core.io.flow.Flow
@@ -86,6 +87,7 @@ trait Trigger {
   * @author lawrence.daniels@gmail.com
   */
 object Trigger {
+  lazy val taskPool = new TaskActorPool(3)
 
   /**
     * I/O Statistics

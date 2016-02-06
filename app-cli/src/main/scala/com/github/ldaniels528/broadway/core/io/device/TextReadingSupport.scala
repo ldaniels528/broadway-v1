@@ -10,7 +10,7 @@ import com.github.ldaniels528.broadway.core.io.device.TextReadingSupport.TextInp
 trait TextReadingSupport {
   self: InputSource =>
 
-  def readLine(implicit scope: Scope): Option[TextInput]
+  def readText(implicit scope: Scope): Option[TextInput]
 
 }
 

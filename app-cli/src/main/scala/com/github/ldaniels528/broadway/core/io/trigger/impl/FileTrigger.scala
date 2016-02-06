@@ -6,7 +6,7 @@ import java.nio.file.{Path, Paths, WatchService}
 
 import com.github.ldaniels528.broadway.core.StoryConfig
 import com.github.ldaniels528.broadway.core.actors.FileManagementActor.ArchiveFile
-import com.github.ldaniels528.broadway.core.actors.{BroadwayActorSystem, FileManagementActor, ProcessingActor}
+import com.github.ldaniels528.broadway.core.actors.{BroadwayActorSystem, FileManagementActor}
 import com.github.ldaniels528.broadway.core.io.trigger.Trigger
 import com.ldaniels528.commons.helpers.OptionHelper._
 import org.slf4j.LoggerFactory
@@ -29,7 +29,7 @@ case class FileTrigger(id: String, directories: Seq[FileFeedDirectory]) extends 
       FileTrigger.register(watcherName = id, directory = new File(directory.path)) { incomingFile =>
         directory.feeds.find(_.matches(incomingFile)) foreach { feed =>
           logger.info(s"Processing '${incomingFile.getName}' for '$id'...")
-          ProcessingActor ! createTask(story, directory, feed, incomingFile)
+          Trigger.taskPool ! createTask(story, directory, feed, incomingFile)
         }
       }
     }
@@ -103,7 +103,6 @@ object FileTrigger {
 
   /**
     * Recursively schedules all files found in the given directory for processing
-    *
     * @param directory    the given directory
     * @param registration the given registration
     */
@@ -120,7 +119,6 @@ object FileTrigger {
 
   /**
     * notifies the caller when the file is ready
-    *
     * @param file         the given [[File]]
     * @param registration the given registration
     */
@@ -154,7 +152,6 @@ object FileTrigger {
 
     /**
       * Attempts to determine whether the file is complete or not
-      *
       * @return true, if the file's size or last modified time hasn't changed in [up to] 10 seconds
       */
     def isReady: Boolean = {
@@ -181,7 +178,6 @@ object FileTrigger {
 
   /**
     * Represents a file watching registration
-    *
     * @param watcherName the given unique registration ID
     * @param directory   the directory to watch
     * @param path        the path to watch

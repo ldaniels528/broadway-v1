@@ -23,7 +23,7 @@ object InputSource {
 
     def readText(implicit scope: Scope) = {
       source match {
-        case device: TextReadingSupport => device.readLine
+        case device: TextReadingSupport => device.readText
         case device =>
           throw new IllegalArgumentException(s"Input source '${device.id}' is not a text-capable device")
       }

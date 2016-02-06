@@ -11,11 +11,10 @@ import com.github.ldaniels528.broadway.core.io.record.Record
 import scala.collection.concurrent.TrieMap
 
 /**
-  * Multi-Part Layout
+  * Multi-Record Layout implementation
   * @author lawrence.daniels@gmail.com
   */
-case class MultiPartLayout(id: String, body: Section, header: Option[Section] = None, trailer: Option[Section] = None)
-  extends Layout {
+case class MultiPartLayout(id: String, body: Section, header: Option[Section], trailer: Option[Section]) extends Layout {
   private val buffers = TrieMap[InputSource, List[TextInput]]()
 
   override def read(device: InputSource)(implicit scope: Scope) = {
