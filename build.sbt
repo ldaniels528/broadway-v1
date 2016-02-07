@@ -85,7 +85,7 @@ lazy val broadway_cli = (project in file("app-cli"))
       "com.typesafe.play" %% "play-json" % myPlayVersion,
       //
       // SQL/NOSQL Dependencies
-//      "com.datastax.cassandra" % "cassandra-driver-core" % "2.1.9",
+      "com.datastax.cassandra" % "cassandra-driver-core" % "2.1.9",
       "org.mongodb" %% "casbah-commons" % "3.1.0" exclude("org.slf4j", "slf4j-log4j12"),
       "org.mongodb" %% "casbah-core" % "3.1.0" exclude("org.slf4j", "slf4j-log4j12"),
       //
