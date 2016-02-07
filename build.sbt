@@ -6,6 +6,7 @@ import sbtassembly.Plugin._
 val myScalaVersion = "2.11.7"
 val myAkkaVersion = "2.3.14"
 val myPlayVersion = "2.4.6"
+val sprayVersion = "1.3.2"
 
 val myScalacOptions = Seq("-deprecation", "-encoding", "UTF-8", "-feature", "-target:jvm-1.7", "-unchecked",
   "-Ywarn-adapted-args", "-Ywarn-value-discard", "-Xlint")
@@ -91,7 +92,7 @@ lazy val broadway_cli = (project in file("app-cli"))
       //
       // General Java Dependencies
       "commons-io" % "commons-io" % "2.4",
-//      "jline" % "jline" % "2.12",
+      //      "jline" % "jline" % "2.12",
       "joda-time" % "joda-time" % "2.9.1",
       "net.liftweb" %% "lift-json" % "3.0-M7",
       "org.joda" % "joda-convert" % "1.8.1",
@@ -104,7 +105,7 @@ lazy val broadway_cli = (project in file("app-cli"))
   )
 
 lazy val broadway_ui = (project in file("app-play"))
-  .dependsOn(broadway_cli)
+  .dependsOn(broadway_cli, broadway_js)
   .settings(
     name := "broadway_ui",
     organization := "com.github.ldaniels528",
@@ -127,15 +128,15 @@ lazy val broadway_ui = (project in file("app-play"))
       // Web Jar dependencies
       //
       "org.webjars" % "angularjs" % "1.4.8",
-//      "org.webjars" % "angularjs-nvd3-directives" % "0.0.7-1",
+      //      "org.webjars" % "angularjs-nvd3-directives" % "0.0.7-1",
       "org.webjars" % "angularjs-toaster" % "0.4.8",
-//      "org.webjars" % "angular-highlightjs" % "0.4.3",
+      //      "org.webjars" % "angular-highlightjs" % "0.4.3",
       "org.webjars" % "angular-ui-bootstrap" % "0.14.3",
       "org.webjars" % "angular-ui-router" % "0.2.13",
       "org.webjars" % "bootstrap" % "3.3.6",
       //"org.webjars" % "d3js" % "3.5.3",
       "org.webjars" % "font-awesome" % "4.5.0",
-//      "org.webjars" % "highlightjs" % "8.7",
+      //      "org.webjars" % "highlightjs" % "8.7",
       "org.webjars" % "jquery" % "2.1.3",
       "org.webjars" % "nervgh-angular-file-upload" % "2.1.1",
       "org.webjars" %% "webjars-play" % "2.4.0-1"
@@ -144,21 +145,42 @@ lazy val broadway_ui = (project in file("app-play"))
   .aggregate(broadway_js)
 
 lazy val broadway_tomcat = (project in file("app-tomcat"))
-  .dependsOn(broadway_ui)
+  .dependsOn(broadway_cli)
   .enablePlugins(TomcatPlugin)
   //.aggregate(broadway_ui)
   .settings(
-    name := "broadway_tomcat",
-    organization := "com.github.ldaniels528",
-    version := "0.1.0",
-    scalaVersion := myScalaVersion,
-    scalacOptions ++= myScalacOptions,
-    javacOptions ++= myJavacOptions,
-    containerShutdownOnExit := false,
-    libraryDependencies ++= Seq(
-      "javax.servlet" % "javax.servlet-api" % "3.0.1" % "provided"
-    )
+  name := "broadway_tomcat",
+  organization := "com.github.ldaniels528",
+  version := "0.1.0",
+  scalaVersion := myScalaVersion,
+  scalacOptions ++= myScalacOptions,
+  javacOptions ++= myJavacOptions,
+  containerShutdownOnExit := false,
+  libraryDependencies ++= Seq(
+    "io.spray" %% "spray-can" % sprayVersion,
+    "io.spray" %% "spray-servlet" % sprayVersion,
+    "io.spray" %% "spray-routing" % sprayVersion,
+    "io.spray" %% "spray-json" % "1.3.1",
+    "io.spray" %% "spray-testkit" % sprayVersion % "test",
+    "javax.servlet" % "javax.servlet-api" % "3.0.1" % "provided",
+    //
+    // Web Jar dependencies
+    //
+    "org.webjars" % "angularjs" % "1.4.8",
+    //      "org.webjars" % "angularjs-nvd3-directives" % "0.0.7-1",
+    "org.webjars" % "angularjs-toaster" % "0.4.8",
+    //      "org.webjars" % "angular-highlightjs" % "0.4.3",
+    "org.webjars" % "angular-ui-bootstrap" % "0.14.3",
+    "org.webjars" % "angular-ui-router" % "0.2.13",
+    "org.webjars" % "bootstrap" % "3.3.6",
+    //"org.webjars" % "d3js" % "3.5.3",
+    "org.webjars" % "font-awesome" % "4.5.0",
+    //      "org.webjars" % "highlightjs" % "8.7",
+    "org.webjars" % "jquery" % "2.1.3",
+    "org.webjars" % "nervgh-angular-file-upload" % "2.1.1",
+    "org.webjars" %% "webjars-play" % "2.4.0-1"
   )
+)
 
 // loads the jvm project at sbt startup
 onLoad in Global := (Command.process("project broadway_tomcat", _: State)) compose (onLoad in Global).value

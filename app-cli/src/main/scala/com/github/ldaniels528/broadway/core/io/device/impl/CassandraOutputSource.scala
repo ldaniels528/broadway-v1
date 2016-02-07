@@ -62,7 +62,7 @@ object CassandraOutputSource {
     */
   case class ConnectionInfo(keySpace: String, table: String, servers: Seq[String]) {
 
-    def connect() = {
+    def connect()(implicit scope: Scope) = {
       val cluster = servers.foldLeft[Cluster.Builder](new Cluster.Builder()) { case (builder, server) =>
         builder.addContactPoint(server)
         builder
