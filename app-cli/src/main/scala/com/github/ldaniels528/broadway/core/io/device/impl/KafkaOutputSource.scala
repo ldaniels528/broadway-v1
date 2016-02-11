@@ -8,10 +8,10 @@ import akka.util.Timeout
 import com.github.ldaniels528.broadway.core.actors.BroadwayActorSystem
 import com.github.ldaniels528.broadway.core.io.Scope
 import com.github.ldaniels528.broadway.core.io.device.impl.KafkaOutputSource._
-import com.github.ldaniels528.broadway.core.io.device.{AsynchronousOutputSupport, OutputSource}
-import com.github.ldaniels528.broadway.core.support.kafka.{ByteBufferUtils, KafkaPublisher, ZkProxy}
+import com.github.ldaniels528.broadway.core.io.device.{AsynchronousOutputSupport, DataSet, OutputSource}
 import com.github.ldaniels528.broadway.core.io.layout.Layout
 import com.github.ldaniels528.broadway.core.io.record.Record
+import com.github.ldaniels528.broadway.core.support.kafka.{ByteBufferUtils, KafkaPublisher, ZkProxy}
 import org.slf4j.LoggerFactory
 
 import scala.collection.concurrent.TrieMap
@@ -21,7 +21,6 @@ import scala.concurrent.duration._
 
 /**
   * Kafka Output Source
-  *
   * @author lawrence.daniels@gmail.com
   */
 case class KafkaOutputSource(id: String, topic: String, zk: ZkProxy, layout: Layout) extends OutputSource with AsynchronousOutputSupport {
@@ -48,10 +47,10 @@ case class KafkaOutputSource(id: String, topic: String, zk: ZkProxy, layout: Lay
     publisher.open()
   }
 
-  override def writeRecord(record: Record)(implicit scope: Scope) = {
+  override def writeRecord(record: Record, dataSet: DataSet)(implicit scope: Scope) = {
     implicit val timeout: Timeout = 15.seconds
     val key = ByteBufferUtils.uuidToBytes(UUID.randomUUID())
-    val message = record.convertToBinary
+    val message = dataSet.convertToBinary(record)
     (asyncActor ? publisher.publish(topic, key, message)) foreach (_ => updateCount(1))
     0
   }
@@ -60,6 +59,7 @@ case class KafkaOutputSource(id: String, topic: String, zk: ZkProxy, layout: Lay
 
 /**
   * Kafka Output IOSource Companion Object
+  * @author lawrence.daniels@gmail.com
   */
 object KafkaOutputSource {
   val asyncActor = BroadwayActorSystem.system.actorOf(Props[AsyncResultActor])

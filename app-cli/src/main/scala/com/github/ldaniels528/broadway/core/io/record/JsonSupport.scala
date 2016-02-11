@@ -3,6 +3,7 @@ package com.github.ldaniels528.broadway.core.io.record
 import java.util.Date
 
 import com.github.ldaniels528.broadway.core.io.Scope
+import com.github.ldaniels528.broadway.core.io.device.DataSet
 import com.github.ldaniels528.broadway.core.io.record.DataTypes._
 import com.github.ldaniels528.broadway.core.io.record.JsonSupport._
 import com.ldaniels528.commons.helpers.OptionHelper.Risky._
@@ -20,16 +21,15 @@ trait JsonSupport {
   protected val logger = LoggerFactory.getLogger(getClass)
 
   def fromJson(jsonString: String)(implicit scope: Scope) = {
-    Json.parse(jsonString) match {
-      case jsObject: JsObject => scope ++= toProperties(jsObject)
+    DataSet(Json.parse(jsonString) match {
+      case jsObject: JsObject => toProperties(jsObject) map { case (name, value) => name -> Option(value) }
       case js =>
-        logger.info(s"Unhandled JSON value '$js' (${js.getClass.getSimpleName})")
-    }
-    this
+        throw new IllegalArgumentException(s"Unhandled JSON value '$js' (${js.getClass.getSimpleName})")
+    })
   }
 
-  def toJson(implicit scope: Scope): JsObject = {
-    val jsValues = fields.map(f => f.name -> f.convertToJson)
+  def toJson(dataSet: DataSet)(implicit scope: Scope): JsObject = {
+    val jsValues = fields zip dataSet.values(fields) map { case (f, (_, v)) => f.name -> f.convertToJson(v) }
     jsValues.foldLeft(Json.obj()) { case (js, (k, v)) => js ++ Json.obj(k -> v) }
   }
 
@@ -81,8 +81,8 @@ object JsonSupport {
     */
   implicit class JsonSupportEnrichment(val field: Field) extends AnyVal {
 
-    def convertToJson(implicit scope: Scope): JsValue = {
-      field.value map { value =>
+    def convertToJson(aValue: Option[Any])(implicit scope: Scope): JsValue = {
+      aValue map { value =>
         field.`type` match {
           case BOOLEAN => JsBoolean(value == "true")
           case DATE => value match {

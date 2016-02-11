@@ -5,31 +5,36 @@
 
     <triggers>
         <StartUpTrigger id="Files_Combiner">
-            <flows>
-                <BasicFlow id="AMEX" input="AMEX.txt" output="kafka-topic" input-layout="eod_company_input_layout" output-layout="json-output"/>
-                <BasicFlow id="NASDAQ" input="NASDAQ.txt" output="kafka-topic" input-layout="eod_company_input_layout" output-layout="json-output"/>
-                <BasicFlow id="NYSE" input="NYSE.txt" output="kafka-topic" input-layout="eod_company_input_layout" output-layout="json-output"/>
-                <BasicFlow id="OTCBB" input="OTCBB.txt" output="kafka-topic" input-layout="eod_company_input_layout" output-layout="json-output"/>
-            </flows>
+            <Compositelow id="combiner">
+                <input-sources>
+                    <include source="AMEX.txt" />
+                    <include source="NASDAQ.txt" />
+                    <include source="NYSE.txt" />
+                    <include source="OTCBB.txt" />
+                </input-sources>
+                <output-sources>
+                    <include source="kafka-topic" />
+                </output-sources>
+            </Compositelow>
         </StartUpTrigger>
     </triggers>
 
     <data-sources>
-        <TextFileInputSource id="AMEX.txt" path="./app-cli/src/test/resources/files/AMEX.txt" />
-        <TextFileInputSource id="NASDAQ.txt" path="./app-cli/src/test/resources/files/NASDAQ.txt" />
-        <TextFileInputSource id="NYSE.txt" path="./app-cli/src/test/resources/files/NYSE.txt" />
-        <TextFileInputSource id="OTCBB.txt" path="./app-cli/src/test/resources/files/OTCBB.txt" />
-        <KafkaOutputSource id="kafka-topic" topic="shocktrade.companies.json" connectionString="vault114:2181" />
+        <TextFileInputSource id="AMEX.txt" path="./app-cli/src/test/resources/files/AMEX.txt" layout="eod_company_input_layout" />
+        <TextFileInputSource id="NASDAQ.txt" path="./app-cli/src/test/resources/files/NASDAQ.txt" layout="eod_company_input_layout" />
+        <TextFileInputSource id="NYSE.txt" path="./app-cli/src/test/resources/files/NYSE.txt" layout="eod_company_input_layout" />
+        <TextFileInputSource id="OTCBB.txt" path="./app-cli/src/test/resources/files/OTCBB.txt" layout="eod_company_input_layout" />
+        <KafkaOutputSource id="kafka-topic" topic="shocktrade.companies.json" connectionString="vault114:2181" layout="json-output" />
     </data-sources>
 
     <layouts>
-        <TextLayout id="json-output">
+        <MultiPartLayout id="json-output">
             <body>
-                <record format="json">
-                    <field>symbol</field>
-                    <field>description</field>
+                <record id="json_body" format="json">
+                    <field name="symbol" type="string">{{ symbol }}</field>
+                    <field name="description" type="string">{{ description }}</field>
                 </record>
             </body>
-        </TextLayout>
+        </MultiPartLayout>
     </layouts>
 </story>

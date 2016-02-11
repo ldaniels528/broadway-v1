@@ -3,8 +3,8 @@ package com.github.ldaniels528.broadway.core.io.device.impl
 import java.util.UUID
 
 import com.github.ldaniels528.broadway.core.io.Scope
-import com.github.ldaniels528.broadway.core.io.device.OutputSource
 import com.github.ldaniels528.broadway.core.io.device.impl.DocumentDBOutputSource.DocumentDBConnectionInfo
+import com.github.ldaniels528.broadway.core.io.device.{DataSet, OutputSource}
 import com.github.ldaniels528.broadway.core.io.layout.Layout
 import com.github.ldaniels528.broadway.core.io.record.Record
 import com.ldaniels528.commons.helpers.OptionHelper._
@@ -46,10 +46,10 @@ case class DocumentDBOutputSource(id: String, options: DocumentDBConnectionInfo,
     ()
   }
 
-  override def writeRecord(record: Record)(implicit scope: Scope) = {
+  override def writeRecord(record: Record, dataSet: DataSet)(implicit scope: Scope) = {
     scope.getResource[DocumentClient](uuid) map { client =>
       val link = docCollLink orDie "Document collection link not set"
-      val doc = new Document(record.convertToJson.toString())
+      val doc = new Document(dataSet.convertToJson(record).toString())
       val options = new RequestOptions()
       val disableAutomaticIdGen = false
       val response = client.createDocument(link, doc, options, disableAutomaticIdGen)

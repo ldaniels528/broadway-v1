@@ -37,13 +37,13 @@
         <MultiPartLayout id="sql_layout">
             <body>
                 <record id="sql_body" format="none">
-                    <field name="symbol" type="string" value="{{ csv_body.ticker }}"/>
-                    <field name="tradeDate" type="date" value="{{ csv_body.date | date:parse:yyyyMMdd }}"/>
-                    <field name="daysOpen" type="double" value="{{ csv_body.open }}"/>
-                    <field name="daysHigh" type="double" value="{{ csv_body.high }}"/>
-                    <field name="daysLow" type="double" value="{{ csv_body.low }}"/>
-                    <field name="daysClose" type="string" value="{{ csv_body.close }}"/>
-                    <field name="volume" type="long" value="{{ csv_body.volume }}"/>
+                    <field name="symbol" type="string" value="{{ ticker }}"/>
+                    <field name="tradeDate" type="date" value="{{ date | date:parse:yyyyMMdd }}"/>
+                    <field name="daysOpen" type="double" value="{{ open }}"/>
+                    <field name="daysHigh" type="double" value="{{ high }}"/>
+                    <field name="daysLow" type="double" value="{{ low }}"/>
+                    <field name="daysClose" type="string" value="{{ close }}"/>
+                    <field name="volume" type="long" value="{{ volume }}"/>
                 </record>
             </body>
         </MultiPartLayout>

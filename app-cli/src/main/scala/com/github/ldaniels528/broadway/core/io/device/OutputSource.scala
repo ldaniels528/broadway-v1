@@ -9,6 +9,6 @@ import com.github.ldaniels528.broadway.core.io.record.Record
   */
 trait OutputSource extends DataSource {
 
-  def writeRecord(record: Record)(implicit scope: Scope): Int
+  def writeRecord(record: Record, dataSet: DataSet)(implicit scope: Scope): Int
 
 }

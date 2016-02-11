@@ -5,12 +5,17 @@
 
     <triggers>
         <StartUpTrigger id="File_Combining_Trigger">
-            <CompositeInputFlow id="combiner" output-source="output.txt">
-                <include input-source="AMEX.txt" />
-                <include input-source="NASDAQ.txt" />
-                <include input-source="NYSE.txt" />
-                <include input-source="OTCBB.txt" />
-            </CompositeInputFlow>
+            <Compositelow id="combiner">
+                <input-sources>
+                    <include source="AMEX.txt" />
+                    <include source="NASDAQ.txt" />
+                    <include source="NYSE.txt" />
+                    <include source="OTCBB.txt" />
+                </input-sources>
+                <output-sources>
+                    <include source="output.txt" />
+                </output-sources>
+            </Compositelow>
         </StartUpTrigger>
     </triggers>
 
@@ -26,8 +31,8 @@
         <MultiPartLayout id="json-output">
             <body>
                 <record id="json_body" format="json">
-                    <field name="symbol" type="string" value="{{ delimited_body.symbol }}" />
-                    <field name="description" type="string" value="{{ delimited_body.description }}" />
+                    <field name="symbol" type="string">{{ symbol }}</field>
+                    <field name="description" type="string">{{ description }}</field>
                 </record>
             </body>
         </MultiPartLayout>

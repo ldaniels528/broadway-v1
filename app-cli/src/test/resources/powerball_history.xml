@@ -5,11 +5,16 @@
 
     <triggers>
         <StartUpTrigger id="powerball_file_trigger">
-            <CompositeOutputFlow id="dual_output_flow" input-source="input_file">
-                <include output-source="csv_output" />
-                <include output-source="sql_output" />
-                <include output-source="docdb_output" />
-            </CompositeOutputFlow>
+            <CompositeFlow id="dual_output_flow">
+                <input-sources>
+                    <include source="input_file" />
+                </input-sources>
+                <output-sources>
+                    <include source="csv_output" />
+                    <include source="sql_output" />
+                    <include source="docdb_output" />
+                </output-sources>
+            </CompositeFlow>
         </StartUpTrigger>
     </triggers>
 
@@ -82,14 +87,14 @@
             </header>
             <body>
                 <record id="csv_body" format="csv">
-                    <field name="draw_num" type="string">{{ fixed_body.draw_num }}</field>
-                    <field name="draw_date" type="string">{{ fixed_body.draw_date | date:parse:"EEE'.' MMM dd',' yyyy" | date:format:yyyyMMdd }}</field>
-                    <field name="number_1" type="string">{{ fixed_body.number_1 }}</field>
-                    <field name="number_2" type="string">{{ fixed_body.number_2 }}</field>
-                    <field name="number_3" type="string">{{ fixed_body.number_3 }}</field>
-                    <field name="number_4" type="string">{{ fixed_body.number_4 }}</field>
-                    <field name="number_5" type="string">{{ fixed_body.number_5 }}</field>
-                    <field name="powerball" type="string">{{ fixed_body.powerball }}</field>
+                    <field name="draw_num" type="string">{{ draw_num }}</field>
+                    <field name="draw_date" type="string">{{ draw_date | date:parse:"EEE'.' MMM dd',' yyyy" | date:format:yyyyMMdd }}</field>
+                    <field name="number_1" type="string">{{ number_1 }}</field>
+                    <field name="number_2" type="string">{{ number_2 }}</field>
+                    <field name="number_3" type="string">{{ number_3 }}</field>
+                    <field name="number_4" type="string">{{ number_4 }}</field>
+                    <field name="number_5" type="string">{{ number_5 }}</field>
+                    <field name="powerball" type="string">{{ powerball }}</field>
                 </record>
             </body>
         </MultiPartLayout>
@@ -97,14 +102,14 @@
         <MultiPartLayout id="json_layout">
             <body>
                 <record id="history_json" format="json">
-                    <field name="draw_num" type="string">{{ fixed_body.draw_num }}</field>
-                    <field name="draw_date" type="date">{{ fixed_body.draw_date | date:parse:"EEE'.' MMM dd',' yyyy" }}</field>
-                    <field name="number_1" type="string">{{ fixed_body.number_1 }}</field>
-                    <field name="number_2" type="string">{{ fixed_body.number_2 }}</field>
-                    <field name="number_3" type="string">{{ fixed_body.number_3 }}</field>
-                    <field name="number_4" type="string">{{ fixed_body.number_4 }}</field>
-                    <field name="number_5" type="string">{{ fixed_body.number_5 }}</field>
-                    <field name="powerball" type="string">{{ fixed_body.powerball }}</field>
+                    <field name="draw_num" type="string">{{ draw_num }}</field>
+                    <field name="draw_date" type="date">{{ draw_date | date:parse:"EEE'.' MMM dd',' yyyy" }}</field>
+                    <field name="number_1" type="string">{{ number_1 }}</field>
+                    <field name="number_2" type="string">{{ number_2 }}</field>
+                    <field name="number_3" type="string">{{ number_3 }}</field>
+                    <field name="number_4" type="string">{{ number_4 }}</field>
+                    <field name="number_5" type="string">{{ number_5 }}</field>
+                    <field name="powerball" type="string">{{ powerball }}</field>
                 </record>
             </body>
         </MultiPartLayout>
@@ -112,14 +117,14 @@
         <MultiPartLayout id="sql_layout">
             <body>
                 <record id="history_sql" type="sql">
-                    <field name="draw_num" type="string">{{ fixed_body.draw_num }}</field>
-                    <field name="draw_date" type="date">{{ fixed_body.draw_date | date:parse:"EEE'.' MMM dd',' yyyy" }}</field>
-                    <field name="number_1" type="string">{{ fixed_body.number_1 }}</field>
-                    <field name="number_2" type="string">{{ fixed_body.number_2 }}</field>
-                    <field name="number_3" type="string">{{ fixed_body.number_3 }}</field>
-                    <field name="number_4" type="string">{{ fixed_body.number_4 }}</field>
-                    <field name="number_5" type="string">{{ fixed_body.number_5 }}</field>
-                    <field name="powerball" type="string">{{ fixed_body.powerball }}</field>
+                    <field name="draw_num" type="string">{{ draw_num }}</field>
+                    <field name="draw_date" type="date">{{ draw_date | date:parse:"EEE'.' MMM dd',' yyyy" }}</field>
+                    <field name="number_1" type="string">{{ number_1 }}</field>
+                    <field name="number_2" type="string">{{ number_2 }}</field>
+                    <field name="number_3" type="string">{{ number_3 }}</field>
+                    <field name="number_4" type="string">{{ number_4 }}</field>
+                    <field name="number_5" type="string">{{ number_5 }}</field>
+                    <field name="powerball" type="string">{{ powerball }}</field>
                 </record>
             </body>
         </MultiPartLayout>

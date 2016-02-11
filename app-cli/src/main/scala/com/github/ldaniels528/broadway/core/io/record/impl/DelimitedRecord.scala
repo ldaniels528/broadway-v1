@@ -1,6 +1,7 @@
 package com.github.ldaniels528.broadway.core.io.record.impl
 
 import com.github.ldaniels528.broadway.core.io.Scope
+import com.github.ldaniels528.broadway.core.io.device.DataSet
 import com.github.ldaniels528.broadway.core.io.record.Field._
 import com.github.ldaniels528.broadway.core.io.record.{Field, Record, TextSupport}
 
@@ -16,14 +17,25 @@ case class DelimitedRecord(id: String,
   extends Record with TextSupport {
 
   override def fromText(line: String)(implicit scope: Scope) = {
-    val values = fromDelimitedText(line)
-    fields zip values foreach { case (field, value) =>
-      field.value = value.convert(field.`type`)
-    }
-    this
+    val rawValues = fromDelimitedText(line)
+    val delta = fields.size - rawValues.size
+    val values = rawValues ++ (if (delta > 0) fields.takeRight(delta).map(_.defaultValue.getOrElse("")) else Nil)
+    DataSet(fields zip values map {
+      case (field, value: String) =>
+        field.name -> value.convert(field.`type`)
+      case (field, value) =>
+        field.name -> Option(value)
+    })
   }
 
-  override def toText(implicit scope: Scope) = toDelimitedText(fields.map(_.value.getOrElse("")))
+  override def toText(dataSet: DataSet)(implicit scope: Scope) = {
+    toDelimitedText(dataSet.values(fields) map {
+      case (name, Some(value: String)) =>
+        scope.evaluate(value) getOrElse value
+      case (name, value) =>
+        value.map(_.toString) getOrElse ""
+    })
+  }
 
   private def fromDelimitedText(text: String) = {
     var inQuotes = false

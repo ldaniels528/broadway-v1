@@ -66,9 +66,9 @@ lazy val broadway_cli = (project in file("app-cli"))
       "com.microsoft.sqlserver" % "sqljdbc4" % "4.0",
       //
       // Avro Dependencies
-      "com.twitter" %% "bijection-core" % "0.7.2",
-      "com.twitter" %% "bijection-avro" % "0.7.2",
-      "org.apache.avro" % "avro" % "1.7.7",
+      "com.twitter" %% "bijection-core" % "0.9.0",
+      "com.twitter" %% "bijection-avro" % "0.9.0",
+      "org.apache.avro" % "avro" % "1.8.0",
       //
       // Akka dependencies
       "com.typesafe.akka" %% "akka-actor" % myAkkaVersion,
@@ -92,11 +92,12 @@ lazy val broadway_cli = (project in file("app-cli"))
       //
       // General Java Dependencies
       "commons-io" % "commons-io" % "2.4",
-      //      "jline" % "jline" % "2.12",
+      //"jline" % "jline" % "2.12",
       "joda-time" % "joda-time" % "2.9.1",
       "net.liftweb" %% "lift-json" % "3.0-M7",
       "org.joda" % "joda-convert" % "1.8.1",
-      "org.slf4j" % "slf4j-api" % "1.7.14",
+      "org.slf4j" % "slf4j-api" % "1.7.16",
+      "org.slf4j" % "slf4j-log4j12" % "1.7.16",
       //
       // Testing dependencies
       "org.mockito" % "mockito-all" % "1.10.19" % "test",

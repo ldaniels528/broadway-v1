@@ -4,7 +4,7 @@ import java.io.{BufferedWriter, File, FileWriter}
 import java.util.UUID
 
 import com.github.ldaniels528.broadway.core.io.Scope
-import com.github.ldaniels528.broadway.core.io.device.OutputSource
+import com.github.ldaniels528.broadway.core.io.device.{DataSet, OutputSource}
 import com.github.ldaniels528.broadway.core.io.layout._
 import com.github.ldaniels528.broadway.core.io.record.Record
 import com.ldaniels528.commons.helpers.OptionHelper._
@@ -35,9 +35,9 @@ case class TextFileOutputSource(id: String, path: String, layout: Layout) extend
     ()
   }
 
-  override def writeRecord(record: Record)(implicit scope: Scope) = {
+  override def writeRecord(record: Record, dataSet: DataSet)(implicit scope: Scope) = {
     scope.getResource[BufferedWriter](uuid) map { writer =>
-      writer.write(record.convertToText)
+      writer.write(dataSet.convertToText(record))
       writer.newLine()
       updateCount(1)
     } orDie s"Text file output source '$id' has not been opened"

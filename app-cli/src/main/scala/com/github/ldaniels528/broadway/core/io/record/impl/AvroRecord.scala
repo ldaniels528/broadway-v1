@@ -1,10 +1,11 @@
 package com.github.ldaniels528.broadway.core.io.record.impl
 
 import com.github.ldaniels528.broadway.core.io.Scope
+import com.github.ldaniels528.broadway.core.io.device.DataSet
 import com.github.ldaniels528.broadway.core.io.record._
 import com.github.ldaniels528.broadway.core.support.AvroConversion._
 import org.apache.avro.Schema
-import play.api.libs.json.{JsArray, JsObject, Json}
+import play.api.libs.json.{JsArray, JsObject, JsString, Json}
 
 /**
   * Avro Record implementation
@@ -19,13 +20,13 @@ case class AvroRecord(id: String, name: String, namespace: String, fields: Seq[F
     fromJson(transcodeAvroBytesToAvroJson(schema, bytes))
   }
 
-  override def toBytes(implicit scope: Scope) = {
-    transcodeJsonToAvroBytes(toJson.toString(), schema)
+  override def toBytes(dataSet: DataSet)(implicit scope: Scope) = {
+    transcodeJsonToAvroBytes(toJson(dataSet).toString(), schema)
   }
 
   override def fromText(line: String)(implicit scope: Scope) = fromJson(line)
 
-  override def toText(implicit scope: Scope) = toJson.toString()
+  override def toText(dataSet: DataSet)(implicit scope: Scope) = toJson(dataSet).toString()
 
   /**
     * Generates the Avro Schema
@@ -39,9 +40,20 @@ case class AvroRecord(id: String, name: String, namespace: String, fields: Seq[F
       "fields" -> JsArray(fields.foldLeft[List[JsObject]](Nil) { (list, field) =>
         Json.obj(
           "name" -> field.name,
-          "type" -> field.`type`.toTypeName,
-          "doc" -> "auto-generated comment") :: list
+          "doc" -> "auto-generated comment") ++ toAvroType(field) :: list
       })) toString()
+  }
+
+  /**
+    * Generates the Avro type object (e.g. '"type": ["null", "string"]')
+    * @param field the given field whose type is being modeled
+    * @return the type object
+    */
+  private def toAvroType(field: Field) = {
+    if (field.nullable.contains(true))
+      Json.obj("type" -> JsArray(Seq("null", field.`type`.toTypeName) map JsString))
+    else
+      Json.obj("type" -> field.`type`.toTypeName)
   }
 
 }

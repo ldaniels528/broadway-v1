@@ -29,7 +29,7 @@ case class SimpleFlow(id: String, input: InputSource, output: OutputSource) exte
       inputSet = input.layout.read(input)
 
       // transform the output record(s)
-      inputSet.filter(_.records.nonEmpty).foreach(output.layout.write(output, _))
+      inputSet.foreach(output.layout.write(output, _))
 
     } while (inputSet.exists(!_.isEOF))
 

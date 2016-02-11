@@ -12,7 +12,7 @@ import com.github.ldaniels528.broadway.core.io.device.impl._
 import com.github.ldaniels528.broadway.core.io.filters.Filter
 import com.github.ldaniels528.broadway.core.io.filters.impl.{DateFilter, TrimFilter}
 import com.github.ldaniels528.broadway.core.io.flow._
-import com.github.ldaniels528.broadway.core.io.flow.impl.{CompositeInputFlow, CompositeOutputFlow, SimpleFlow}
+import com.github.ldaniels528.broadway.core.io.flow.impl.{CompositeFlow, SimpleFlow}
 import com.github.ldaniels528.broadway.core.io.layout._
 import com.github.ldaniels528.broadway.core.io.layout.impl.MultiPartLayout
 import com.github.ldaniels528.broadway.core.io.layout.impl.MultiPartLayout.Section
@@ -95,7 +95,6 @@ class StoryConfigParser() {
     (rootNode \ "data-sources") flatMap { devicesNode =>
       devicesNode.child.filter(_.label != "#PCDATA") map { node =>
         node.label match {
-          case "CompositeOutputSource" => parseDataSources_CompositeOutputSource(node, layouts)
           case "ConcurrentOutputSource" => parseDataSources_ConcurrentOutput(node, layouts)
           case "DocumentDBOutputSource" => parseDataSources_DocumentDBOutput(node, layouts)
           case "KafkaOutputSource" => parseDataSources_KafkaOutput(node, layouts)
@@ -108,12 +107,6 @@ class StoryConfigParser() {
         }
       }
     }
-  }
-
-  private def parseDataSources_CompositeOutputSource(node: Node, layouts: Seq[Layout]) = {
-    CompositeOutputSource(
-      id = node \\@ "id",
-      devices = parseDataSources(node, layouts).requireType[OutputSource](_.id, "output source"))
   }
 
   private def parseDataSources_ConcurrentOutput(node: Node, layouts: Seq[Layout]) = {
@@ -183,8 +176,7 @@ class StoryConfigParser() {
   private def parseFlows(rootNode: Node, devices: Seq[DataSource], layouts: Seq[Layout]): Seq[Flow] = {
     rootNode.child.filter(_.label != "#PCDATA") map { node =>
       node.label match {
-        case "CompositeInputFlow" => parseFlows_CompositeInput(node, devices)
-        case "CompositeOutputFlow" => parseFlows_CompositeOutput(node, devices)
+        case "CompositeFlow" => parseFlows_Composite(node, devices)
         case "SimpleFlow" => parseFlows_Simple(node, devices)
         case label =>
           throw new IllegalArgumentException(s"Invalid flow reference '$label'")
@@ -192,21 +184,14 @@ class StoryConfigParser() {
     }
   }
 
-  private def parseFlows_CompositeInput(node: Node, devices: Seq[DataSource]) = {
-    CompositeInputFlow(
+  private def parseFlows_Composite(node: Node, devices: Seq[DataSource]) = {
+    CompositeFlow(
       id = node \\@ "id",
-      output = lookupOutputDataSource(devices, id = node \\@ "output-source"),
-      inputs = (node \ "include") map { includeNode =>
-        lookupInputDataSource(devices, id = includeNode \\@ "input-source")
-      })
-  }
-
-  private def parseFlows_CompositeOutput(node: Node, devices: Seq[DataSource]) = {
-    CompositeOutputFlow(
-      id = node \\@ "id",
-      input = lookupInputDataSource(devices, id = node \\@ "input-source"),
-      outputs = (node \ "include") map { includeNode =>
-        lookupOutputDataSource(devices, id = includeNode \\@ "output-source")
+      inputs = (node \ "input-sources" \ "include") map { includeNode =>
+        lookupInputDataSource(devices, id = includeNode \\@ "source")
+      },
+      outputs = (node \ "output-sources" \ "include") map { includeNode =>
+        lookupOutputDataSource(devices, id = includeNode \\@ "source")
       })
   }
 
@@ -283,13 +268,14 @@ class StoryConfigParser() {
   }
 
   private def parseRecord_Field(recordId: String, node: Node) = {
-    val name = node \\@ "name"
     Field(
-      name = name,
-      path = s"$recordId.$name",
+      name = node \\@ "name",
       `type` = (node \?@ "type").map(_.toUpperCase) map DataTypes.withName getOrElse DataTypes.STRING,
       defaultValue = node \?@ "value" ?? node.text_?,
-      length = (node \?@ "length") map (_.toInt))
+      length = (node \?@ "length") map (_.toInt),
+      nullable = (node \?@ "nullable") map (_.toBoolean),
+      updateKey = (node \?@ "updateKey") map (_.split(',').map(_.trim))
+    )
   }
 
   private def parseRecord_Format(node: Node, id: String, fields: Seq[Field], format: String) = {

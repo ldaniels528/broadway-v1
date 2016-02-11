@@ -3,7 +3,7 @@ package com.github.ldaniels528.broadway.core.io.device.impl
 import java.util.UUID
 
 import com.github.ldaniels528.broadway.core.io.Scope
-import com.github.ldaniels528.broadway.core.io.device.OutputSource
+import com.github.ldaniels528.broadway.core.io.device.{DataSet, OutputSource}
 import com.github.ldaniels528.broadway.core.io.device.impl.MongoDbOutputSource._
 import com.github.ldaniels528.broadway.core.io.layout._
 import com.github.ldaniels528.broadway.core.io.record.Record
@@ -41,11 +41,11 @@ case class MongoDbOutputSource(id: String, serverList: String, database: String,
     scope.discardResource[MongoConnection](connUUID).foreach(_.close())
   }
 
-  override def writeRecord(record: Record)(implicit scope: Scope) = {
+  override def writeRecord(record: Record, dataSet: DataSet)(implicit scope: Scope) = {
     (for {
       mc <- scope.getResource[MongoCollection](collUUID)
     } yield {
-      val doc = toDocument(record.convertToJson)
+      val doc = toDocument(dataSet.convertToJson(record))
       val result = mc.insert(doc, writeConcern)
       updateCount(if (result.wasAcknowledged()) result.getN else 1)
     }) getOrElse 0

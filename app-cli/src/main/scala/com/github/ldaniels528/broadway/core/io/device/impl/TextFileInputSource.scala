@@ -4,18 +4,20 @@ import java.io.{BufferedReader, File, FileReader}
 import java.util.UUID
 
 import com.github.ldaniels528.broadway.core.io.Scope
-import com.github.ldaniels528.broadway.core.io.device.TextReadingSupport.TextInput
-import com.github.ldaniels528.broadway.core.io.device.{InputSource, TextReadingSupport}
+import com.github.ldaniels528.broadway.core.io.device.InputSource
 import com.github.ldaniels528.broadway.core.io.layout._
+import com.github.ldaniels528.broadway.core.io.record.{Record, TextSupport, UnsupportedRecordTypeException}
 
 /**
   * Text File Input Source
   * @author lawrence.daniels@gmail.com
   */
-case class TextFileInputSource(id: String, path: String, layout: Layout) extends InputSource with TextReadingSupport {
+case class TextFileInputSource(id: String, path: String, layout: Layout) extends InputSource {
   private val uuid = UUID.randomUUID()
 
-  override def close(implicit scope: Scope) = scope.discardResource[BufferedReader](uuid).foreach(_.close())
+  override def close(implicit scope: Scope) = {
+    scope.discardResource[BufferedReader](uuid).foreach(_.close())
+  }
 
   override def open(implicit scope: Scope) = {
     val file = new File(scope.evaluateAsString(path))
@@ -32,13 +34,18 @@ case class TextFileInputSource(id: String, path: String, layout: Layout) extends
     ()
   }
 
-  override def readText(implicit scope: Scope) = {
+  override def read(record: Record)(implicit scope: Scope) = {
     for {
       reader <- scope.getResource[BufferedReader](uuid)
       line <- Option(reader.readLine)
       _ = updateCount(1)
       offset = getStatistics.offset
-    } yield TextInput(line, offset)
+    } yield {
+      record match {
+        case rec: TextSupport => rec.fromText(line)
+        case rec => throw new UnsupportedRecordTypeException(rec)
+      }
+    }
   }
 
 }

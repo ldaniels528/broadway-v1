@@ -31,13 +31,13 @@
         <MultiPartLayout id="mongo_layout">
             <body>
                 <record id="json_body" format="json">
-                    <field name="ticker" type="string" value="{{ csv_body.ticker }}"/>
-                    <field name="date" type="string" value="{{ csv_body.date }}"/>
-                    <field name="open" type="double" value="{{ csv_body.open }}"/>
-                    <field name="high" type="double" value="{{ csv_body.high }}"/>
-                    <field name="low" type="double" value="{{ csv_body.low }}"/>
-                    <field name="close" type="string" value="{{ csv_body.close }}"/>
-                    <field name="volume" type="long" value="{{ csv_body.volume }}"/>
+                    <field name="ticker" type="string" value="{{ ticker }}"/>
+                    <field name="date" type="string" value="{{ date }}"/>
+                    <field name="open" type="double" value="{{ open }}"/>
+                    <field name="high" type="double" value="{{ high }}"/>
+                    <field name="low" type="double" value="{{ low }}"/>
+                    <field name="close" type="string" value="{{ close }}"/>
+                    <field name="volume" type="long" value="{{ volume }}"/>
                 </record>
             </body>
         </MultiPartLayout>

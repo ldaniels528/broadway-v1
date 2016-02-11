@@ -6,7 +6,7 @@ import akka.util.Timeout
 import com.github.ldaniels528.broadway.core.actors.{BroadwayActorSystem, TaskActorPool}
 import com.github.ldaniels528.broadway.core.io.Scope
 import com.github.ldaniels528.broadway.core.io.device.impl.ConcurrentOutputSource._
-import com.github.ldaniels528.broadway.core.io.device.{AsynchronousOutputSupport, OutputSource}
+import com.github.ldaniels528.broadway.core.io.device.{AsynchronousOutputSupport, DataSet, OutputSource}
 import com.github.ldaniels528.broadway.core.io.record.Record
 import com.ldaniels528.commons.helpers.OptionHelper._
 
@@ -43,11 +43,11 @@ case class ConcurrentOutputSource(id: String, concurrency: Int, devices: Seq[Out
     devices.foreach(_.open(scope))
   }
 
-  override def writeRecord(record: Record)(implicit scope: Scope) = {
+  override def writeRecord(record: Record, dataSet: DataSet)(implicit scope: Scope) = {
     implicit val timeout: Timeout = 30.seconds
     lastWrite = System.currentTimeMillis()
     ticker += 1
-    val promise = taskActorPool ? (() => devices(ticker % devices.length).writeRecord(record))
+    val promise = taskActorPool ? (() => devices(ticker % devices.length).writeRecord(record, dataSet))
     promise foreach updateCount
     0
   }

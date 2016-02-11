@@ -1,6 +1,7 @@
 package com.github.ldaniels528.broadway.core.io.record
 
 import com.github.ldaniels528.broadway.core.io.Scope
+import com.github.ldaniels528.broadway.core.io.device.DataSet
 
 /**
   * Represents binary-representation support capability for a record
@@ -9,8 +10,8 @@ import com.github.ldaniels528.broadway.core.io.Scope
 trait BinarySupport {
   self: Record =>
 
-  def fromBytes(bytes: Array[Byte])(implicit scope: Scope): Record
+  def fromBytes(bytes: Array[Byte])(implicit scope: Scope): DataSet
 
-  def toBytes(implicit scope: Scope): Array[Byte]
+  def toBytes(dataSet: DataSet)(implicit scope: Scope): Array[Byte]
 
 }

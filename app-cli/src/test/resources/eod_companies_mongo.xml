@@ -5,12 +5,17 @@
 
     <triggers>
         <StartUpTrigger id="Files_Combiner">
-            <CompositionFlow id="combiner" output-source="mongodb">
-                <include input-source="AMEX.txt" />
-                <include input-source="NASDAQ.txt" />
-                <include input-source="NYSE.txt" />
-                <include input-source="OTCBB.txt" />
-            </CompositionFlow>
+            <Compositelow id="combiner">
+                <input-sources>
+                    <include source="AMEX.txt" />
+                    <include source="NASDAQ.txt" />
+                    <include source="NYSE.txt" />
+                    <include source="OTCBB.txt" />
+                </input-sources>
+                <output-sources>
+                    <include source="mongodb" />
+                </output-sources>
+            </Compositelow>
         </StartUpTrigger>
     </triggers>
 

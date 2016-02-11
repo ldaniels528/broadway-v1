@@ -1,8 +1,10 @@
 package com.github.ldaniels528.broadway.core.io.record.impl
 
 import com.github.ldaniels528.broadway.core.io.Scope
+import com.github.ldaniels528.broadway.core.io.device.DataSet
 import com.github.ldaniels528.broadway.core.io.record.Field._
 import com.github.ldaniels528.broadway.core.io.record.{Field, Record, TextSupport}
+import com.ldaniels528.commons.helpers.OptionHelper._
 
 import scala.language.postfixOps
 
@@ -14,17 +16,21 @@ case class FixedRecord(id: String, fields: Seq[Field]) extends Record with TextS
 
   override def fromText(line: String)(implicit scope: Scope) = {
     var pos = 0
-    fields foreach { field =>
+    DataSet(fields map { field =>
       val length = field.length getOrElse 1
-      field.value = extract(line, pos, pos + length).trim.convert(field.`type`)
+      val value = extract(line, pos, pos + length).trim.convert(field.`type`)
       pos += length
-    }
-    this
+      field.name -> value
+    })
   }
 
-  override def toText(implicit scope: Scope) = {
-    fields.foldLeft[StringBuilder](new StringBuilder) { (sb, field) =>
-      val raw = field.value.map(_.toString).getOrElse("")
+  override def toText(dataSet: DataSet)(implicit scope: Scope) = {
+    (fields zip dataSet.values(fields)).foldLeft[StringBuilder](new StringBuilder(length)) { case (sb, (field, (_, value))) =>
+      val resolvedValue = value match {
+        case Some(expr: String) => scope.evaluate(expr) ?? value
+        case _ => value
+      }
+      val raw = resolvedValue.map(_.toString).getOrElse("")
       val length = field.length.getOrElse(raw.length)
       val sized = if (raw.length > length) raw.take(length) else raw + " " * (length - raw.length)
       sb.append(sized)
@@ -35,13 +41,13 @@ case class FixedRecord(id: String, fields: Seq[Field]) extends Record with TextS
     * Returns the record length
     * @return the record length
     */
-  def length = fields.flatMap(_.length).sum
+  lazy val length = fields.map(_.length.getOrElse(1)).sum
 
   /**
     * Extracts a fixed-length portion of the given text
-    * @param text the given text
+    * @param text  the given text
     * @param start the starting position of the substring
-    * @param end the ending position of the substring
+    * @param end   the ending position of the substring
     * @return a fixed-length portion
     */
   private def extract(text: String, start: Int, end: Int) = {

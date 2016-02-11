@@ -1,7 +1,6 @@
 package com.github.ldaniels528.broadway.core.io.layout.impl
 
 import com.github.ldaniels528.broadway.core.io.Scope
-import com.github.ldaniels528.broadway.core.io.device.TextReadingSupport.TextInput
 import com.github.ldaniels528.broadway.core.io.device._
 import com.github.ldaniels528.broadway.core.io.layout.Layout
 import com.github.ldaniels528.broadway.core.io.layout.Layout.InputSet
@@ -15,54 +14,86 @@ import scala.collection.concurrent.TrieMap
   * @author lawrence.daniels@gmail.com
   */
 case class MultiPartLayout(id: String, body: Section, header: Option[Section], trailer: Option[Section]) extends Layout {
-  private val buffers = TrieMap[InputSource, List[TextInput]]()
+  private val buffers = TrieMap[InputSource, List[DataSet]]()
 
   override def read(device: InputSource)(implicit scope: Scope) = {
-    val textInput = readLine(device)
-    val records = textInput match {
+    device.getStatistics.offset match {
       // extract-only the optional header record(s)
-      case Some(input) if input.isHeader =>
-        header.foreach(_.records.foreach(_.importText(input.textInput.line)))
-        Nil
+      case offset if isHeader(offset) =>
+        for {
+          head <- header
+          dataSet <- device.read(head.records(offset.toInt))
+        } yield {
+          scope ++= dataSet.data
+          InputSet(dataSets = Nil, offset = offset, isEOF = false)
+        }
 
       // extract-only the optional trailer record(s)
-      case Some(input) if input.isTrailer =>
-        trailer.foreach(_.records.foreach(_.importText(input.textInput.line)))
-        Nil
+      case offset if isTrailer(device) =>
+        for {
+          buffer <- buffers.get(device)
+          footer <- trailer
+          record = footer.records(footer.records.length - buffer.length)
+          dataSet <- device.read(record)
+        } yield {
+          scope ++= dataSet.data
+          InputSet(dataSets = Nil, offset = offset, isEOF = false)
+        }
 
       // extract & populate the body record(s)
-      case Some(input) =>
-        body.records.map(_.importText(input.textInput.line))
+      case offset =>
+        // TODO implement read ahead here
 
-      // end-of-files
-      case None =>
-        buffers.clear()
-        Nil
+        val record = body.records(offset.toInt % body.records.length)
+        device.read(record) map { dataSet =>
+          InputSet(dataSets = Seq(dataSet), offset = offset, isEOF = false)
+        }
     }
-
-    InputSet(records, offset = device.getStatistics.offset, isEOF = textInput.isEmpty)
   }
 
-  override def write(device: OutputSource, inputSet: InputSet)(implicit scope: Scope) {
+  private def isHeader(offset: Long) = header.exists(offset < _.records.length)
+
+  private def isTrailer(device: InputSource) = {
+    (for {
+      buffer <- buffers.get(device)
+      footer <- trailer
+    } yield buffer.length <= footer.records.length).contains(true)
+  }
+
+  override def write(device: OutputSource, inputSet: Option[InputSet])(implicit scope: Scope) {
     inputSet match {
-      case is if is.isEOF => trailer.foreach(_.records foreach device.writeRecord)
-      case is =>
-        if (device.getStatistics.offset == 0L) header.foreach(_.records foreach device.writeRecord)
-        body.records foreach device.writeRecord
+      case Some(is) =>
+        // write the header records
+        if (device.getStatistics.offset == 0L) {
+          header.foreach(_.records foreach { record =>
+            device.writeRecord(record, record.toDataSet)
+          })
+        }
+
+        // write the body
+        for {
+          record <- body.records
+          dataSet <- is.dataSets
+        } device.writeRecord(record, dataSet)
+
+      case None =>
+        // write the trailer records
+        trailer.foreach(_.records foreach { record =>
+          device.writeRecord(record, record.toDataSet)
+        })
     }
   }
 
-
-  private def readLine(device: InputSource)(implicit scope: Scope) = {
+  private def readAhead(record: Record, device: InputSource)(implicit scope: Scope) = {
     var buffer = buffers.getOrElseUpdate(device, Nil)
     var eof = false
 
     // make sure the head ahead buffer is filled
-    var newLines: List[TextInput] = Nil
-    while (!eof && buffer.size < readAhead) {
-      val text = device.readText
+    var newLines: List[DataSet] = Nil
+    while (!eof && buffer.size < readAheadSize) {
+      val text = device.read(record)
       eof = text.isEmpty
-      text.foreach(ti => newLines = ti :: newLines)
+      text.foreach(item => newLines = item :: newLines)
     }
     buffer = buffer ::: newLines.reverse
 
@@ -71,13 +102,13 @@ case class MultiPartLayout(id: String, body: Section, header: Option[Section], t
     buffer = if (buffer.nonEmpty) buffer.tail else Nil
     buffers(device) = buffer
     input.map(ti => InputData(
-      textInput = ti,
+      dataSet = ti,
       buffer = buffer,
-      isHeader = header.exists(_.records.length >= ti.offset),
+      isHeader = header.exists(_.records.length >= device.getStatistics.offset),
       isTrailer = trailer.exists(_.records.length > buffer.length)))
   }
 
-  private def readAhead: Int = {
+  private def readAheadSize: Int = {
     1 + (header.map(_.records.length) getOrElse 0) + (trailer.map(_.records.length) getOrElse 0)
   }
 
@@ -94,6 +125,6 @@ object MultiPartLayout {
     */
   case class Section(records: Seq[Record])
 
-  case class InputData(textInput: TextInput, buffer: List[TextInput] = Nil, isHeader: Boolean, isTrailer: Boolean)
+  case class InputData(dataSet: DataSet, buffer: List[DataSet] = Nil, isHeader: Boolean, isTrailer: Boolean)
 
 }

@@ -11,25 +11,25 @@ import scala.util.Try
   * Represents a generic column, field, property or XML element
   * @author lawrence.daniels@gmail.com
   * @param name         the name of the element
-  * @param path         the fully qualified field name (e.g. "myrecord.myfield")
   * @param `type`       the data type of the element
   * @param defaultValue the optional default value of the element
   * @param length       the optional fixed length of the field's value
+  * @param nullable     the optional nullable indicator
   * @param updateKey    an optional primary key or update key designation
   * @param properties   the optional properties or attributes of the element
   * @param elements     the optional child elements of this element
   */
 case class Field(name: String,
-                 path: String,
                  `type`: DataType = DataTypes.STRING,
                  defaultValue: Option[String] = None,
                  length: Option[Int] = None,
-                 updateKey: Option[Boolean] = None,
+                 nullable: Option[Boolean] = None,
+                 updateKey: Option[Seq[String]] = None,
                  properties: Seq[Field] = Nil,
                  elements: Seq[Field] = Nil) {
 
   def value(implicit scope: Scope): Option[Any] = {
-    val result = (defaultValue flatMap {
+    (defaultValue flatMap {
       case expr: String if expr.contains("{{") && expr.contains("}}") =>
         scope.evaluate(expr) flatMap {
           case value: String => value.convert(`type`)
@@ -37,11 +37,10 @@ case class Field(name: String,
         }
       case value: String => value.convert(`type`)
       case value => Option(value)
-    }) ?? scope.find(path)
-    result
+    }) ?? scope.find(name)
   }
 
-  def value_=(newValue: Option[Any])(implicit scope: Scope) = newValue.foreach(scope += path -> _)
+  def value_=(newValue: Option[Any])(implicit scope: Scope) = newValue.foreach(scope += name -> _)
 
 }
 

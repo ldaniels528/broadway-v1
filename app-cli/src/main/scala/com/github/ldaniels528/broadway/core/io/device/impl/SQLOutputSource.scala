@@ -4,8 +4,8 @@ import java.sql.{Connection, DriverManager, PreparedStatement, Timestamp}
 import java.util.{Date, UUID}
 
 import com.github.ldaniels528.broadway.core.io.Scope
-import com.github.ldaniels528.broadway.core.io.device.OutputSource
 import com.github.ldaniels528.broadway.core.io.device.impl.SQLOutputSource._
+import com.github.ldaniels528.broadway.core.io.device.{DataSet, OutputSource}
 import com.github.ldaniels528.broadway.core.io.layout.Layout
 import com.github.ldaniels528.broadway.core.io.record.DataTypes._
 import com.github.ldaniels528.broadway.core.io.record.{Field, Record}
@@ -40,7 +40,7 @@ case class SQLOutputSource(id: String, connectionInfo: SQLConnectionInfo, layout
     ()
   }
 
-  override def writeRecord(record: Record)(implicit scope: Scope) = {
+  override def writeRecord(record: Record, dataSet: DataSet)(implicit scope: Scope) = {
     scope.getResource[Connection](uuid) map { conn =>
       val sql = sqlCache.getOrElseUpdate(s"${tableName}_INSERT", SQLInsert(conn, record, tableName))
       updateCount(sql.execute())

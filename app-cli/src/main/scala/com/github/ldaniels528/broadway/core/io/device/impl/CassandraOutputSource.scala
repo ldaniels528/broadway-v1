@@ -4,8 +4,8 @@ import java.util.UUID
 
 import com.datastax.driver.core.{BoundStatement, Cluster, PreparedStatement, Session}
 import com.github.ldaniels528.broadway.core.io.Scope
-import com.github.ldaniels528.broadway.core.io.device.OutputSource
 import com.github.ldaniels528.broadway.core.io.device.impl.CassandraOutputSource.{ConnectionInfo, _}
+import com.github.ldaniels528.broadway.core.io.device.{DataSet, OutputSource}
 import com.github.ldaniels528.broadway.core.io.layout.Layout
 import com.github.ldaniels528.broadway.core.io.record.{Field, Record}
 import com.ldaniels528.commons.helpers.OptionHelper._
@@ -36,7 +36,7 @@ case class CassandraOutputSource(id: String, connectionInfo: ConnectionInfo, lay
     tableName = connectionInfo.getTable
   }
 
-  override def writeRecord(record: Record)(implicit scope: Scope) = {
+  override def writeRecord(record: Record, dataSet: DataSet)(implicit scope: Scope) = {
     scope.getResource[ConnectionState](uuid) map { case (_, session) =>
       val sql = sqlCache.getOrElseUpdate(s"${tableName}_INSERT", CQLInsert(session, record, tableName))
       updateCount(sql.execute())
