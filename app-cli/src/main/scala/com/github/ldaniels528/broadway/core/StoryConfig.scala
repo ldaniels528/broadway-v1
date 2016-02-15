@@ -1,7 +1,7 @@
 package com.github.ldaniels528.broadway.core
 
 import java.io.FileInputStream
-
+import com.github.ldaniels528.broadway.core.util.ResourceHelper._
 import com.github.ldaniels528.broadway.core.StoryConfig.StoryProperties
 import com.github.ldaniels528.broadway.core.io.Scope
 import com.github.ldaniels528.broadway.core.io.archive.Archive
@@ -14,6 +14,7 @@ import scala.collection.JavaConversions._
 
 /**
   * Story Configuration
+  *
   * @author lawrence.daniels@gmail.com
   */
 case class StoryConfig(id: String,
@@ -44,9 +45,11 @@ object StoryConfig {
   case class StoryPropertiesFile(path: String) extends StoryProperties {
 
     override def load(implicit scope: Scope) = {
-      val props = new java.util.Properties()
-      props.load(new FileInputStream(scope.evaluateAsString(path)))
-      props.toSeq
+      new FileInputStream(scope.evaluateAsString(path)) use { in =>
+        val props = new java.util.Properties()
+        props.load(in)
+        props.toSeq
+      }
     }
 
   }
