@@ -2,7 +2,7 @@ package com.github.ldaniels528.broadway.core.io.device
 
 import com.github.ldaniels528.broadway.core.io.Scope
 import com.github.ldaniels528.broadway.core.io.record._
-import com.ldaniels528.commons.helpers.OptionHelper._
+import com.github.ldaniels528.commons.helpers.OptionHelper._
 import play.api.libs.json.JsObject
 
 /**

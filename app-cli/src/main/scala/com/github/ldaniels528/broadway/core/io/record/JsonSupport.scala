@@ -6,8 +6,8 @@ import com.github.ldaniels528.broadway.core.io.Scope
 import com.github.ldaniels528.broadway.core.io.device.DataSet
 import com.github.ldaniels528.broadway.core.io.record.DataTypes._
 import com.github.ldaniels528.broadway.core.io.record.JsonSupport._
-import com.ldaniels528.commons.helpers.OptionHelper.Risky._
-import com.ldaniels528.commons.helpers.OptionHelper._
+import com.github.ldaniels528.commons.helpers.OptionHelper.Risky._
+import com.github.ldaniels528.commons.helpers.OptionHelper._
 import org.slf4j.LoggerFactory
 import play.api.libs.json._
 

@@ -4,7 +4,7 @@ import com.github.ldaniels528.broadway.core.io.Scope
 import com.github.ldaniels528.broadway.core.io.device.{AsynchronousOutputSupport, InputSource, OutputSource}
 import com.github.ldaniels528.broadway.core.io.flow.Flow
 import com.github.ldaniels528.broadway.core.io.layout.Layout.InputSet
-import com.ldaniels528.commons.helpers.OptionHelper.Risky._
+import com.github.ldaniels528.commons.helpers.OptionHelper.Risky._
 
 import scala.concurrent.{ExecutionContext, Future}
 

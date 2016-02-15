@@ -8,7 +8,7 @@ import com.github.ldaniels528.broadway.core.StoryConfig
 import com.github.ldaniels528.broadway.core.actors.FileManagementActor.ArchiveFile
 import com.github.ldaniels528.broadway.core.actors.{BroadwayActorSystem, FileManagementActor}
 import com.github.ldaniels528.broadway.core.io.trigger.Trigger
-import com.ldaniels528.commons.helpers.OptionHelper._
+import com.github.ldaniels528.commons.helpers.OptionHelper._
 import org.slf4j.LoggerFactory
 
 import scala.collection.JavaConversions._

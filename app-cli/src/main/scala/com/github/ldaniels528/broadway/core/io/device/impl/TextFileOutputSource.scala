@@ -7,7 +7,7 @@ import com.github.ldaniels528.broadway.core.io.Scope
 import com.github.ldaniels528.broadway.core.io.device.{DataSet, OutputSource}
 import com.github.ldaniels528.broadway.core.io.layout._
 import com.github.ldaniels528.broadway.core.io.record.Record
-import com.ldaniels528.commons.helpers.OptionHelper._
+import com.github.ldaniels528.commons.helpers.OptionHelper._
 
 /**
   * Text File Output Source

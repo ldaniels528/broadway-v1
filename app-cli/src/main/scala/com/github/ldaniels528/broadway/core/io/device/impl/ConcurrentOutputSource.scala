@@ -8,7 +8,7 @@ import com.github.ldaniels528.broadway.core.io.Scope
 import com.github.ldaniels528.broadway.core.io.device.impl.ConcurrentOutputSource._
 import com.github.ldaniels528.broadway.core.io.device.{AsynchronousOutputSupport, DataSet, OutputSource}
 import com.github.ldaniels528.broadway.core.io.record.Record
-import com.ldaniels528.commons.helpers.OptionHelper._
+import com.github.ldaniels528.commons.helpers.OptionHelper._
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.ExecutionContext.Implicits.global

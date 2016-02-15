@@ -10,7 +10,7 @@ import com.github.ldaniels528.broadway.core.io.layout.Layout
 import com.github.ldaniels528.broadway.core.io.record.DataTypes._
 import com.github.ldaniels528.broadway.core.io.record.{Field, Record}
 import com.github.ldaniels528.broadway.core.util.ResourcePool
-import com.ldaniels528.commons.helpers.OptionHelper._
+import com.github.ldaniels528.commons.helpers.OptionHelper._
 import org.slf4j.LoggerFactory
 
 import scala.collection.concurrent.TrieMap

@@ -1,7 +1,7 @@
 package com.github.ldaniels528.broadway.core.compiler
 
 import com.github.ldaniels528.broadway.core.io.Scope
-import com.ldaniels528.commons.helpers.OptionHelper._
+import com.github.ldaniels528.commons.helpers.OptionHelper._
 
 import scala.annotation.tailrec
 import scala.util.{Failure, Success, Try}

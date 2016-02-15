@@ -20,7 +20,7 @@ import com.github.ldaniels528.broadway.core.io.record._
 import com.github.ldaniels528.broadway.core.io.record.impl._
 import com.github.ldaniels528.broadway.core.io.trigger.impl.{FileFeed, FileFeedDirectory, FileTrigger, StartupTrigger}
 import com.github.ldaniels528.broadway.core.support.kafka.ZkProxy
-import com.ldaniels528.commons.helpers.OptionHelper._
+import com.github.ldaniels528.commons.helpers.OptionHelper._
 import com.microsoft.azure.documentdb.ConsistencyLevel
 import com.mongodb.casbah.Imports._
 

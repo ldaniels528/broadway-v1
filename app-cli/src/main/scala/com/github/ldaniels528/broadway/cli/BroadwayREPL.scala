@@ -6,7 +6,7 @@ import java.util.UUID
 import com.github.ldaniels528.broadway.cli.command.{CommandParser, UnixLikeArgs}
 import com.github.ldaniels528.broadway.core.{StoryConfig, StoryProcessor}
 import com.github.ldaniels528.tabular.Tabular
-import com.ldaniels528.commons.helpers.OptionHelper._
+import com.github.ldaniels528.commons.helpers.OptionHelper._
 import org.slf4j.LoggerFactory
 
 import scala.collection.concurrent.TrieMap

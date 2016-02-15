@@ -8,7 +8,7 @@ import com.github.ldaniels528.broadway.core.io.device.impl.CassandraOutputSource
 import com.github.ldaniels528.broadway.core.io.device.{DataSet, OutputSource}
 import com.github.ldaniels528.broadway.core.io.layout.Layout
 import com.github.ldaniels528.broadway.core.io.record.{Field, Record}
-import com.ldaniels528.commons.helpers.OptionHelper._
+import com.github.ldaniels528.commons.helpers.OptionHelper._
 import org.slf4j.LoggerFactory
 
 import scala.collection.concurrent.TrieMap

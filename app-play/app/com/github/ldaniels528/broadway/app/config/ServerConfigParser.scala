@@ -2,7 +2,7 @@ package com.github.ldaniels528.broadway.app.config
 
 import java.io.File
 
-import com.ldaniels528.commons.helpers.OptionHelper._
+import com.github.ldaniels528.commons.helpers.OptionHelper._
 
 import scala.language.postfixOps
 import scala.util.Try

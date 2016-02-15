@@ -58,7 +58,7 @@ lazy val broadway_cli = (project in file("app-cli"))
     resolvers += "conjars" at "http://conjars.org/repo",
     libraryDependencies ++= Seq(
       // ldaniels528 Dependencies
-      "com.github.ldaniels528" %% "commons-helpers" % "0.1.1",
+      "com.github.ldaniels528" %% "commons-helpers" % "0.1.2",
       "com.github.ldaniels528" %% "tabular" % "0.1.3" exclude("org.slf4j", "slf4j-log4j12"),
       //
       // Microsft/Azure Dependencies

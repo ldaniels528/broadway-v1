@@ -4,8 +4,8 @@ import java.util.concurrent.atomic.AtomicInteger
 
 import com.github.ldaniels528.broadway.core.support.kafka.ByteBufferUtils._
 import com.github.ldaniels528.broadway.core.support.kafka.KafkaMicroConsumer._
-import com.ldaniels528.commons.helpers.OptionHelper._
-import com.ldaniels528.commons.helpers.ResourceHelper._
+import com.github.ldaniels528.commons.helpers.OptionHelper._
+import com.github.ldaniels528.commons.helpers.ResourceHelper._
 import kafka.api._
 import kafka.common._
 import kafka.consumer.SimpleConsumer

@@ -4,7 +4,7 @@ import com.github.ldaniels528.broadway.core.io.Scope
 import com.github.ldaniels528.broadway.core.io.device.DataSet
 import com.github.ldaniels528.broadway.core.io.record.Field._
 import com.github.ldaniels528.broadway.core.io.record.{Field, Record, TextSupport}
-import com.ldaniels528.commons.helpers.OptionHelper._
+import com.github.ldaniels528.commons.helpers.OptionHelper._
 
 import scala.language.postfixOps
 

@@ -5,7 +5,7 @@ import java.util.Date
 
 import com.github.ldaniels528.broadway.core.io.Scope
 import com.github.ldaniels528.broadway.core.io.filters.{Filter, FilterException}
-import com.ldaniels528.commons.helpers.OptionHelper._
+import com.github.ldaniels528.commons.helpers.OptionHelper._
 
 import scala.util.Try
 
