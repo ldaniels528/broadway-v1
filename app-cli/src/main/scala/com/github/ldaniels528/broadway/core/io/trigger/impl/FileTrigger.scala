@@ -37,7 +37,7 @@ case class FileTrigger(id: String, directories: Seq[FileFeedDirectory]) extends 
 
   private def createTask(story: StoryConfig, directory: FileFeedDirectory, feed: FileFeed, incomingFile: File) = new Runnable {
     override def run() {
-      process(createProcessFlows(story, directory, feed, incomingFile)) onComplete {
+      process(story, createProcessFlows(story, directory, feed, incomingFile)) onComplete {
         case Success(result) =>
           (feed.archive ?? directory.archive) foreach { strategy =>
             FileManagementActor ! ArchiveFile(incomingFile, new File(strategy.basePath))

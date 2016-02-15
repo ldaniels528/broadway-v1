@@ -5,7 +5,7 @@
 
     <triggers>
         <FileTrigger id="trading_history_trigger">
-            <directory path="/Users/ldaniels/broadway/incoming/tradingHistory" archive="DataStore">
+            <directory path="{{ user.home }}/broadway/incoming/tradingHistory" archive="DataStore">
                 <feed pattern="AMEX_(.*)[.]txt">
                     <SimpleFlow id="amex_file" input-source="input_file" output-source="output_file" />
                 </feed>
@@ -24,7 +24,7 @@
 
     <data-sources>
         <TextFileInputSource id="input_file" path="{{ flow.input.path }}" layout="eod_history_input_layout" />
-        <TextFileOutputSource id="output_file" path="/tmp/fixed_{{ flow.input.filename }}" layout="output_layout" />
+        <TextFileOutputSource id="output_file" path="{{ java.io.tmpdir }}/fixed_{{ flow.input.filename }}" layout="output_layout" />
     </data-sources>
 
     <layouts>

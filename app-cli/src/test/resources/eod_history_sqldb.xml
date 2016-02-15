@@ -5,7 +5,7 @@
 
     <triggers>
         <FileTrigger id="Repo1">
-            <directory path="/Users/ldaniels/broadway/incoming/tradingHistory" archive="DataStore">
+            <directory path="{{ user.home }}/broadway/incoming/tradingHistory" archive="DataStore">
                 <feed pattern="AMEX_(.*)[.]txt">
                     <SimpleFlow id="amex_flow" input-source="input_file" output-source="sql_output" />
                 </feed>

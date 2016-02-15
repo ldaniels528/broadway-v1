@@ -17,7 +17,7 @@
 
     <!-- Location Triggers -->
 
-    <location id="tradingHistory" path="/Users/ldaniels/broadway/incoming/tradingHistory">
+    <location id="tradingHistory" path="{{ user.home }}/broadway/incoming/tradingHistory">
         <feed name="AMEX_(.*)[.]txt" match="regex" narrative-ref="EodDataImportNarrative"/>
         <feed name="NASDAQ_(.*)[.]txt" match="regex" narrative-ref="EodDataImportNarrative"/>
         <feed name="NYSE_(.*)[.]txt" match="regex" narrative-ref="EodDataImportNarrative"/>

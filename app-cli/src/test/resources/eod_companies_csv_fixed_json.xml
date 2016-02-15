@@ -27,9 +27,9 @@
         <TextFileInputSource id="NYSE" path="./app-cli/src/test/resources/files/NYSE.txt" layout="eod_company_input_layout" />
         <TextFileInputSource id="OTCBB" path="./app-cli/src/test/resources/files/OTCBB.txt" layout="eod_company_input_layout" />
 
-        <TextFileOutputSource id="output_csv" path="/tmp/eod_companies_csv.txt" layout="csv_layout" />
-        <TextFileOutputSource id="output_fixed" path="/tmp/eod_companies_fixed.txt" layout="fixed_layout" />
-        <TextFileOutputSource id="output_json" path="/tmp/eod_companies_json.txt" layout="json_layout" />
+        <TextFileOutputSource id="output_csv" path="{{ java.io.tmpdir }}/eod_companies_csv.txt" layout="csv_layout" />
+        <TextFileOutputSource id="output_fixed" path="{{ java.io.tmpdir }}/eod_companies_fixed.txt" layout="fixed_layout" />
+        <TextFileOutputSource id="output_json" path="{{ java.io.tmpdir }}/eod_companies_json.txt" layout="json_layout" />
     </data-sources>
 
     <layouts>

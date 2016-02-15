@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <story id="powerball_history">
 
-    <properties file="/Users/ldaniels/connection.properties" />
+    <properties file="{{ user.home }}/connection.properties" />
 
     <archives>
-        <FileArchive id="DataStore" base="/Users/ldaniels/broadway/archive" compression="gzip" />
+        <FileArchive id="DataStore" base="{{ user.home }}/broadway/archive" compression="gzip" />
     </archives>
 
     <layouts>

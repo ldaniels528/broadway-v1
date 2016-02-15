@@ -1,7 +1,7 @@
 <?xml version="1.0" ?>
 <broadway-server>
 
-    <directories base="/Users/ldaniels/broadway">
+    <directories base="{{ user.home }}/broadway">
 
     </directories>
 

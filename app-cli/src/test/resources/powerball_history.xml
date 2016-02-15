@@ -21,7 +21,7 @@
     <data-sources>
         <TextFileInputSource id="input_file" path="./app-cli/src/test/resources/files/DownloadAllNumbers.txt" layout="powerball_layout" />
 
-        <TextFileOutputSource id="csv_output" path="/tmp/powerball.txt" layout="csv_layout" />
+        <TextFileOutputSource id="csv_output" path="{{ java.io.tmpdir }}/powerball.txt" layout="csv_layout" />
 
         <SQLOutputSource id="sql_output"
                          table="dbo.powerball_history"

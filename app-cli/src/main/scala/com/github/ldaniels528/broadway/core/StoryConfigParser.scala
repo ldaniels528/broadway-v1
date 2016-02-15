@@ -1,7 +1,8 @@
 package com.github.ldaniels528.broadway.core
 
-import java.io.{File, FileInputStream}
+import java.io.File
 
+import com.github.ldaniels528.broadway.core.StoryConfig.StoryPropertiesFile
 import com.github.ldaniels528.broadway.core.StoryConfigParser._
 import com.github.ldaniels528.broadway.core.io.archive.Archive
 import com.github.ldaniels528.broadway.core.io.archive.impl.FileArchive
@@ -24,7 +25,6 @@ import com.github.ldaniels528.commons.helpers.OptionHelper._
 import com.microsoft.azure.documentdb.ConsistencyLevel
 import com.mongodb.casbah.Imports._
 
-import scala.collection.JavaConversions._
 import scala.language.postfixOps
 import scala.reflect.ClassTag
 import scala.xml.{Node, XML}
@@ -45,7 +45,7 @@ class StoryConfigParser() {
             devices = (config.devices ++ accumulator.devices).dedup(_.id),
             filters = (config.filters ++ accumulator.filters).dedup(_._1),
             layouts = (config.layouts ++ accumulator.layouts).dedup(_.id),
-            properties = (config.properties ++ accumulator.properties).dedup(_._1),
+            properties = config.properties ++ accumulator.properties,
             triggers = (config.triggers ++ accumulator.triggers).dedup(_.id)
           )
         }
@@ -55,7 +55,7 @@ class StoryConfigParser() {
       val filters = (parseFilters(node) ++ baseConfig.filters).dedup(_._1)
       val layouts = (parseLayouts(node) ++ baseConfig.layouts).dedup(_.id)
       val devices = (parseDataSources(node, layouts) ++ baseConfig.devices).dedup(_.id)
-      val properties = (parseProperties(node) ++ baseConfig.properties).dedup(_._1)
+      val properties = parseProperties(node) ++ baseConfig.properties
       val triggers = (parseTriggers(baseConfig, node, archives, devices, layouts) ++ baseConfig.triggers).dedup(_.id)
 
       // finally, return the composite config
@@ -243,11 +243,9 @@ class StoryConfigParser() {
   }
 
   private def parseProperties(rootNode: Node) = {
-    (rootNode \\ "properties") flatMap { propsNode =>
+    (rootNode \\ "properties") map { propsNode =>
       val file = propsNode \\@ "file"
-      val props = new java.util.Properties()
-      props.load(new FileInputStream(file))
-      props.toMap.toSeq
+      StoryPropertiesFile(file)
     }
   }
 

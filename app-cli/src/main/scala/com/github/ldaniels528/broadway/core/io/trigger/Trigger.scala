@@ -11,6 +11,7 @@ import com.github.ldaniels528.broadway.core.io.trigger.Trigger.IOStats
 import com.github.ldaniels528.tabular.Tabular
 import org.slf4j.LoggerFactory
 
+import scala.collection.JavaConversions._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
@@ -26,11 +27,16 @@ trait Trigger {
 
   def execute(story: StoryConfig)(implicit ec: ExecutionContext): Unit
 
-  def process(processFlows: Seq[(Flow, Scope)])(implicit ec: ExecutionContext) = {
+  def process(story: StoryConfig, processFlows: Seq[(Flow, Scope)])(implicit ec: ExecutionContext) = {
     Future.sequence {
       processFlows map { case (flow, scope) =>
-        logger.info(s"Starting to process flow '${flow.id}'...")
         implicit val myScope = scope
+
+        // load the collection of properties into the scope
+        scope ++= story.properties flatMap (_.load)
+
+        // start the task
+        logger.info(s"Starting to process flow '${flow.id}'...")
         val task = flow.execute(scope)
 
         task onComplete {
@@ -50,13 +56,15 @@ trait Trigger {
   protected def createScope(story: StoryConfig, flow: Flow) = {
     val scope = Scope()
 
+    // add all of the system properties
+    scope ++= System.getProperties.toSeq
+
     // add the built-in filters
     story.filters foreach { case (name, filter) =>
       scope.addFilter(name, filter)
     }
 
     // add some properties
-    scope ++= story.properties
     scope ++= Seq(
       "date()" -> (() => new Date()),
       "trigger.id" -> id,

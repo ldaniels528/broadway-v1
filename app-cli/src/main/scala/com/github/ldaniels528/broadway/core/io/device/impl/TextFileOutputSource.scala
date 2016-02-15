@@ -8,12 +8,14 @@ import com.github.ldaniels528.broadway.core.io.device.{DataSet, OutputSource}
 import com.github.ldaniels528.broadway.core.io.layout._
 import com.github.ldaniels528.broadway.core.io.record.Record
 import com.github.ldaniels528.commons.helpers.OptionHelper._
+import org.slf4j.LoggerFactory
 
 /**
   * Text File Output Source
   * @author lawrence.daniels@gmail.com
   */
 case class TextFileOutputSource(id: String, path: String, layout: Layout) extends OutputSource {
+  private val log = LoggerFactory.getLogger(getClass)
   private val uuid = UUID.randomUUID()
 
   override def close(implicit scope: Scope) = {
@@ -31,6 +33,7 @@ case class TextFileOutputSource(id: String, path: String, layout: Layout) extend
       "flow.output.offset" -> (() => getStatistics.offset),
       "flow.output.path" -> file.getCanonicalPath
     )
+    log.info(s"Opening output file '${file.getAbsolutePath}'...")
     scope.createResource(uuid, new BufferedWriter(new FileWriter(file)))
     ()
   }

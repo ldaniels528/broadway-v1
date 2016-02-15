@@ -24,7 +24,7 @@
         <TextFileInputSource id="NASDAQ" path="./app-cli/src/test/resources/files/NASDAQ.txt" layout="eod_company_input_layout" />
         <TextFileInputSource id="NYSE" path="./app-cli/src/test/resources/files/NYSE.txt" layout="eod_company_input_layout" />
         <TextFileInputSource id="OTCBB" path="./app-cli/src/test/resources/files/OTCBB.txt" layout="eod_company_input_layout" />
-        <TextFileOutputSource id="output_file" path="/tmp/eod_companies_csv_new.txt" layout="csv_layout" />
+        <TextFileOutputSource id="output_file" path="{{ java.io.tmpdir }}/eod_companies_csv_new.txt" layout="csv_layout" />
     </data-sources>
 
     <layouts>

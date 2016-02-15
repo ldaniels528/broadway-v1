@@ -85,7 +85,7 @@ the process; in this case, how file feeds are mapped to their respective process
 
     <!-- Location Triggers -->
 
-    <location id="tradingHistory" path="/Users/ldaniels/broadway/incoming/tradingHistory">
+    <location id="tradingHistory" path="{{ user.home }}/broadway/incoming/tradingHistory">
         <feed name="AMEX_(.*)[.]txt" match="regex" narrative-ref="EodDataImportNarrative"/>
         <feed name="NASDAQ_(.*)[.]txt" match="regex" narrative-ref="EodDataImportNarrative"/>
         <feed name="NYSE_(.*)[.]txt" match="regex" narrative-ref="EodDataImportNarrative"/>
@@ -106,7 +106,7 @@ The following is the Broadway narrative that implements the flow described above
 
     <devices>
         <TextInputDevice id="input_file" path="./app-cli/src/test/resources/files/OTCBB_20121217.txt" layout="input_layout"/>
-        <TextOutputDevice id="output_file" path="/tmp/otcbb_output.txt" layout="output_layout"/>
+        <TextOutputDevice id="output_file" path="{{ java.io.tmpdir }}/otcbb_output.txt" layout="output_layout"/>
     </devices>
 
     <layouts>
