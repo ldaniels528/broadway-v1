@@ -8,9 +8,9 @@ val myAkkaVersion = "2.3.14"
 val myPlayVersion = "2.4.6"
 val sprayVersion = "1.3.2"
 
-val myScalacOptions = Seq("-deprecation", "-encoding", "UTF-8", "-feature", "-target:jvm-1.7", "-unchecked",
+val myScalacOptions = Seq("-deprecation", "-encoding", "UTF-8", "-feature", "-target:jvm-1.8", "-unchecked",
   "-Ywarn-adapted-args", "-Ywarn-value-discard", "-Xlint")
-val myJavacOptions = Seq("-Xlint:deprecation", "-Xlint:unchecked", "-source", "1.7", "-target", "1.7", "-g:vars")
+val myJavacOptions = Seq("-Xlint:deprecation", "-Xlint:unchecked", "-source", "1.8", "-target", "1.8", "-g:vars")
 
 lazy val scalaJsOutputDir = Def.settingKey[File]("Directory for Javascript files output by ScalaJS")
 
@@ -26,10 +26,10 @@ lazy val broadway_js = (project in file("app-js"))
     resolvers += "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots",
     addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full),
     libraryDependencies ++= Seq(
-      "be.doeraene" %%% "scalajs-jquery" % "0.8.1",
-      "com.github.ldaniels528" %%% "scalascript" % "0.2.19",
-      "com.vmunier" %% "play-scalajs-sourcemaps" % "0.1.0",
-      "org.scala-js" %%% "scalajs-dom" % "0.8.2"
+      "be.doeraene" %%% "scalajs-jquery" % "0.9.0",
+      "com.github.ldaniels528" %%% "scalascript" % "0.2.20",
+      "com.vmunier" %% "play-scalajs-sourcemaps" % "0.1.0" exclude("com.typesafe.play", "play_2.11"),
+      "org.scala-js" %%% "scalajs-dom" % "0.9.0"
     ))
   .enablePlugins(ScalaJSPlugin)
 
@@ -59,7 +59,7 @@ lazy val broadway_cli = (project in file("app-cli"))
     libraryDependencies ++= Seq(
       // ldaniels528 Dependencies
       "com.github.ldaniels528" %% "commons-helpers" % "0.1.2",
-      "com.github.ldaniels528" %% "tabular" % "0.1.3" exclude("org.slf4j", "slf4j-log4j12"),
+      "com.github.ldaniels528" %% "tabular" % "0.1.3",
       //
       // Microsft/Azure Dependencies
       "com.microsoft.azure" % "azure-documentdb" % "1.5.1",
@@ -78,17 +78,17 @@ lazy val broadway_cli = (project in file("app-cli"))
       // Kafka and Zookeeper Dependencies
       "org.apache.curator" % "curator-framework" % "2.7.1",
       "org.apache.curator" % "curator-test" % "2.7.1" % "test",
-      "org.apache.kafka" %% "kafka" % "0.9.0.0" exclude("org.slf4j", "slf4j-log4j12"),
+      "org.apache.kafka" %% "kafka" % "0.9.0.0",
       "org.apache.kafka" % "kafka-clients" % "0.9.0.0",
-      "org.apache.zookeeper" % "zookeeper" % "3.4.7" exclude("org.slf4j", "slf4j-log4j12"),
+      "org.apache.zookeeper" % "zookeeper" % "3.4.7",
       //
       // Type-Safe dependencies
       "com.typesafe.play" %% "play-json" % myPlayVersion,
       //
       // SQL/NOSQL Dependencies
-      "com.datastax.cassandra" % "cassandra-driver-core" % "2.1.9",
-      "org.mongodb" %% "casbah-commons" % "3.1.0" exclude("org.slf4j", "slf4j-log4j12"),
-      "org.mongodb" %% "casbah-core" % "3.1.0" exclude("org.slf4j", "slf4j-log4j12"),
+      "com.datastax.cassandra" % "cassandra-driver-core" % "3.0.0",
+      "org.mongodb" %% "casbah-commons" % "3.1.0",
+      "org.mongodb" %% "casbah-core" % "3.1.0",
       //
       // General Java Dependencies
       "commons-io" % "commons-io" % "2.4",

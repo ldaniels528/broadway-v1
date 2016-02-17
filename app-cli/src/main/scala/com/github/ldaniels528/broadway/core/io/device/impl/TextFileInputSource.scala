@@ -7,12 +7,14 @@ import com.github.ldaniels528.broadway.core.io.Scope
 import com.github.ldaniels528.broadway.core.io.device.InputSource
 import com.github.ldaniels528.broadway.core.io.layout._
 import com.github.ldaniels528.broadway.core.io.record.{Record, TextSupport, UnsupportedRecordTypeException}
+import org.slf4j.LoggerFactory
 
 /**
   * Text File Input Source
   * @author lawrence.daniels@gmail.com
   */
 case class TextFileInputSource(id: String, path: String, layout: Layout) extends InputSource {
+  private val log = LoggerFactory.getLogger(getClass)
   private val uuid = UUID.randomUUID()
 
   override def close(implicit scope: Scope) = {
@@ -30,6 +32,7 @@ case class TextFileInputSource(id: String, path: String, layout: Layout) extends
       "flow.input.offset" -> (() => getStatistics(scope).offset),
       "flow.input.path" -> file.getCanonicalPath
     )
+    log.info(s"Opening input file '${file.getAbsolutePath}'...")
     scope.createResource(uuid, new BufferedReader(new FileReader(file)))
     ()
   }
