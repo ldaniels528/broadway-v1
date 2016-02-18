@@ -4,11 +4,12 @@ Broadway is a distributed actor-based processing server, and is optimized for hi
 
 ## Motivation
 
-<a href="http://storm.apache.org/" target="new_window">Apache Storm</a> is a powerful and flexible distributed processing engine,
-which is usually fed by a message-oriented middleware solution (like <a href="http://kafka.apache.org/" target="new_window">Apache Kafka</a>
-or <a href="https://github.com/twitter/kestrel" target="new_window">Twitter Kestrel</a>). The challenge that I've identified,
-is that organizations usually have to build a homegrown solution for the high-speed data/file ingestion into Kafka or Kestrel,
-which distracts them from their core focus. I've built Broadway to help provide a solution to that challenge.
+Systems like [Apache Storm](http://storm.apache.org) or [Spark Streaming](http://spark.apache.org) are powerful and flexible distributed processing engines,
+which are usually fed by a message-oriented middleware solution (e.g. [Apache Kafka](http://kafka.apache.org) or [Twitter Kestrel](https://github.com/twitter/kestrel)). 
+
+The challenge that I've identified, is that organizations usually have to build a homegrown solution for the high-speed 
+data/file ingestion into Kafka or Kestrel, which distracts them from their core focus. I've built Broadway to help provide 
+a solution to that challenge.
 
 ## About Broadway
 
@@ -240,29 +241,51 @@ four distinct file patterns via regular expressions (e.g. "```AMEX_(.*)[.]txt```
 
 ### Input Source Types
 
-Text File Input
+##### Text File Input
 
 ```xml
-<TextFileInputSource id="AMEX.txt" path="./app-cli/src/test/resources/files/AMEX.txt" layout="eod_company_input_layout" />
+<TextFileInputSource id="AMEX.txt" 
+                    path="./app-cli/src/test/resources/files/AMEX.txt" 
+                    layout="eod_company_input_layout" />
 ```
 
 
 ### Output Source Types
 
-Kafka Output
+##### Kafka Output
 
 ```xml
-<KafkaOutputSource id="kafka-topic" topic="shocktrade.companies.avro" connectionString="vault114:2181" layout="avro_layout" />
+<KafkaOutputSource id="kafka-topic" 
+                    topic="shocktrade.companies.avro" 
+                    connectionString="vault114:2181" 
+                    layout="avro_layout" />
 ```
 
-MongoDB Output
+##### MongoDB Output
 
 ```xml
-<MongoOutputSource id="mongo1" servers="localhost" database="shocktrade" collection="test_companies" layout="mongo-output"/>
+<MongoOutputSource id="mongo1" 
+                    servers="localhost" 
+                    database="shocktrade" 
+                    collection="test_companies" 
+                    layout="mongo-output"/>
 ```
 
-Text File Output
+##### RDBMS/SQL Output
 
 ```xml
-<TextFileOutputSource id="output.txt" path="{{ java.io.tmpdir }}/eod_companies_fixed.txt" layout="fixed-output" />
+<SQLOutputSource id="sql_output"
+                 table="dbo.tradingHistory"
+                 layout="sql_layout"
+                 driver="com.microsoft.sqlserver.jdbc.SQLServerDriver"
+                 url="jdbc:sqlserver://ladaniel.database.windows.net:1433;database=ladaniel_sql"
+                 user="{{ sqlserver.secret.user }}" password="{{ sqlserver.secret.password }}" />
+```
+
+##### Text File Output
+
+```xml
+<TextFileOutputSource id="output.txt" 
+                        path="{{ java.io.tmpdir }}/eod_companies_fixed.txt" 
+                        layout="fixed-output" />
 ```
