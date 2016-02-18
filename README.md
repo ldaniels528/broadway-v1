@@ -215,10 +215,9 @@ We could've also defined a single input with multiple outputs:
 </CompositeFlow>
 ```
 
-Broadway provides many options ingest, including file-monitoring capabilities. The following is an example of a
-file monitoring agent (FileTrigger) watching a path (e.g. "{{ user.home }}/broadway/incoming/tradingHistory") for
-four distinct file patterns via regular expressions (e.g. "```AMEX_(.*)[.]txt```", "```NASDAQ_(.*)[.]txt```", 
-"```NYSE_(.*)[.]txt```" and "```OTCBB_(.*)[.]txt```").
+Broadway provides many options ingest, including file-monitoring capabilities. The following is an example of a file monitoring 
+agent (FileTrigger) watching a path (e.g. "{{ user.home }}/broadway/incoming/tradingHistory") for four distinct file patterns 
+via regular expressions (e.g. "```AMEX_(.*)[.]txt```", "```NASDAQ_(.*)[.]txt```", "```NYSE_(.*)[.]txt```" and "```OTCBB_(.*)[.]txt```").
 
 ```xml
 <FileTrigger id="trading_history_trigger">
@@ -243,6 +242,8 @@ four distinct file patterns via regular expressions (e.g. "```AMEX_(.*)[.]txt```
 
 ##### Text File Input
 
+Currently Broadway offers a single input source type; however, more will be added soon, including Kafka, RDBMS and others.
+
 ```xml
 <TextFileInputSource id="AMEX.txt" 
                     path="./app-cli/src/test/resources/files/AMEX.txt" 
@@ -251,6 +252,8 @@ four distinct file patterns via regular expressions (e.g. "```AMEX_(.*)[.]txt```
 
 
 ### Output Source Types
+
+Broadway provides a number of options for data persistence, including Kafka, MongoDB, RDBMS, and Text Files (delimited, CSV, Fixed-length, JSON and soon XML).
 
 ##### Kafka Output
 
