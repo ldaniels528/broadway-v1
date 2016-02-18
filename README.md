@@ -43,16 +43,19 @@ Broadway is currently pre-alpha quality software, and although it will currently
 there's still some work to do before it's ready for use by the general public. The current ETA is to have the system 
 ready for action by the end of May 2015.
 
+<a name="build-requirements"></a>
 ## Build Requirements
 
 * [Java SDK 1.7] (http://www.oracle.com/technetwork/java/javase/downloads/jdk7-downloads-1880260.html)
 * [Scala 2.11.4] (http://scala-lang.org/download/)
 * [SBT 0.13+] (http://www.scala-sbt.org/download.html)
 
-#### GitHub/ldaniels528 Dependencies
+<a name="external-dependencies"></a>
+### External Dependencies
 
-* [Trifecta 0.18.14+] (https://github.com/ldaniels528/trifecta)
-* [Tabular 0.1.0] (https://github.com/ldaniels528/tabular)
+* [Commons-Helpers 0.1.2] (https://github.com/ldaniels528/commons-helpers)
+* [ScalaScript 0.2.20] (https://github.com/ldaniels528/scalascript)
+* [Tabular 0.1.3] (https://github.com/ldaniels528/tabular)
 
 ## How it works
 
@@ -63,110 +66,137 @@ The proceeding example is a Broadway narrative that performs the following flow:
 * Encodes the stock quotes as <a href="http://avro.apache.org/" target="avro">Avro</a> records.
 * Publishes each Avro record to a Kafka topic (eoddata.tradinghistory.avro)
 
-We'll start with the anthology, which is an XML file (comprised of one or more narratives) that describes the flow of 
-the process; in this case, how file feeds are mapped to their respective processing endpoints (actors):
-
-```xml
-<anthology id="EodData" version="1.0">
-
-    <!-- Narratives -->
-
-    <narrative id="EodDataImportNarrative"
-               class="com.shocktrade.datacenter.narratives.stock.eoddata.EodDataImportNarrative">
-        <properties>
-            <property key="kafka.topic">eoddata.tradinghistory.avro</property>
-            <property key="kafka.topic.parallelism">5</property>
-            <property key="mongo.database">shocktrade</property>
-            <property key="mongo.replicas">dev801:27017,dev802:27017,dev803:27017</property>
-            <property key="mongo.collection">Stocks</property>
-            <property key="zookeeper.connect">dev801:2181</property>
-        </properties>
-    </narrative>
-
-    <!-- Location Triggers -->
-
-    <location id="tradingHistory" path="{{ user.home }}/broadway/incoming/tradingHistory">
-        <feed name="AMEX_(.*)[.]txt" match="regex" narrative-ref="EodDataImportNarrative"/>
-        <feed name="NASDAQ_(.*)[.]txt" match="regex" narrative-ref="EodDataImportNarrative"/>
-        <feed name="NYSE_(.*)[.]txt" match="regex" narrative-ref="EodDataImportNarrative"/>
-        <feed name="OTCBB_(.*)[.]txt" match="regex" narrative-ref="EodDataImportNarrative"/>
-    </location>
-
-</anthology>
-```
-
-The following is the Broadway narrative that implements the flow described above:
+We'll start with the story configuration, which is an XML file (comprised of one or more narratives) that 
+describes the flow of the process; in this case, how file feeds are mapped to their respective processing 
+endpoints (actors):
 
 ```xml
 <?xml version="1.0" encoding="UTF-8" ?>
-<EtlConfig id="eod-history">
-    <flows>
-        <BasicFlow id="EOD->CSV" input="input_file" output="output_file"/>
-    </flows>
+<story id="eod_companies_csv">
+    <import path="./app-cli/src/test/resources/global_settings.xml" />
 
-    <devices>
-        <TextInputDevice id="input_file" path="./app-cli/src/test/resources/files/OTCBB_20121217.txt" layout="input_layout"/>
-        <TextOutputDevice id="output_file" path="{{ java.io.tmpdir }}/otcbb_output.txt" layout="output_layout"/>
-    </devices>
+    <triggers>
+        <StartUpTrigger id="File_Combining_Trigger">
+            <CompositeFlow id="combiner_flow">
+                <input-sources>
+                    <include source="AMEX" />
+                    <include source="NASDAQ" />
+                    <include source="NYSE" />
+                    <include source="OTCBB" />
+                </input-sources>
+                <output-sources>
+                    <include source="output_file" />
+                </output-sources>
+            </CompositeFlow>
+        </StartUpTrigger>
+    </triggers>
+
+    <data-sources>
+        <TextFileInputSource id="AMEX" path="./app-cli/src/test/resources/files/AMEX.txt" layout="eod_company_input_layout" />
+        <TextFileInputSource id="NASDAQ" path="./app-cli/src/test/resources/files/NASDAQ.txt" layout="eod_company_input_layout" />
+        <TextFileInputSource id="NYSE" path="./app-cli/src/test/resources/files/NYSE.txt" layout="eod_company_input_layout" />
+        <TextFileInputSource id="OTCBB" path="./app-cli/src/test/resources/files/OTCBB.txt" layout="eod_company_input_layout" />
+        <TextFileOutputSource id="output_file" path="{{ java.io.tmpdir }}/eod_companies_csv_new.txt" layout="csv_layout" />
+    </data-sources>
 
     <layouts>
-        <Text id="input_layout">
+        <MultiPartLayout id="csv_layout">
             <header>
-                <fields type="csv">
-                    <field auto-trim="yes">&lt;ticker&gt;</field>
-                    <field auto-trim="yes">&lt;date&gt;</field>
-                    <field auto-trim="yes">&lt;open&gt;</field>
-                    <field auto-trim="yes">&gt;high&gt;</field>
-                    <field auto-trim="yes">&gt;low&gt;</field>
-                    <field auto-trim="yes">&gt;close&gt;</field>
-                    <field auto-trim="yes">&gt;vol&gt;</field>
-                </fields>
+                <record id="cvs_header" format="csv">
+                    <field name="exchange" type="string" value="Exchange" />
+                    <field name="symbol" type="string" value="Ticker" />
+                    <field name="description" type="string" value="Description" />
+                    <field name="source" type="string" value="Source" />
+                    <field name="lineNo" type="string" value="Line Number" />
+                </record>
             </header>
             <body>
-                <fields type="csv">
-                    <field auto-trim="yes">ticker</field>
-                    <field auto-trim="yes">date</field>
-                    <field auto-trim="yes">open</field>
-                    <field auto-trim="yes">high</field>
-                    <field auto-trim="yes">low</field>
-                    <field auto-trim="yes">close</field>
-                    <field auto-trim="yes">vol</field>
-                </fields>
+                <record id="csv_data" format="csv">
+                    <field name="exchange" type="string">{{ flow.input.id }}</field>
+                    <field name="symbol" type="string">{{ symbol }}</field>
+                    <field name="description" type="string">{{ description }}</field>
+                    <field name="source" type="string">{{ flow.input.filename }}</field>
+                    <field name="lineNo" type="int">{{ flow.input.offset }}</field>
+                </record>
             </body>
-        </Text>
-
-        <Text id="output_layout">
-            <header>
-                <fields type="fixed-length">
-                    <field length="10">ticker</field>
-                    <field length="9">date</field>
-                    <field length="12">open</field>
-                    <field length="12">high</field>
-                    <field length="12">low</field>
-                    <field length="12">close</field>
-                    <field length="12">vol</field>
-                </fields>
-            </header>
-            <body>
-                <fields type="fixed-length">
-                    <field length="10">ticker</field>
-                    <field length="9">date</field>
-                    <field length="12">open</field>
-                    <field length="12">high</field>
-                    <field length="12">low</field>
-                    <field length="12">close</field>
-                    <field length="12">vol</field>
-                </fields>
-            </body>
-            <footer>
-                <fields type="fixed-length">
-                    <field length="15">input</field>
-                    <field length="10">{{ input_file.__OFFSET }}</field>
-                    <field length="15">output</field>
-                    <field length="10">{{ output_file.__OFFSET }}</field>
-                </fields>
-            </footer>
-        </Text>
+        </MultiPartLayout>
     </layouts>
-</EtlConfig>
+</story>
+```
+
+Broadway provides many options ingest, including file-monitoring capabilities:
+
+```xml
+<FileTrigger id="trading_history_trigger">
+    <directory path="{{ user.home }}/broadway/incoming/tradingHistory" archive="DataStore">
+        <feed pattern="AMEX_(.*)[.]txt">
+            <SimpleFlow id="amex_file" input-source="input_file" output-source="output_file" />
+        </feed>
+        <feed pattern="NASDAQ_(.*)[.]txt">
+            <SimpleFlow id="nasdaq_flow" input-source="input_file" output-source="output_file" />
+        </feed>
+        <feed pattern="NYSE_(.*)[.]txt">
+            <SimpleFlow id="nyse_flow" input-source="input_file" output-source="output_file" />
+        </feed>
+        <feed pattern="OTCBB_(.*)[.]txt">
+            <SimpleFlow id="otcbb_flow" input-source="input_file" output-source="output_file" />
+        </feed>
+    </directory>
+</FileTrigger>
+```
+
+Broadway also provides a number of options for flow control:
+
+```xml
+<CompositeFlow id="combiner_flow">
+    <input-sources>
+        <include source="AMEX" />
+        <include source="NASDAQ" />
+        <include source="NYSE" />
+        <include source="OTCBB" />
+    </input-sources>
+    <output-sources>
+        <include source="output_file" />
+    </output-sources>
+</CompositeFlow>
+```
+
+The following is an example of a composition of input sources, which are all written to each output source in the format
+defined by the source. 
+
+Thus, the output source "output_csv" will contain a CSV representation of the data:
+```
+"Exchange","Ticker","Description","Source","Line Number"
+"AMEX","AA.P","Alcoa Inc Pf 3.75","AMEX.txt",2
+"AMEX","AADR","BNY Mellon Focused Growth ADR ETF","AMEX.txt",3
+```
+ 
+The output source "output_fixed" will contain a fixed-length representation of the data: 
+```
+Symbol    Description                                       Source                                  Line Number 
+AA.P      Alcoa Inc Pf 3.75                                 AMEX.txt                                2           
+AADR      BNY Mellon Focused Growth ADR ETF                 AMEX.txt                                3                  
+```
+
+And finally, the output source "output_json" will contain a JSON representation of the data:
+```json
+{"symbol":"AA.P","description":"Alcoa Inc Pf 3.75"}
+{"symbol":"AADR","description":"BNY Mellon Focused Growth ADR ETF"}
+{"symbol":"AAMC","description":"Altisource Asset"}
+```
+
+```xml
+<CompositeFlow id="combiner_flow">
+    <input-sources>
+        <include source="AMEX" />
+        <include source="NASDAQ" />
+        <include source="NYSE" />
+        <include source="OTCBB" />
+    </input-sources>
+    <output-sources>
+        <include source="output_csv" />
+        <include source="output_fixed" />
+        <include source="output_json" />
+    </output-sources>
+</CompositeFlow>
 ```
