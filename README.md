@@ -215,9 +215,12 @@ We could've also defined a single input with multiple outputs:
 </CompositeFlow>
 ```
 
-Broadway provides many options ingest, including file-monitoring capabilities. The following is an example of a file monitoring 
+### Flow Control
+
+Broadway provides many data ingestion options, including file-monitoring capabilities. The following is an example of a file monitoring 
 agent (FileTrigger) watching a path (e.g. "{{ user.home }}/broadway/incoming/tradingHistory") for four distinct file patterns 
 via regular expressions (e.g. "```AMEX_(.*)[.]txt```", "```NASDAQ_(.*)[.]txt```", "```NYSE_(.*)[.]txt```" and "```OTCBB_(.*)[.]txt```").
+Once a file is detected, a flow is kicked off, in this case, each file feed contains a ```SimpleFlow``` directive, indicating how to process the file.
 
 ```xml
 <FileTrigger id="trading_history_trigger">
@@ -238,11 +241,22 @@ via regular expressions (e.g. "```AMEX_(.*)[.]txt```", "```NASDAQ_(.*)[.]txt```"
 </FileTrigger>
 ```
 
+### File Archival Strategies
+
+Broadway provides a mechanism for archiving files. This is normally used in conjunction with a ```FileTrigger``` directive. Simply put
+ the archive stores (and optionally compresses) files after they have been processed.
+
+```xml
+<archives>
+    <FileArchive id="DataStore" base="{{ user.home }}/broadway/archive" compression="gzip" />
+</archives>
+```
+
 ### Input Source Types
 
-##### Text File Input
-
 Currently Broadway offers a single input source type; however, more will be added soon, including Kafka, RDBMS and others.
+
+##### Text File Input
 
 ```xml
 <TextFileInputSource id="AMEX.txt" 
