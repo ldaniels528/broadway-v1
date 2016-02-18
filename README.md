@@ -47,9 +47,9 @@ ready for action by the end of May 2015.
 <a name="build-requirements"></a>
 ## Build Requirements
 
-* [Java SDK 1.7] (http://www.oracle.com/technetwork/java/javase/downloads/jdk7-downloads-1880260.html)
-* [Scala 2.11.4] (http://scala-lang.org/download/)
-* [SBT 0.13+] (http://www.scala-sbt.org/download.html)
+* [Java SDK 1.8] (http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html)
+* [Scala 2.11.7] (http://scala-lang.org/download/)
+* [SBT 0.13.9] (http://www.scala-sbt.org/download.html)
 
 <a name="external-dependencies"></a>
 ### External Dependencies
@@ -286,7 +286,7 @@ Broadway provides a number of options for data persistence, including Azure Docu
 ```xml
 <KafkaOutputSource id="kafka-topic" 
                     topic="shocktrade.companies.avro" 
-                    connectionString="vault114:2181" 
+                    connectionString="localhost:2181" 
                     layout="avro_layout" />
 ```
 
@@ -307,7 +307,7 @@ Broadway provides a number of options for data persistence, including Azure Docu
                  table="dbo.tradingHistory"
                  layout="sql_layout"
                  driver="com.microsoft.sqlserver.jdbc.SQLServerDriver"
-                 url="jdbc:sqlserver://ladaniel.database.windows.net:1433;database=ladaniel_sql"
+                 url="jdbc:sqlserver://testing.database.windows.net:1433;database=ladaniel_sql"
                  user="{{ sqlserver.secret.user }}" password="{{ sqlserver.secret.password }}" />
 ```
 
