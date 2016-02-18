@@ -258,6 +258,56 @@ Broadway provides a mechanism for archiving files. This is normally used in conj
 </archives>
 ```
 
+### Layouts
+
+Broadway uses the concept of a ```layout``` to define the input or output format of a data source. The following example is a simple
+JSON layout, with two fields, ```symbol``` and ```description````.
+
+```xml
+<MultiPartLayout id="json_layout">
+    <body>
+        <record id="json_body" format="json">
+            <field name="symbol" type="string" value="{{ symbol }}" />
+            <field name="description" type="string" value="{{ description }}" />
+        </record>
+    </body>
+</MultiPartLayout>
+```
+
+The layout above describes data that looks like the following:
+```json
+{"symbol":"AADR","description":"BNY Mellon Focused Growth ADR ETF"}
+```
+
+You can, however, define much more complex layouts with optional header and trailer records. Consider the following:
+```xml
+<MultiPartLayout id="fixed_layout">
+    <header>
+        <record id="fixed_header" format="fixed">
+            <field name="symbol" value="Symbol" type="string" length="10" />
+            <field name="description" value="Description" type="string" length="50"/>
+            <field name="source" type="string" value="Source" length="40" />
+            <field name="lineNo" type="string" value="Line Number" length="12" />
+        </record>
+    </header>
+    <body>
+        <record id="fixed_body" format="fixed">
+            <field name="symbol" type="string" length="10" value="{{ symbol }}"/>
+            <field name="description" type="string" length="50" value="{{ description }}"/>
+            <field name="source" type="string" length="40" value="{{ flow.input.filename }}" />
+            <field name="lineNo" type="int" length="12" value="{{ flow.input.offset }}" />
+        </record>
+    </body>
+</MultiPartLayout>
+```
+
+The layout above describes data that could looks like the following:
+```
+Symbol    Description                                       Source                                  Line Number 
+AA.P      Alcoa Inc Pf 3.75                                 AMEX.txt                                2           
+AADR      BNY Mellon Focused Growth ADR ETF                 AMEX.txt                                3                  
+```
+
 ### Input Source Types
 
 Currently Broadway offers a single input source type; however, more will be added soon, including Kafka, RDBMS and others.
@@ -265,7 +315,7 @@ Currently Broadway offers a single input source type; however, more will be adde
 ##### Text File Input
 
 ```xml
-<TextFileInputSource id="AMEX.txt" 
+<TextFileInputSource id="AMEX" 
                     path="./app-cli/src/test/resources/files/AMEX.txt" 
                     layout="eod_company_input_layout" />
 ```
