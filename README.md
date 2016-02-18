@@ -184,6 +184,8 @@ And finally, the output source "output_json" will create a JSON representation o
 {"symbol":"AAMC","description":"Altisource Asset"}
 ```
 
+### Flow Control
+
 Alternatively, we could have defined a single output source:
 
 ```xml
@@ -195,7 +197,7 @@ Alternatively, we could have defined a single output source:
         <include source="OTCBB" />
     </input-sources>
     <output-sources>
-        <include source="output_file" />
+        <include source="output_csv" />
     </output-sources>
 </CompositeFlow>
 ```
@@ -205,7 +207,7 @@ We could've also defined a single input with multiple outputs:
 ```xml
 <CompositeFlow id="combiner_flow">
     <input-sources>
-        <include source="AMEX" />
+        <include source="NASDAQ" />
     </input-sources>
     <output-sources>
         <include source="output_csv" />
@@ -215,9 +217,13 @@ We could've also defined a single input with multiple outputs:
 </CompositeFlow>
 ```
 
-### Flow Control
+Or, using the simplest flow control option... A single input and a single output source.
 
-Broadway provides many data ingestion options, including file-monitoring capabilities. The following is an example of a file monitoring 
+```xml
+<SimpleFlow id="nyse_flow" input-source="NASDAQ" output-source="output_csv" />
+```
+
+Broadway also provides many data ingestion options, including file-monitoring capabilities. The following is an example of a file monitoring 
 agent (FileTrigger) watching a path (e.g. "{{ user.home }}/broadway/incoming/tradingHistory") for four distinct file patterns 
 via regular expressions (e.g. "```AMEX_(.*)[.]txt```", "```NASDAQ_(.*)[.]txt```", "```NYSE_(.*)[.]txt```" and "```OTCBB_(.*)[.]txt```").
 Once a file is detected, a flow is kicked off, in this case, each file feed contains a ```SimpleFlow``` directive, indicating how to process the file.
