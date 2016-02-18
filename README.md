@@ -1,5 +1,5 @@
 Broadway
-====
+========
 Broadway is a distributed actor-based processing server, and is optimized for high-speed data/file ingestion.
 
 ## Motivation
@@ -57,6 +57,7 @@ ready for action by the end of May 2015.
 * [ScalaScript 0.2.20] (https://github.com/ldaniels528/scalascript)
 * [Tabular 0.1.3] (https://github.com/ldaniels528/tabular)
 
+<a name="how-it-works"></a>
 ## How it works
 
 Broadway provides a construct called a narrative (e.g. story), which describes the flow for a single processing event.
@@ -85,7 +86,9 @@ endpoints (actors):
                     <include source="OTCBB" />
                 </input-sources>
                 <output-sources>
-                    <include source="output_file" />
+                    <include source="output_csv" />
+                    <include source="output_fixed" />
+                    <include source="output_json" />
                 </output-sources>
             </CompositeFlow>
         </StartUpTrigger>
@@ -96,7 +99,10 @@ endpoints (actors):
         <TextFileInputSource id="NASDAQ" path="./app-cli/src/test/resources/files/NASDAQ.txt" layout="eod_company_input_layout" />
         <TextFileInputSource id="NYSE" path="./app-cli/src/test/resources/files/NYSE.txt" layout="eod_company_input_layout" />
         <TextFileInputSource id="OTCBB" path="./app-cli/src/test/resources/files/OTCBB.txt" layout="eod_company_input_layout" />
-        <TextFileOutputSource id="output_file" path="{{ java.io.tmpdir }}/eod_companies_csv_new.txt" layout="csv_layout" />
+
+        <TextFileOutputSource id="output_csv" path="{{ java.io.tmpdir }}/eod_companies_csv.txt" layout="csv_layout" />
+        <TextFileOutputSource id="output_fixed" path="{{ java.io.tmpdir }}/eod_companies_fixed.txt" layout="fixed_layout" />
+        <TextFileOutputSource id="output_json" path="{{ java.io.tmpdir }}/eod_companies_json.txt" layout="json_layout" />
     </data-sources>
 
     <layouts>
@@ -120,11 +126,98 @@ endpoints (actors):
                 </record>
             </body>
         </MultiPartLayout>
+
+        <MultiPartLayout id="fixed_layout">
+            <header>
+                <record id="fixed_header" format="fixed">
+                    <field name="symbol" value="Symbol" type="string" length="10" />
+                    <field name="description" value="Description" type="string" length="50"/>
+                    <field name="source" type="string" value="Source" length="40" />
+                    <field name="lineNo" type="string" value="Line Number" length="12" />
+                </record>
+            </header>
+            <body>
+                <record id="fixed_body" format="fixed">
+                    <field name="symbol" type="string" length="10" value="{{ symbol }}"/>
+                    <field name="description" type="string" length="50" value="{{ description }}"/>
+                    <field name="source" type="string" length="40" value="{{ flow.input.filename }}" />
+                    <field name="lineNo" type="int" length="12" value="{{ flow.input.offset }}" />
+                </record>
+            </body>
+        </MultiPartLayout>
+
+        <MultiPartLayout id="json_layout">
+            <body>
+                <record id="json_body" format="json">
+                    <field name="symbol" type="string" value="{{ symbol }}" />
+                    <field name="description" type="string" value="{{ description }}" />
+                </record>
+            </body>
+        </MultiPartLayout>
     </layouts>
 </story>
 ```
 
-Broadway provides many options ingest, including file-monitoring capabilities:
+Broadway also provides a number of options for flow control. In the example above, we've defined a composition of 
+input sources (AMEX, NASDAQ, NYSE and OTCBB), which are written to a collection of output sources in the format 
+prescribed by each source. 
+
+Thus, the output source "output_csv" will create a CSV representation of the data:
+```
+"Exchange","Ticker","Description","Source","Line Number"
+"AMEX","AA.P","Alcoa Inc Pf 3.75","AMEX.txt",2
+"AMEX","AADR","BNY Mellon Focused Growth ADR ETF","AMEX.txt",3
+```
+ 
+The output source "output_fixed" will create a fixed-length representation of the data: 
+```
+Symbol    Description                                       Source                                  Line Number 
+AA.P      Alcoa Inc Pf 3.75                                 AMEX.txt                                2           
+AADR      BNY Mellon Focused Growth ADR ETF                 AMEX.txt                                3                  
+```
+
+And finally, the output source "output_json" will create a JSON representation of the data:
+```json
+{"symbol":"AA.P","description":"Alcoa Inc Pf 3.75"}
+{"symbol":"AADR","description":"BNY Mellon Focused Growth ADR ETF"}
+{"symbol":"AAMC","description":"Altisource Asset"}
+```
+
+Alternatively, we could have defined a single output source:
+
+```xml
+<CompositeFlow id="combiner_flow">
+    <input-sources>
+        <include source="AMEX" />
+        <include source="NASDAQ" />
+        <include source="NYSE" />
+        <include source="OTCBB" />
+    </input-sources>
+    <output-sources>
+        <include source="output_file" />
+    </output-sources>
+</CompositeFlow>
+```
+
+We could've also defined a single input with multiple outputs:
+
+```xml
+<CompositeFlow id="combiner_flow">
+    <input-sources>
+        <include source="AMEX" />
+    </input-sources>
+    <output-sources>
+        <include source="output_csv" />
+        <include source="output_fixed" />
+        <include source="output_json" />
+    </output-sources>
+</CompositeFlow>
+```
+
+Broadway provides many options ingest, including file-monitoring capabilities. The following is an example of a
+file monitoring agent (FileTrigger) watching a path (e.g. "{{ user.home }}/broadway/incoming/tradingHistory") for
+four distinct file patterns via regular expressions (e.g. "AMEX_(.*)[.]txt", "NASDAQ_(.*)[.]txt", "NYSE_(.*)[.]txt" 
+and "OTCBB_(.*)[.]txt").
 
 ```xml
 <FileTrigger id="trading_history_trigger">
@@ -145,58 +238,3 @@ Broadway provides many options ingest, including file-monitoring capabilities:
 </FileTrigger>
 ```
 
-Broadway also provides a number of options for flow control:
-
-```xml
-<CompositeFlow id="combiner_flow">
-    <input-sources>
-        <include source="AMEX" />
-        <include source="NASDAQ" />
-        <include source="NYSE" />
-        <include source="OTCBB" />
-    </input-sources>
-    <output-sources>
-        <include source="output_file" />
-    </output-sources>
-</CompositeFlow>
-```
-
-The following is an example of a composition of input sources, which are all written to each output source in the format
-defined by the source. 
-
-Thus, the output source "output_csv" will contain a CSV representation of the data:
-```
-"Exchange","Ticker","Description","Source","Line Number"
-"AMEX","AA.P","Alcoa Inc Pf 3.75","AMEX.txt",2
-"AMEX","AADR","BNY Mellon Focused Growth ADR ETF","AMEX.txt",3
-```
- 
-The output source "output_fixed" will contain a fixed-length representation of the data: 
-```
-Symbol    Description                                       Source                                  Line Number 
-AA.P      Alcoa Inc Pf 3.75                                 AMEX.txt                                2           
-AADR      BNY Mellon Focused Growth ADR ETF                 AMEX.txt                                3                  
-```
-
-And finally, the output source "output_json" will contain a JSON representation of the data:
-```json
-{"symbol":"AA.P","description":"Alcoa Inc Pf 3.75"}
-{"symbol":"AADR","description":"BNY Mellon Focused Growth ADR ETF"}
-{"symbol":"AAMC","description":"Altisource Asset"}
-```
-
-```xml
-<CompositeFlow id="combiner_flow">
-    <input-sources>
-        <include source="AMEX" />
-        <include source="NASDAQ" />
-        <include source="NYSE" />
-        <include source="OTCBB" />
-    </input-sources>
-    <output-sources>
-        <include source="output_csv" />
-        <include source="output_fixed" />
-        <include source="output_json" />
-    </output-sources>
-</CompositeFlow>
-```
