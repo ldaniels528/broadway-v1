@@ -158,9 +158,9 @@ endpoints (actors):
 </story>
 ```
 
-Broadway also provides a number of options for flow control. In the example above, we've defined a composition of 
-input sources (AMEX, NASDAQ, NYSE and OTCBB), which are written to a collection of output sources in the format 
-prescribed by each source. 
+Broadway provides a number of options for flow control. In the example above, we've defined a composition of 
+input sources (```AMEX```, ```NASDAQ```, ```NYSE``` and ```OTCBB```), which are written to a collection of output 
+sources in the format prescribed by each source. 
 
 Thus, the output source "output_csv" will create a CSV representation of the data:
 ```
@@ -216,8 +216,8 @@ We could've also defined a single input with multiple outputs:
 
 Broadway provides many options ingest, including file-monitoring capabilities. The following is an example of a
 file monitoring agent (FileTrigger) watching a path (e.g. "{{ user.home }}/broadway/incoming/tradingHistory") for
-four distinct file patterns via regular expressions (e.g. "AMEX_(.*)[.]txt", "NASDAQ_(.*)[.]txt", "NYSE_(.*)[.]txt" 
-and "OTCBB_(.*)[.]txt").
+four distinct file patterns via regular expressions (e.g. "```AMEX_(.*)[.]txt```", "```NASDAQ_(.*)[.]txt```", 
+"```NYSE_(.*)[.]txt```" and "```OTCBB_(.*)[.]txt```").
 
 ```xml
 <FileTrigger id="trading_history_trigger">
@@ -238,3 +238,31 @@ and "OTCBB_(.*)[.]txt").
 </FileTrigger>
 ```
 
+### Input Source Types
+
+Text File Input
+
+```xml
+<TextFileInputSource id="AMEX.txt" path="./app-cli/src/test/resources/files/AMEX.txt" layout="eod_company_input_layout" />
+```
+
+
+### Output Source Types
+
+Kafka Output
+
+```xml
+<KafkaOutputSource id="kafka-topic" topic="shocktrade.companies.avro" connectionString="vault114:2181" layout="avro_layout" />
+```
+
+MongoDB Output
+
+```xml
+<MongoOutputSource id="mongo1" servers="localhost" database="shocktrade" collection="test_companies" layout="mongo-output"/>
+```
+
+Text File Output
+
+```xml
+<TextFileOutputSource id="output.txt" path="{{ java.io.tmpdir }}/eod_companies_fixed.txt" layout="fixed-output" />
+```
