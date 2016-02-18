@@ -253,7 +253,19 @@ Currently Broadway offers a single input source type; however, more will be adde
 
 ### Output Source Types
 
-Broadway provides a number of options for data persistence, including Kafka, MongoDB, RDBMS, and Text Files (delimited, CSV, Fixed-length, JSON and soon XML).
+Broadway provides a number of options for data persistence, including Azure DocumentDB, Kafka, MongoDB, RDBMS, and Text Files (delimited, CSV, Fixed-length, JSON and soon XML).
+
+##### Azure DocumentDB Output
+
+```xml
+<DocumentDBOutputSource id="docdb_output"
+                        database="broadway"
+                        collection="powerball_history"
+                        host="{{ documentdb.secret.host }}"
+                        master-key="{{ documentdb.secret.master_key }}"
+                        consistency-level="Session"
+                        layout="json_layout" />
+```
 
 ##### Kafka Output
 
