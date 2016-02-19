@@ -184,6 +184,80 @@ And finally, the output source "output_json" will create a JSON representation o
 {"symbol":"AAMC","description":"Altisource Asset"}
 ```
 
+### Import Directive
+
+Broadway provides the capability to importing additional configuration entities. This is accomplished via the `import` directive.
+```xml
+<import path="./app-cli/src/test/resources/global_settings.xml" />
+```
+
+These imported files may contain any valid directive, and could you be used to avoid defining frequently referenced input/output sources,
+layouts, archival strategies, etc.
+
+In the earlier story example, the following was defined in the file `global_settings.xml`:
+```xml
+<?xml version="1.0" encoding="UTF-8" ?>
+<story id="global_settings">
+
+    <properties file="{{ user.home }}/connection.properties" />
+
+    <archives>
+        <FileArchive id="DataStore" base="{{ user.home }}/broadway/archive" compression="gzip" />
+    </archives>
+
+    <layouts>
+        <MultiPartLayout id="eod_company_input_layout">
+            <header>
+                <record id="delimited_header" format="delimited" delimiter="\t">
+                    <field name="symbol" type="string"/>
+                    <field name="description" type="string"/>
+                </record>
+            </header>
+            <body>
+                <record id="delimited_data" format="delimited" delimiter="\t">
+                    <field name="symbol" type="string"/>
+                    <field name="description" type="string"/>
+                </record>
+            </body>
+        </MultiPartLayout>
+
+        <MultiPartLayout id="eod_history_input_layout">
+            <header>
+                <record id="input_header" format="csv">
+                    <field name="ticker" type="string">&lt;ticker&gt;</field>
+                    <field name="date" type="string">&lt;date&gt;</field>
+                    <field name="open" type="string">&lt;open&gt;</field>
+                    <field name="high" type="string">&lt;high&gt;</field>
+                    <field name="low" type="string">&lt;low&gt;</field>
+                    <field name="close" type="string">&lt;close&gt;</field>
+                    <field name="volume" type="string">&lt;vol&gt;</field>
+                </record>
+            </header>
+            <body>
+                <record id="input_body" format="csv">
+                    <field name="ticker" type="string" />
+                    <field name="date" type="string" />
+                    <field name="open" type="string" />
+                    <field name="high" type="string" />
+                    <field name="low" type="string" />
+                    <field name="close" type="string" />
+                    <field name="volume" type="string" />
+                </record>
+            </body>
+        </MultiPartLayout>
+    </layouts>
+</story>
+```
+
+### Properties Directive
+
+Broadway provides the capability of loading predefined configuration properties from a file. These properties could be details that
+you want to hide for security reasons, or frequently used properties that you don't want to define in every story you create.
+
+```xml
+<properties file="{{ user.home }}/connection.properties" />
+```
+
 ### Flow Control
 
 Alternatively, we could have defined a single output source:
@@ -223,6 +297,8 @@ Or, using the simplest flow control option... A single input and a single output
 <SimpleFlow id="nyse_flow" input-source="NASDAQ" output-source="output_csv" />
 ```
 
+### Triggers
+
 Broadway also provides many data ingestion options, including file-monitoring capabilities. The following is an example of a file monitoring 
 agent (FileTrigger) watching a path (e.g. "{{ user.home }}/broadway/incoming/tradingHistory") for four distinct file patterns 
 via regular expressions (e.g. "```AMEX_(.*)[.]txt```", "```NASDAQ_(.*)[.]txt```", "```NYSE_(.*)[.]txt```" and "```OTCBB_(.*)[.]txt```").
@@ -260,9 +336,12 @@ Broadway provides a mechanism for archiving files. This is normally used in conj
 
 ### Layouts
 
-Broadway uses the concept of a ```layout``` to define the input or output format of a data source. The following example is a simple
-JSON layout, with two fields, ```symbol``` and ```description````.
+Broadway uses the concept of a ```layout``` to define the input or output format of a data source. Data formats like CSV, JSON, Avro and others
+are all made possible via layout definitions.
 
+##### JSON Formatting
+
+The following example is a simple JSON layout, with two fields, ```symbol``` and ```description```.
 ```xml
 <MultiPartLayout id="json_layout">
     <body>
@@ -278,6 +357,22 @@ The layout above describes data that looks like the following:
 ```json
 {"symbol":"AADR","description":"BNY Mellon Focused Growth ADR ETF"}
 ```
+
+##### Avro Formatting
+
+Additionally, the Avro format (a binary JSON derivative) is also supported:
+```xml
+<MultiPartLayout id="avro_layout">
+    <body>
+        <record id="avro_body" format="avro" name="EodCompanyInfo" namespace="com.shocktrade.avro" doc="EOD Data companies schema">
+            <field name="symbol" type="string">{{ symbol }}</field>
+            <field name="description" type="string">{{ description }}</field>
+        </record>
+    </body>
+</MultiPartLayout>
+```
+
+##### Text Formatting
 
 You can, however, define much more complex layouts with optional header and trailer records. Consider the following:
 ```xml
