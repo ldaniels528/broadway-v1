@@ -3,7 +3,6 @@ package com.github.ldaniels528.broadway.core
 import java.io.File
 
 import com.github.ldaniels528.broadway.core.StoryConfig.StoryPropertiesFile
-import com.github.ldaniels528.broadway.core.StoryConfigParser._
 import com.github.ldaniels528.broadway.core.io.archive.Archive
 import com.github.ldaniels528.broadway.core.io.archive.impl.FileArchive
 import com.github.ldaniels528.broadway.core.io.device._
@@ -33,10 +32,12 @@ import scala.xml.{Node, XML}
   * Story Configuration Parser
   * @author lawrence.daniels@gmail.com
   */
-class StoryConfigParser() {
+object StoryConfigParser {
+
+  def parse(file: File): Seq[StoryConfig] = parse(XML.loadFile(file))
 
   def parse(xml: Node): Seq[StoryConfig] = {
-    (xml \\ "story") map { node =>
+    (xml \ "story") map { node =>
       // first create the base configuration; processing all import statements
       val baseConfig: StoryConfig = parseImports(node)
         .foldLeft(StoryConfig(id = "baseConfig", filters = getbuiltInFilters)) { (accumulator, config) =>
@@ -76,7 +77,7 @@ class StoryConfigParser() {
         node.label match {
           case "FileArchive" => parseArchives_File(node)
           case label =>
-            throw new IllegalArgumentException(s"Invalid archive '$label'")
+            throw new IllegalArgumentException(s"Invalid archive type '$label'")
         }
       }
     }
@@ -97,6 +98,7 @@ class StoryConfigParser() {
         node.label match {
           case "ConcurrentOutputSource" => parseDataSources_ConcurrentOutput(node, layouts)
           case "DocumentDBOutputSource" => parseDataSources_DocumentDBOutput(node, layouts)
+          case "LoopbackOutputSource" => parseDataSources_LoopBackOutput(node, layouts)
           case "KafkaOutputSource" => parseDataSources_KafkaOutput(node, layouts)
           case "MongoOutputSource" => parseDataSources_MongoOutput(node, layouts)
           case "SQLOutputSource" => parseDataSources_SQLOutput(node, layouts)
@@ -125,6 +127,12 @@ class StoryConfigParser() {
         database = node \\@ "database",
         collection = node \\@ "collection",
         consistencyLevel = (node \?@ "consistency-level").map(ConsistencyLevel.valueOf) getOrElse ConsistencyLevel.Session),
+      layout = lookupLayout(layouts, id = node \\@ "layout"))
+  }
+
+  private def parseDataSources_LoopBackOutput(node: Node, layouts: Seq[Layout]) = {
+    LoopBackOutputSource(
+      id = node \\@ "id",
       layout = lookupLayout(layouts, id = node \\@ "layout"))
   }
 
@@ -372,18 +380,6 @@ class StoryConfigParser() {
 
   private def lookupOutputDataSource(devices: Seq[DataSource], id: String) = {
     lookupDataSource[OutputSource](devices, id, "output source")
-  }
-
-}
-
-/**
-  * Story Config Parser
-  * @author lawrence.daniels@gmail.com
-  */
-object StoryConfigParser {
-
-  def parse(file: File) = {
-    new StoryConfigParser().parse(XML.loadFile(file))
   }
 
   /**

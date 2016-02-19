@@ -8,9 +8,9 @@ import com.github.ldaniels528.broadway.core.io.record.{Field, JsonSupport, Recor
   * Json Record implementation
   * @author lawrence.daniels@gmail.com
   */
-case class JsonRecord(id: String, fields: Seq[Field]) extends Record with TextSupport with JsonSupport {
+case class JsonRecord(id: String, fields: Seq[Field]) extends Record with JsonSupport with TextSupport {
 
-  override def fromText(line: String)(implicit scope: Scope) = fromJson(line)
+  override def fromText(jsonString: String)(implicit scope: Scope) = fromJson(jsonString)
 
   override def toText(dataSet: DataSet)(implicit scope: Scope) = toJson(dataSet).toString()
 

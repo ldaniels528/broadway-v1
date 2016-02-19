@@ -36,10 +36,10 @@ case class CompositeFlow(id: String, inputs: Seq[InputSource], outputs: Seq[Outp
     })
 
     // ask to be notified once all asynchronous writes have completed
-    val task = Future.sequence((outputs flatMap {
-      case aos: AsynchronousOutputSupport => Some(aos.allWritesCompleted)
-      case _ => None
-    }).toList)
+    val task = Future.sequence((outputs map {
+      case aos: AsynchronousOutputSupport => aos.allWritesCompleted
+      case _ => Future.successful(outputs)
+    }).toList) map(_.flatten)
 
     // close the output source once all writes have completed
     task onComplete (_ => outputs.foreach(_.close))

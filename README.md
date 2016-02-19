@@ -65,7 +65,7 @@ Broadway provides a construct called a narrative (e.g. story), which describes t
 The proceeding example is a Broadway narrative that performs the following flow:
 
 * Extracts historical stock quotes from a tabbed-delimited file.
-* Encodes the stock quotes as <a href="http://avro.apache.org/" target="avro">Avro</a> records.
+* Encodes the stock quotes as [Avro](avro.apache.org) records.
 * Publishes each Avro record to a Kafka topic (eoddata.tradinghistory.avro)
 
 We'll start with the story configuration, which is an XML file (comprised of one or more narratives) that 
@@ -160,7 +160,7 @@ endpoints (actors):
 ```
 
 Broadway provides a number of options for flow control. In the example above, we've defined a composition of 
-input sources (```AMEX```, ```NASDAQ```, ```NYSE``` and ```OTCBB```), which are written to a collection of output 
+input sources (`AMEX`, `NASDAQ`, `NYSE` and `OTCBB`), which are written to a collection of output 
 sources in the format prescribed by each source. 
 
 Thus, the output source "output_csv" will create a CSV representation of the data:
@@ -311,8 +311,8 @@ Or, using the simplest flow control option... A single input and a single output
 
 Broadway also provides many data ingestion options, including file-monitoring capabilities. The following is an example of a file monitoring 
 agent (FileTrigger) watching a path (e.g. "{{ user.home }}/broadway/incoming/tradingHistory") for four distinct file patterns 
-via regular expressions (e.g. "```AMEX_(.*)[.]txt```", "```NASDAQ_(.*)[.]txt```", "```NYSE_(.*)[.]txt```" and "```OTCBB_(.*)[.]txt```").
-Once a file is detected, a flow is kicked off, in this case, each file feed contains a ```SimpleFlow``` directive, indicating how to process the file.
+via regular expressions (e.g. "`AMEX_(.*)[.]txt`", "`NASDAQ_(.*)[.]txt`", "`NYSE_(.*)[.]txt`" and "`OTCBB_(.*)[.]txt`").
+Once a file is detected, a flow is kicked off, in this case, each file feed contains a `SimpleFlow` directive, indicating how to process the file.
 
 ```xml
 <FileTrigger id="trading_history_trigger">
@@ -335,7 +335,7 @@ Once a file is detected, a flow is kicked off, in this case, each file feed cont
 
 ### File Archival Strategies
 
-Broadway provides a mechanism for archiving files. This is normally used in conjunction with a ```FileTrigger``` directive. Simply put
+Broadway provides a mechanism for archiving files. This is normally used in conjunction with a `FileTrigger` directive. Simply put
  the archive stores (and optionally compresses) files after they have been processed.
 
 ```xml
@@ -346,12 +346,12 @@ Broadway provides a mechanism for archiving files. This is normally used in conj
 
 ### Layouts
 
-Broadway uses the concept of a ```layout``` to define the input or output format of a data source. Data formats like CSV, JSON, Avro and others
+Broadway uses the concept of a `layout` to define the input or output format of a data source. Data formats like CSV, JSON, Avro and others
 are all made possible via layout definitions.
 
 ##### JSON Formatting
 
-The following example is a simple JSON layout, with two fields, ```symbol``` and ```description```.
+The following example is a simple JSON layout, with two fields, `symbol` and `description`.
 ```xml
 <MultiPartLayout id="json_layout">
     <body>
@@ -418,7 +418,6 @@ AADR      BNY Mellon Focused Growth ADR ETF                 AMEX.txt            
 Currently Broadway offers a single input source type; however, more will be added soon, including Kafka, RDBMS and others.
 
 ##### Text File Input
-
 ```xml
 <TextFileInputSource id="AMEX" 
                     path="./app-cli/src/test/resources/files/AMEX.txt" 
@@ -431,7 +430,6 @@ Currently Broadway offers a single input source type; however, more will be adde
 Broadway provides a number of options for data persistence, including Azure DocumentDB, Kafka, MongoDB, RDBMS, and Text Files (delimited, CSV, Fixed-length, JSON and soon XML).
 
 ##### Azure DocumentDB Output
-
 ```xml
 <DocumentDBOutputSource id="docdb_output"
                         database="broadway"
@@ -443,7 +441,6 @@ Broadway provides a number of options for data persistence, including Azure Docu
 ```
 
 ##### Kafka Output
-
 ```xml
 <KafkaOutputSource id="kafka-topic" 
                     topic="shocktrade.companies.avro" 
@@ -452,7 +449,6 @@ Broadway provides a number of options for data persistence, including Azure Docu
 ```
 
 ##### MongoDB Output
-
 ```xml
 <MongoOutputSource id="mongo1" 
                     servers="localhost" 
@@ -462,7 +458,6 @@ Broadway provides a number of options for data persistence, including Azure Docu
 ```
 
 ##### RDBMS/SQL Output
-
 ```xml
 <SQLOutputSource id="sql_output"
                  table="dbo.tradingHistory"
@@ -473,7 +468,6 @@ Broadway provides a number of options for data persistence, including Azure Docu
 ```
 
 ##### Text File Output
-
 ```xml
 <TextFileOutputSource id="output.txt" 
                         path="{{ java.io.tmpdir }}/eod_companies_fixed.txt" 

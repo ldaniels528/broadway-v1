@@ -1,6 +1,6 @@
 package com.github.ldaniels528.broadway.core.io.layout
 
-
+import com.github.ldaniels528.broadway.core.io.Scope
 import com.github.ldaniels528.broadway.core.io.record.impl.AvroRecord
 import com.github.ldaniels528.broadway.core.io.record.{DataTypes, Field}
 import org.scalatest.Matchers._
@@ -21,35 +21,42 @@ class AvroRecordSpec() extends FeatureSpec with BeforeAndAfterEach with GivenWhe
       Given("a text string in JSON format")
       val jsonString = """{ "symbol":"AAPL", "open":96.76, "close":96.99, "low":95.89, "high":109.99 }"""
 
-      And("a Avro record")
+      And("an Avro record")
       val record = AvroRecord(
         id = "avro_rec",
         name = "EodCompanyInfo",
         namespace = "com.shocktrade.avro",
         fields = Seq(
-          Field(name = "symbol", path = "symbol", `type` = DataTypes.STRING),
-          Field(name = "open", path = "open", `type` = DataTypes.STRING),
-          Field(name = "close", path = "close", `type` = DataTypes.STRING),
-          Field(name = "low", path = "low", `type` = DataTypes.STRING),
-          Field(name = "high", path = "high", `type` = DataTypes.STRING)
+          Field(name = "symbol", `type` = DataTypes.STRING),
+          Field(name = "open", `type` = DataTypes.DOUBLE),
+          Field(name = "close", `type` = DataTypes.DOUBLE),
+          Field(name = "low", `type` = DataTypes.DOUBLE),
+          Field(name = "high", `type` = DataTypes.DOUBLE)
         ))
+
+      And("a scope")
+      implicit val scope = new Scope()
 
       When("the Avro Schema is queried:")
       info(s"The Avro Schema is ${Json.prettyPrint(Json.parse(record.toSchemaString))}")
 
       And("the JSON string is consumed")
-      record.fromJson(jsonString)
+      val dataSet = record.fromJson(jsonString)
+      dataSet.data foreach {
+        case (name, Some(value)) =>
+          info(s"name: $name, value: '$value'")
+        case (name, None) =>
+          info(s"name: $name, value is null")
+      }
 
       Then("the toJson method should return the JSON string")
-      info(record.toJson.toString())
-      record.toJson.toString() shouldBe """{"symbol":"AAPL","open":96.76,"close":96.99,"low":95.89,"high":109.99}"""
+      val jsonOutput = record.toJson(dataSet).toString()
+      info(jsonOutput)
+      jsonOutput shouldBe """{"symbol":"AAPL","open":96.76,"close":96.99,"low":95.89,"high":109.99}"""
 
       And(s"the record must contain the values")
-      val validation = List("symbol" -> "AAPL", "open" -> 96.76d, "close" -> 96.99d, "low" -> 95.89d, "high" -> 109.99d)
-      record.fields foreach { field =>
-        info(s"name: ${field.name}, value: ${field.value}")
-      }
-      record.fields.map(f => f.name -> f.value) shouldBe validation.map { case (k, v) => k -> Some(v) }
+      val validation = List("symbol" -> Some("AAPL"), "open" -> Some(96.76d), "close" -> Some(96.99d), "low" -> Some(95.89d), "high" -> Some(109.99d))
+      dataSet.data.toSet shouldBe validation.toSet
     }
   }
 

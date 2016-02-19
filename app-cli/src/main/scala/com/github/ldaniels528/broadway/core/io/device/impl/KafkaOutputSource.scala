@@ -31,7 +31,7 @@ case class KafkaOutputSource(id: String, topic: String, zk: ZkProxy, layout: Lay
     implicit val timeout: Timeout = 1.hour
     (asyncActor ? Die) map { _ =>
       logger.info("Closing Kafka publisher...")
-      this
+      Seq(this)
     }
   }
 

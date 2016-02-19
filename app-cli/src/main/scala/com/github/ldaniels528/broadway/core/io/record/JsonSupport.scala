@@ -22,7 +22,7 @@ trait JsonSupport {
 
   def fromJson(jsonString: String)(implicit scope: Scope) = {
     DataSet(Json.parse(jsonString) match {
-      case jsObject: JsObject => toProperties(jsObject) map { case (name, value) => name -> Option(value) }
+      case jsObject: JsObject => toProperties(jsObject)
       case js =>
         throw new IllegalArgumentException(s"Unhandled JSON value '$js' (${js.getClass.getSimpleName})")
     })
@@ -43,14 +43,15 @@ trait JsonSupport {
     }
   }
 
-  protected def toProperties(jsObject: JsObject, prefix: Option[String] = None): List[(String, Any)] = {
+  protected def toProperties(jsObject: JsObject, prefix: Option[String] = None): List[(String, Option[Any])] = {
     def fullName(name: String) = prefix.map(s => s"$s.$name") getOrElse name
 
-    jsObject.value.foldLeft[List[(String, Any)]](Nil) { case (list, (name, js)) =>
-      val result: List[(String, Any)] = js match {
+    jsObject.value.foldLeft[List[(String, Option[Any])]](Nil) { case (list, (name, js)) =>
+      val result: List[(String, Option[Any])] = js match {
         case JsBoolean(value) => List(fullName(name) -> value)
-        case JsNull => Nil
+        case JsNull => List(fullName(name) -> None)
         case JsNumber(value) => List(fullName(name) -> value.toDouble)
+        case JsString(value) => List(fullName(name) -> value)
         case jo: JsObject => toProperties(jo, prefix = fullName(name))
         case unknown =>
           throw new IllegalArgumentException(s"Could not convert property '$name' type '$unknown' to a Scala value")

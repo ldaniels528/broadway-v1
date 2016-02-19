@@ -24,7 +24,7 @@ case class AvroRecord(id: String, name: String, namespace: String, fields: Seq[F
     transcodeJsonToAvroBytes(toJson(dataSet).toString(), schema)
   }
 
-  override def fromText(line: String)(implicit scope: Scope) = fromJson(line)
+  override def fromText(jsonString: String)(implicit scope: Scope) = fromJson(jsonString)
 
   override def toText(dataSet: DataSet)(implicit scope: Scope) = toJson(dataSet).toString()
 

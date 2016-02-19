@@ -20,8 +20,8 @@ case class SimpleFlow(id: String, input: InputSource, output: OutputSource) exte
     implicit val myScope = scope
 
     // open the input and output sources
-    input.open
     output.open
+    input.open
 
     var inputSet: Option[InputSet] = None
     do {
@@ -39,7 +39,7 @@ case class SimpleFlow(id: String, input: InputSource, output: OutputSource) exte
     // ask to be notified once all asynchronous writes have completed
     val task = output match {
       case aos: AsynchronousOutputSupport => aos.allWritesCompleted
-      case _ => Future.successful({})
+      case _ => Future.successful(Seq(output))
     }
 
     // close the output source once all writes have completed

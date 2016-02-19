@@ -7,7 +7,7 @@
         <FileTrigger id="trading_history_trigger">
             <directory path="{{ user.home }}/broadway/incoming/tradingHistory" archive="DataStore">
                 <feed pattern="AMEX_(.*)[.]txt">
-                    <SimpleFlow id="amex_file" input-source="input_file" output-source="output_file" />
+                    <SimpleFlow id="amex_flow" input-source="input_file" output-source="output_file" />
                 </feed>
                 <feed pattern="NASDAQ_(.*)[.]txt">
                     <SimpleFlow id="nasdaq_flow" input-source="input_file" output-source="output_file" />

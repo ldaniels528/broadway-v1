@@ -29,7 +29,7 @@ case class ConcurrentOutputSource(id: String, concurrency: Int, devices: Seq[Out
   val layout = devices.headOption.map(_.layout) orDie "No output devices configured"
 
   override def allWritesCompleted(implicit scope: Scope, ec: ExecutionContext) = {
-    taskActorPool.die(4.hours) map (_ => this)
+    taskActorPool.die(4.hours) map (_ => devices)
   }
 
   override def close(implicit scope: Scope) = delayedClose
