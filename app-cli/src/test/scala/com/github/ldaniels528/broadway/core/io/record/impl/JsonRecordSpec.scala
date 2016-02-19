@@ -1,7 +1,6 @@
-package com.github.ldaniels528.broadway.core.io.layout
+package com.github.ldaniels528.broadway.core.io.record.impl
 
 import com.github.ldaniels528.broadway.core.io.Scope
-import com.github.ldaniels528.broadway.core.io.record.impl.JsonRecord
 import com.github.ldaniels528.broadway.core.io.record.{DataTypes, Field}
 import org.scalatest.Matchers._
 import org.scalatest.mock.MockitoSugar

@@ -1,9 +1,8 @@
-package com.github.ldaniels528.broadway.core.io.layout
+package com.github.ldaniels528.broadway.core.io.record.impl
 
-import com.github.ldaniels528.commons.helpers.OptionHelper.Risky._
 import com.github.ldaniels528.broadway.core.io.Scope
-import com.github.ldaniels528.broadway.core.io.record.impl.FixedRecord
 import com.github.ldaniels528.broadway.core.io.record.{DataTypes, Field}
+import com.github.ldaniels528.commons.helpers.OptionHelper.Risky._
 import org.scalatest.Matchers._
 import org.scalatest.mock.MockitoSugar
 import org.scalatest.{BeforeAndAfterEach, FeatureSpec, GivenWhenThen}
