@@ -258,6 +258,16 @@ you want to hide for security reasons, or frequently used properties that you do
 <properties file="{{ user.home }}/connection.properties" />
 ```
 
+The properties may look like the following:
+```
+sqlserver.secret.user=ldaniels
+sqlserver.secret.password=somereallyhardpassword
+sqlserver.secret.url=jdbc:sqlserver://testing.database.windows.net:1433;database=sample_db
+
+documentdb.secret.host=https://testing.documents.azure.com:443/;AccountKey=ELAVEM9Kb67Dqq8W1hdWwfae3FZVE5SbbMqwjOfsL3gb87SRDOD7ae4dg6kBWR8orHfph1IQlaS19tppSStpZQ==;
+documentdb.secret.master_key=ELAVEM9Kb53Dqq9Q1hdWwfae3FZVE5SbbMrnxOfsL3gb87SRDOD7ae4dg6kBWR8orHfph1IQlaS17tppPMtpZQ==
+```
+
 ### Flow Control
 
 Alternatively, we could have defined a single output source:
