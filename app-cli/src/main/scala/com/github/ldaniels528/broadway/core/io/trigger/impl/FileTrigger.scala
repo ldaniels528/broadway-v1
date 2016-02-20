@@ -22,25 +22,27 @@ import scala.util.{Failure, Success}
   * File Trigger
   * @author lawrence.daniels@gmail.com
   */
-case class FileTrigger(id: String, directories: Seq[FileFeedDirectory]) extends Trigger {
+case class FileTrigger(id: String, directories: Seq[FeedContainer]) extends Trigger {
+
+  override def destroy() = {}
 
   override def execute(story: StoryConfig)(implicit ec: ExecutionContext) = {
     directories foreach { directory =>
-      FileTrigger.register(watcherName = id, directory = new File(directory.path)) { incomingFile =>
-        directory.feeds.find(_.matches(incomingFile)) foreach { feed =>
-          logger.info(s"Processing '${incomingFile.getName}' for '$id'...")
-          Trigger.taskPool ! createTask(story, directory, feed, incomingFile)
+      FileTrigger.register(watcherName = id, directory = new File(directory.path)) { file =>
+        directory.find(file) foreach { feed =>
+          logger.info(s"Processing '${file.getName}' for '$id'...")
+          Trigger.taskPool ! createTask(story, directory, feed, file)
         }
       }
     }
   }
 
-  private def createTask(story: StoryConfig, directory: FileFeedDirectory, feed: FileFeed, incomingFile: File) = new Runnable {
+  private def createTask(story: StoryConfig, directory: FeedContainer, feed: FileFeed, incomingFile: File) = new Runnable {
     override def run() {
       process(story, createProcessFlows(story, directory, feed, incomingFile)) onComplete {
         case Success(result) =>
           (feed.archive ?? directory.archive) foreach { strategy =>
-            FileManagementActor ! ArchiveFile(incomingFile, new File(strategy.basePath))
+            FileManagementActor ! ArchiveFile(incomingFile, baseDirectory = new File(strategy.basePath))
           }
         case Failure(e) =>
           logger.error(s"Trigger '$id' failed: ${e.getMessage}")
@@ -48,7 +50,7 @@ case class FileTrigger(id: String, directories: Seq[FileFeedDirectory]) extends 
     }
   }
 
-  private def createProcessFlows(story: StoryConfig, directory: FileFeedDirectory, feed: FileFeed, incomingFile: File) = {
+  private def createProcessFlows(story: StoryConfig, directory: FeedContainer, feed: FileFeed, incomingFile: File) = {
     feed.flows zip (feed.flows map { flow =>
       val scope = createScope(story, flow)
       scope ++= Seq(

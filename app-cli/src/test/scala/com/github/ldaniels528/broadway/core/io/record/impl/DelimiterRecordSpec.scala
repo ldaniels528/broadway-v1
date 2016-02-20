@@ -7,7 +7,8 @@ import org.scalatest.mock.MockitoSugar
 import org.scalatest.{BeforeAndAfterEach, FeatureSpec, GivenWhenThen}
 
 /**
-  * Delimiter Record Spec
+  * Delimiter Record Specification
+  * @author lawrence.daniels@gmail.com
   */
 class DelimiterRecordSpec() extends FeatureSpec with BeforeAndAfterEach with GivenWhenThen with MockitoSugar {
   val validation = List("symbol" -> Some("AAPL"), "open" -> Some("96.76"), "close" -> Some("96.99"), "low" -> Some("95.89"), "high" -> Some("109.99"))

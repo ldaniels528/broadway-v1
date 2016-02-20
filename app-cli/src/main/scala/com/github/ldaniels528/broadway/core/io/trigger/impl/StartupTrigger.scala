@@ -12,6 +12,8 @@ import scala.concurrent.ExecutionContext
   */
 case class StartupTrigger(id: String, flows: Seq[Flow]) extends Trigger {
 
+  override def destroy() = {}
+
   override def execute(story: StoryConfig)(implicit ec: ExecutionContext) = {
     Trigger.taskPool ! new Runnable {
       override def run() = {

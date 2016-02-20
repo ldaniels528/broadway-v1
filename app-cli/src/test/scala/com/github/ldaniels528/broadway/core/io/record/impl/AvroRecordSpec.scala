@@ -9,6 +9,7 @@ import play.api.libs.json.Json
 
 /**
   * Avro Record Specification
+  * @author lawrence.daniels@gmail.com
   */
 class AvroRecordSpec() extends FeatureSpec with BeforeAndAfterEach with GivenWhenThen with MockitoSugar {
 

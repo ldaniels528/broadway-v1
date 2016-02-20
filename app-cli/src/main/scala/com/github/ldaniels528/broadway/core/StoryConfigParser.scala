@@ -18,7 +18,7 @@ import com.github.ldaniels528.broadway.core.io.layout.impl.MultiPartLayout
 import com.github.ldaniels528.broadway.core.io.layout.impl.MultiPartLayout.Section
 import com.github.ldaniels528.broadway.core.io.record._
 import com.github.ldaniels528.broadway.core.io.record.impl._
-import com.github.ldaniels528.broadway.core.io.trigger.impl.{FileFeed, FileFeedDirectory, FileTrigger, StartupTrigger}
+import com.github.ldaniels528.broadway.core.io.trigger.impl._
 import com.github.ldaniels528.broadway.core.support.kafka.ZkProxy
 import com.github.ldaniels528.commons.helpers.OptionHelper._
 import com.microsoft.azure.documentdb.ConsistencyLevel
@@ -323,7 +323,10 @@ object StoryConfigParser {
   private def parseTriggers_FileTrigger(rootNode: Node, archives: Seq[Archive], devices: Seq[DataSource], layouts: Seq[Layout]) = {
     FileTrigger(
       id = rootNode \\@ "id",
-      directories = parseTriggers_FileTrigger_Directories(rootNode, archives, devices, layouts))
+      directories =
+        parseTriggers_FileTrigger_Directories(rootNode, archives, devices, layouts) ++
+          parseTriggers_FileTrigger_FeedSet(rootNode, archives, devices, layouts)
+    )
   }
 
   private def parseTriggers_FileTrigger_Directories(rootNode: Node, archives: Seq[Archive], devices: Seq[DataSource], layouts: Seq[Layout]) = {
@@ -335,15 +338,25 @@ object StoryConfigParser {
     }
   }
 
+  private def parseTriggers_FileTrigger_FeedSet(rootNode: Node, archives: Seq[Archive], devices: Seq[DataSource], layouts: Seq[Layout]) = {
+    (rootNode \ "feed-set") map { node =>
+      FileFeedSet(
+        path = node \\@ "path",
+        pattern = node \\@ "pattern",
+        feeds = parseTriggers_FileTrigger_Feeds(node, archives, devices, layouts),
+        archive = (node \?@ "archive").map(lookupArchive(archives, _)))
+    }
+  }
+
   private def parseTriggers_FileTrigger_Feeds(rootNode: Node, archives: Seq[Archive], devices: Seq[DataSource], layouts: Seq[Layout]) = {
     (rootNode \ "feed") map { feedNode =>
       val flows = parseFlows(feedNode, devices, layouts)
       val archive = (rootNode \?@ "archive").map(id => lookupArchive(archives, id))
 
-      (feedNode \?@ "endsWith").map(suffix => FileFeed.endsWith(suffix, flows, archive)) ??
+      (feedNode \?@ "ends-with").map(suffix => FileFeed.endsWith(suffix, flows, archive)) ??
         (feedNode \?@ "name").map(name => FileFeed.exact(name, flows, archive)) ??
         (feedNode \?@ "pattern").map(pattern => FileFeed.regex(pattern, flows, archive)) ??
-        (feedNode \?@ "startsWith").map(prefix => FileFeed.startsWith(prefix, flows, archive)) orDie s"Invalid feed definition - $feedNode"
+        (feedNode \?@ "starts-with").map(prefix => FileFeed.startsWith(prefix, flows, archive)) orDie s"Invalid feed definition - $feedNode"
     }
   }
 

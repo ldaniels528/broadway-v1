@@ -21,6 +21,8 @@ case class KafkaTrigger(id: String,
 
   private val consumer = Consumer.create(consumerConfig)
 
+  override def destroy() = {}
+
   override def execute(config: StoryConfig)(implicit ec: ExecutionContext) = {
     val streamMap = consumer.createMessageStreams(Map(topic -> parallelism))
 

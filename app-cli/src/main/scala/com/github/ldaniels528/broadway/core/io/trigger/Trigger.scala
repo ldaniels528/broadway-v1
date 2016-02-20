@@ -25,6 +25,8 @@ trait Trigger {
 
   def id: String
 
+  def destroy(): Unit
+
   def execute(story: StoryConfig)(implicit ec: ExecutionContext): Unit
 
   def process(story: StoryConfig, processFlows: Seq[(Flow, Scope)])(implicit ec: ExecutionContext) = {
