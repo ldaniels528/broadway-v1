@@ -8,6 +8,7 @@ import scala.language.postfixOps
 
 /**
   * Server Directories
+  * @author lawrence.daniels@gmail.com
   */
 case class Directories(base: File) {
   val archive = new File(base, "archive") verify
@@ -24,6 +25,10 @@ case class Directories(base: File) {
   */
 object Directories {
 
+  /**
+    * File enrichment utility
+    * @param file the given [[File file]]
+    */
   implicit class FileEnrichment(val file: File) extends AnyVal {
 
     def verify: File = {
@@ -32,7 +37,6 @@ object Directories {
       }
       file
     }
-
   }
 
 }
