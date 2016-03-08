@@ -5,7 +5,7 @@
 
     <triggers>
         <FileTrigger id="trading_history_trigger">
-            <directory path="{{ user.home }}/broadway/incoming/tradingHistory" archive="DataStore">
+            <directory path="/usr/local/java/broadway/incoming/tradingHistory" archive="DataStore">
                 <feed pattern="AMEX_(.*)[.]txt">
                     <SimpleFlow id="amex_flow" input-source="input_file" output-source="kafka_topic" />
                 </feed>
