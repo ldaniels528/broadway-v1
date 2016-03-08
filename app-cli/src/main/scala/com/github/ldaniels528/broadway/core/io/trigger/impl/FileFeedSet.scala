@@ -15,11 +15,7 @@ case class FileFeedSet(path: String, pattern: String, feeds: Seq[FileFeed], arch
   extends FeedContainer {
   private val patternR = pattern.r
 
-  override def find(file: File) = {
-    for {
-      feed <- feeds.find(_.matches(file))
-    } yield feed
-  }
+  override def find(file: File) = feeds.find(_.matches(file))
 
   def isSatisfied(files: Seq[File]) = feeds.forall(feed => files.exists(feed.matches))
 

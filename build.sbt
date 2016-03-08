@@ -64,6 +64,7 @@ lazy val broadway_cli = (project in file("app-cli"))
       //
       // Microsft/Azure Dependencies
       "com.microsoft.azure" % "azure-documentdb" % "1.5.1",
+      "com.microsoft.azure" % "azure-storage" % "4.0.0",
       "com.microsoft.sqlserver" % "sqljdbc4" % "4.0",
       //
       // Avro Dependencies

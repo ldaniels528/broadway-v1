@@ -27,6 +27,10 @@
         <TextFileOutputSource id="output_file" path="{{ java.io.tmpdir }}/eod_companies_csv_new.txt" layout="csv_layout" />
     </data-sources>
 
+    <locations>
+        <AzureBlobStorage id="test" container="test" connection-string="{{ blob.storage.secret.connect }}" />
+    </locations>
+
     <layouts>
         <MultiPartLayout id="csv_layout">
             <header>
