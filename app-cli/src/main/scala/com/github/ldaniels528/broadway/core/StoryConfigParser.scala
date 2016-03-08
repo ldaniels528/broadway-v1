@@ -37,7 +37,7 @@ object StoryConfigParser {
   def parse(file: File): Seq[StoryConfig] = parse(XML.loadFile(file))
 
   def parse(xml: Node): Seq[StoryConfig] = {
-    (xml \ "story") map { node =>
+    (xml \\ "story") map { node =>
       // first create the base configuration; processing all import statements
       val baseConfig: StoryConfig = parseImports(node)
         .foldLeft(StoryConfig(id = "baseConfig", filters = getbuiltInFilters)) { (accumulator, config) =>

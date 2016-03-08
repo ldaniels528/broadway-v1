@@ -4,9 +4,11 @@ sbt "project broadway_cli" run
 
 # Microsoft Driver in Maven
 
-http://claude.betancourt.us/add-microsoft-sql-jdbc-driver-to-maven/
+https://www.microsoft.com/en-us/download/details.aspx?id=11774
 
 mvn install:install-file -Dfile=sqljdbc4-4.0.2206.100.jar -Dpackaging=jar -DgroupId=com.microsoft.sqlserver -DartifactId=sqljdbc4 -Dversion=4.0
+
+mvn install:install-file -Dfile=sqljdbc4.jar -Dpackaging=jar -DgroupId=com.microsoft.sqlserver -DartifactId=sqljdbc4 -Dversion=4.0
 
 <dependency>
     <groupId>com.microsoft.sqlserver</groupId>

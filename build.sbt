@@ -56,6 +56,7 @@ lazy val broadway_cli = (project in file("app-cli"))
     resolvers += "google-sedis-fix" at "http://pk11-scratch.googlecode.com/svn/trunk",
     resolvers += "clojars" at "https://clojars.org/repo",
     resolvers += "conjars" at "http://conjars.org/repo",
+    resolvers += "Local Maven" at Path.userHome.asFile.toURI.toURL + ".m2/repository",
     libraryDependencies ++= Seq(
       // ldaniels528 Dependencies
       "com.github.ldaniels528" %% "commons-helpers" % "0.1.2",
