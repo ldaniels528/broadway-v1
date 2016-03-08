@@ -5,10 +5,10 @@
 
     <triggers>
         <StartUpTrigger id="Files_Combiner">
-            <SimpleFlow id="AMEX" input-source="AMEX.txt" output-source="kafka-topic" />
-            <SimpleFlow id="NASDAQ" input-source="NASDAQ.txt" output-source="kafka-topic" />
-            <SimpleFlow id="NYSE" input-source="NYSE.txt" output-source="kafka-topic" />
-            <SimpleFlow id="OTCBB" input-source="OTCBB.txt" output-source="kafka-topic" />
+            <SimpleFlow id="AMEX" input-source="AMEX.txt" output-source="kafka_topic" />
+            <SimpleFlow id="NASDAQ" input-source="NASDAQ.txt" output-source="kafka_topic" />
+            <SimpleFlow id="NYSE" input-source="NYSE.txt" output-source="kafka_topic" />
+            <SimpleFlow id="OTCBB" input-source="OTCBB.txt" output-source="kafka_topic" />
         </StartUpTrigger>
     </triggers>
 
@@ -17,7 +17,7 @@
         <TextFileInputSource id="NASDAQ.txt" path="./app-cli/src/test/resources/files/NASDAQ.txt" layout="eod_company_input_layout" />
         <TextFileInputSource id="NYSE.txt" path="./app-cli/src/test/resources/files/NYSE.txt" layout="eod_company_input_layout" />
         <TextFileInputSource id="OTCBB.txt" path="./app-cli/src/test/resources/files/OTCBB.txt" layout="eod_company_input_layout" />
-        <KafkaOutputSource id="kafka-topic" topic="shocktrade.companies.avro" connectionString="vault114:2181" layout="avro_layout" />
+        <KafkaOutputSource id="kafka_topic" topic="shocktrade.companies.avro" connectionString="vault114:2181" layout="avro_layout" />
     </data-sources>
 
     <layouts>

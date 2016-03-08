@@ -442,7 +442,7 @@ Broadway provides a number of options for data persistence, including Azure Docu
 
 ##### Kafka Output
 ```xml
-<KafkaOutputSource id="kafka-topic" 
+<KafkaOutputSource id="kafka_topic" 
                     topic="shocktrade.companies.avro" 
                     connectionString="localhost:2181" 
                     layout="avro_layout" />
