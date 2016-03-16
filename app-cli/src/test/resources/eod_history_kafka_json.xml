@@ -35,13 +35,13 @@
         <MultiPartLayout id="json_output">
             <body>
                 <record id="output_body" format="json">
-                    <field name="symbol" type="string" length="10">{{ ticker }}</field>
-                    <field name="date" type="date" length="15">{{ date | date:parse:"yyyyMMdd" }}</field>
-                    <field name="open" type="string" length="12">{{ open }}</field>
-                    <field name="high" type="string" length="12">{{ high }}</field>
-                    <field name="low" type="string" length="12">{{ low }}</field>
-                    <field name="close" type="string" length="12">{{ close }}</field>
-                    <field name="volume" type="string" length="12">{{ volume }}</field>
+                    <field name="ticker" type="string">{{ ticker }}</field>
+                    <field name="date" type="date">{{ date | date:parse:"yyyyMMdd" }}</field>
+                    <field name="open" type="string">{{ open }}</field>
+                    <field name="high" type="string">{{ high }}</field>
+                    <field name="low" type="string">{{ low }}</field>
+                    <field name="close" type="string">{{ close }}</field>
+                    <field name="volume" type="string">{{ volume }}</field>
                 </record>
             </body>
         </MultiPartLayout>
