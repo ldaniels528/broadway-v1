@@ -5,8 +5,8 @@ import java.util.UUID
 
 import com.github.ldaniels528.broadway.cli.command.{CommandParser, UnixLikeArgs}
 import com.github.ldaniels528.broadway.core.{StoryConfig, StoryProcessor}
-import com.github.ldaniels528.tabular.Tabular
 import com.github.ldaniels528.commons.helpers.OptionHelper._
+import com.github.ldaniels528.tabular.Tabular
 import org.slf4j.LoggerFactory
 
 import scala.collection.concurrent.TrieMap
@@ -36,6 +36,10 @@ object BroadwayREPL {
     */
   def main(args: Array[String]): Unit = shell(args)
 
+  /**
+    * Runs the CLI shell
+    * @param args the given command line arguments
+    */
   def shell(args: Array[String]): Unit = {
     logger.info(s"Broadway REPL v$Version")
 
