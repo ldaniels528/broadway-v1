@@ -1,3 +1,5 @@
+sbt "project broadway_cli" "run ./app-cli/src/test/resources/shocktrade_mongo_to_sql.xml"
+
 sbt "project broadway_cli" "run ./app-cli/src/test/resources/eod_companies_csv.xml"
 
 sbt "project broadway_cli" "run ./app-cli/src/test/resources/eod_history_kafka_json.xml"

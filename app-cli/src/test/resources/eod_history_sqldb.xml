@@ -29,7 +29,7 @@
                          table="dbo.tradingHistory"
                          layout="sql_layout"
                          driver="com.microsoft.sqlserver.jdbc.SQLServerDriver"
-                         url="jdbc:sqlserver://ladaniel.database.windows.net:1433;database=ladaniel_sql"
+                         url="{{ qlserver.secret.url }}"
                          user="{{ sqlserver.secret.user }}" password="{{ sqlserver.secret.password }}" />
     </data-sources>
 

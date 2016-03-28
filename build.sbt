@@ -62,7 +62,7 @@ lazy val broadway_cli = (project in file("app-cli"))
       "com.github.ldaniels528" %% "commons-helpers" % "0.1.2",
       "com.github.ldaniels528" %% "tabular" % "0.1.3",
       //
-      // Microsft/Azure Dependencies
+      // Microsoft/Azure Dependencies
       "com.microsoft.azure" % "azure-documentdb" % "1.5.1",
       "com.microsoft.azure" % "azure-storage" % "4.0.0",
       "com.microsoft.sqlserver" % "sqljdbc4" % "4.0",
@@ -94,7 +94,6 @@ lazy val broadway_cli = (project in file("app-cli"))
       //
       // General Java Dependencies
       "commons-io" % "commons-io" % "2.4",
-      //"jline" % "jline" % "2.12",
       "joda-time" % "joda-time" % "2.9.1",
       "net.liftweb" %% "lift-json" % "3.0-M7",
       "org.joda" % "joda-convert" % "1.8.1",

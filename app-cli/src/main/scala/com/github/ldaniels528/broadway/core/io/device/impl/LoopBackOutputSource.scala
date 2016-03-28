@@ -3,15 +3,28 @@ package com.github.ldaniels528.broadway.core.io.device.impl
 import com.github.ldaniels528.broadway.core.io.Scope
 import com.github.ldaniels528.broadway.core.io.device.{DataSet, OutputSource}
 import com.github.ldaniels528.broadway.core.io.layout.Layout
-import com.github.ldaniels528.broadway.core.io.record.Record
+import com.github.ldaniels528.broadway.core.io.record.{BinarySupport, JsonSupport, Record, TextSupport}
+import org.slf4j.LoggerFactory
 
 /**
   * Loop-back OutputSource
   * @author lawrence.daniels@gmail.com
   */
 case class LoopBackOutputSource(id: String, layout: Layout) extends OutputSource {
+  private val logger = LoggerFactory.getLogger(getClass)
+  private var offset = 0L
 
-  override def writeRecord(record: Record, dataSet: DataSet)(implicit scope: Scope) = 1
+  override def writeRecord(record: Record, dataSet: DataSet)(implicit scope: Scope) = {
+    val text: String = record match {
+      case rec: BinarySupport => new String(rec.toBytes(dataSet))
+      case rec: TextSupport => rec.toText(dataSet)
+      case rec: JsonSupport => rec.toJson(dataSet).toString()
+      case rec => s"[${rec.asString}]"
+    }
+    logger.info(f"[$offset%06d] $text")
+    offset += 1
+    1
+  }
 
   override def close(implicit scope: Scope) = ()
 
