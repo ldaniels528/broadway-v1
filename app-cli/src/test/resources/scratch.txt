@@ -1,4 +1,5 @@
-sbt "project broadway_cli" "run ./app-cli/src/test/resources/shocktrade_mongo_to_sql.xml"
+sbt "project broadway_cli" "run $HOME/git/shocktrade/shocktrade-js/app-play/transitions/broadway/shocktrade_naics.xml"
+sbt "project broadway_cli" "run $HOME/git/shocktrade/shocktrade-js/app-play/transitions/broadway/shocktrade_sic.xml"
 
 sbt "project broadway_cli" "run ./app-cli/src/test/resources/eod_companies_csv.xml"
 

@@ -46,7 +46,7 @@ case class MongoDbInputSource(id: String, serverList: String, database: String, 
     (scope.getResource[Iterator[DBObject]](cursorUUID) map toDataSet) orDie "No MongoDB connection found"
   }
 
-  private def toDataSet(it: Iterator[DBObject]): Option[DataSet] = {
+  private def toDataSet(it: Iterator[DBObject])(implicit scope: Scope): Option[DataSet] = {
     if (!it.hasNext) None
     else {
       val doc = it.next()
